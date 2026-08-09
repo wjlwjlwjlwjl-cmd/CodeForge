@@ -76,18 +76,19 @@ public class ProducerApplication {
     }
 
     public static void modeTopic() throws Exception{
+        //Bindkey 和 RoutingKey 都由 . 和 单词构成，提供 . 匹配任意一个单词，# 匹配任意多个单词
         //* 表示单个单词，# 表示多个单词
         channel.exchangeDeclare("topic", BuiltinExchangeType.TOPIC, true, false, null);
-        channel.queueBind("test_queue1", "a.b.*", "test_queue1"); //如果交换机类型为 fanout，那么路由键设置为 ""，表示广播到所有队列
-        channel.queueBind("test_queue2", "1.#", "test_queue2"); //如果交换机类型为 fanout，那么路由键设置为 ""，表示广播到所有队列
+        channel.queueBind("test_queue1", "topic", "a.b.*"); //如果交换机类型为 fanout，那么路由键设置为 ""，表示广播到所有队列
+        channel.queueBind("test_queue2", "topic", "1.#"); //如果交换机类型为 fanout，那么路由键设置为 ""，表示广播到所有队列
 
         for(int i = 0; i < 10; i++){
             String msg = i + ": hello world";
             if(i % 2 == 1){
-                channel.basicPublish("a.b.c", "test_queue1", null, msg.getBytes()); //交换机默认是 ""
+                channel.basicPublish("topic", "a.b.c", null, msg.getBytes()); //交换机默认是 ""
             }
             else{
-                channel.basicPublish("1.2.3.4", "test_queue2", null, msg.getBytes()); //交换机默认是 ""
+                channel.basicPublish("topic", "1.2.3.4", null, msg.getBytes()); //交换机默认是 ""
             }
             TimeUnit.SECONDS.sleep(1);
         }
