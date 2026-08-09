@@ -7,7 +7,6 @@
     <groupId>com.wjl</groupId>
     <artifactId>rabbitmq_springboot</artifactId>
     <version>1.0-SNAPSHOT</version>
-    <packaging>pom</packaging>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -26,6 +25,12 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
             <version>3.2.5</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 
