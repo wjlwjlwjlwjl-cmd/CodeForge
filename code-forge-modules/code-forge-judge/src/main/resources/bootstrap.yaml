@@ -1,0 +1,5 @@
+server:
+    port: 18082
+spring:
+    application:
+        name: code-forge-judge

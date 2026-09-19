@@ -1,0 +1,45 @@
+#启动命令 docker compose -f docker-compose-mid.yml up -d
+services:
+  code-forge-mysql:
+    container_name: code-forge-mysql
+    image: mysql:8.4.2
+    ports:
+      - "3306:3306"
+    volumes:
+      - ../data/codeforgedata/mysql/data:/var/lib/mysql
+      - ./mysql/sql:/docker-entrypoint-initdb.d
+    command: [
+      'mysqld',
+      '--innodb-buffer-pool-size=80M',
+      '--character-set-server=utf8mb4',
+      '--collation-server=utf8mb4_unicode_ci',
+      '--default-time-zone=+8:00',
+      '--lower-case-table-names=1',
+      '--explicit_defaults_for_timestamp=true',
+      '--server-id=1',
+      '--log-bin=mysql-bin',
+      '--binlog-ignore-db=mysql',
+      '--binlog-cache-size=256M',
+      '--binlog-format=ROW',
+      '--max_connections=2000'
+    ]
+    restart: always
+    networks:
+      - codeforge_network
+    healthcheck:
+      test: mysql --user=wjl -h127.0.0.1 --password='wjl@123' -e "SELECT 1;"
+      start_period: 180s
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: wjl@123
+    ulimits:
+      nproc: 65535
+      nofile:
+        soft: 20000
+        hard: 40000
+
+network:
+  codeforge_network:
