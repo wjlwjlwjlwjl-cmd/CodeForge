@@ -41,5 +41,5 @@ services:
         soft: 20000
         hard: 40000
 
-network:
+networks:
   codeforge_network:
