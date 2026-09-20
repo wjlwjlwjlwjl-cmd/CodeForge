@@ -3,7 +3,7 @@
 USE `db_code_forge`;
 DROP TABLE IF EXISTS `tb_sys_user`;
 CREATE TABLE `tb_sys_user` (
-    `id` bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '主键id',
+    `id` bigint unsigned NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '主键id',
     `user_id` bigint(20) unsigned NOT NULL COMMENT '用户id',
     `user_account` varchar(32) DEFAULT NULL COMMENT '用户账号',
     `password` varchar(100) DEFAULT NULL COMMENT '用户密码',
