@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.wjl.constants.CommonConstants;
 
 @Configuration 
 public class RedisConfig {
@@ -46,7 +47,7 @@ public class RedisConfig {
         .configure(SerializationFeature.WRITE_DATE_KEYS_AS_TIMESTAMPS, false)   //使Map的日期键通过统一指定的方式序列化，不要序列化为默认的时间戳格式
         .configure(MapperFeature.USE_ANNOTATIONS, false)                        //不允许类通过注解更改序列化、反序列化行为，简化配置操作
         .addModule(new JavaTimeModule())                                               //序列化 LocalDateTime 和 LocalDate 的必要方式
-        .defaultDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss"))                //序列化日期类型i时的时间格式
+        .defaultDateFormat(new SimpleDateFormat(CommonConstants.STANDARD_FORMAT))      //序列化日期类型i时的时间格式
         .serializationInclusion(JsonInclude.Include.NON_NULL)                          //只针对非空的值进行序列化
         .build();
 
