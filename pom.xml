@@ -48,6 +48,8 @@
         <javax-activation.version>1.1.1</javax-activation.version>
         <org-glassfish-jaxb.version>2.3.3</org-glassfish-jaxb.version>
         <aliyun-oss.version>3.17.4</aliyun-oss.version>
+        <redisson.version>3.31.0</redisson.version>
+        <commons-collections4.version>4.4</commons-collections4.version>
     </properties>
 
     <dependencies>
@@ -60,6 +62,12 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-collections4</artifactId>
+            <version>${commons-collections4.version}</version>
         </dependency>
     </dependencies>
 

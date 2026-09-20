@@ -9,8 +9,13 @@ import com.wjl.system.domain.dto.SysLoginDTO;
 @RestController 
 @RequestMapping ("/system")
 public class SystemController {
-    @RequestMapping("login")
+    @RequestMapping("/login")
     public R<String> login(SysLoginDTO loginDTO) {
         return R.success("login");
+    }
+
+    @RequestMapping("/logout")
+    public R<Void> logout(){
+        return null;
     }
 }

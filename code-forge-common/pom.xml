@@ -16,6 +16,7 @@
     <modules>
         <module>code-forge-common-core</module>
         <module>code-forge-common-swagger</module>
+        <module>code-forge-common-redis</module>
     </modules>
 
     <properties>
