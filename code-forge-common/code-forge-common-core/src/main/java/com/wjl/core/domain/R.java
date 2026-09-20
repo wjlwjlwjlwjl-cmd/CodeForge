@@ -19,6 +19,10 @@ public class R <T>{
         return r;
     }
 
+    public static<T> R<T> success(){
+        return new R<>();
+    }
+
     public static<T> R<T> error(Integer code,String msg){
         R<T> r = new R<>();
         r.setCode(code);

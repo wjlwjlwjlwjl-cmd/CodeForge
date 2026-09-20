@@ -8,3 +8,11 @@ spring:
         username: wjl
         password: wjl@123
         driver-class-name: com.mysql.cj.jdbc.Driver
+
+    cache:
+        type: redis
+    data:
+        redis:
+            host: 127.0.0.1 # 这里后续打 jar 包上服务器后需要修改为容器名 code-forge-redis
+            port: 6379
+            password: wjl@123

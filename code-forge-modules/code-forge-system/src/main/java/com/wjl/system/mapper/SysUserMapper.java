@@ -9,6 +9,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 @Mapper 
 @Schema (description = "系统用户Mapper")
-public interface SystemMapper extends BaseMapper<SysUser> {
+public interface SysUserMapper extends BaseMapper<SysUser> {
 
 }

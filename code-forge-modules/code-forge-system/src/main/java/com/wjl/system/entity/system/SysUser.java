@@ -13,7 +13,8 @@ import lombok.Data;
 @TableName ("tb_sys_user")
 @Schema (description = "系统用户")
 public class SysUser {
-    @TableId (value="user_id", type=IdType.ASSIGN_ID)
+    @TableId (value="id", type=IdType.AUTO)
+    private Long id;
     private Long userId;
     private String userAccount;
     private String password;

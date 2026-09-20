@@ -13,4 +13,7 @@ CREATE TABLE `tb_sys_user` (
     `update_by` bigint(8) DEFAULT NULL COMMENT '更新用户',
     `update_time` datetime DEFAULT NULL COMMENT '更新时间',
     UNIQUE KEY `user_account` (`user_account`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理端用户表'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理端用户表';
+
+# 初始化默认管理员
+INSERT INTO tb_sys_user VALUES (0, 1, 'admin', 'admin@123', 'admin', 1, NOW(), 1, NOW());
