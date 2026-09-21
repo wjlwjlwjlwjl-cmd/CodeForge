@@ -229,7 +229,7 @@ CREATE TABLE `permissions`
 );
 
 INSERT INTO users (username, password, enabled)
-VALUES ('nacos', '$2a$10$9IcbyRmE9Tulsa1baGrdNeQ4YiHiU9mRgyhuB.LwnntSb9JVPKLSi', TRUE);
+VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuSwc2TlQxOqnJ5Ki9Kp', TRUE);
 
 INSERT INTO roles (username, role)
 VALUES ('nacos', 'ROLE_ADMIN');
