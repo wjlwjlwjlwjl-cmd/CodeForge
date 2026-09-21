@@ -13,7 +13,7 @@ public class R <T>{
 
     public static<T> R<T> success(T data){
         R<T> r = new R<>();
-        r.setCode(200);
+        r.setCode(1000);
         r.setMsg("success");
         r.setData(data);
         return r;

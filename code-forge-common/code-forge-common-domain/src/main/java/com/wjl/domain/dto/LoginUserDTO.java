@@ -18,6 +18,11 @@ public class LoginUserDTO {
     private String email;
 
     /**
+     * 用户账号
+     */
+    private String userAccount;
+
+    /**
      * 用户名称
      */
     private String username;

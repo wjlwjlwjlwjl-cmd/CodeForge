@@ -63,6 +63,7 @@ public class TokenService {
         claimsMap.put(SecurityConstants.USER_ID, loginUserDTO.getUserId());
         claimsMap.put(SecurityConstants.EMAIL, loginUserDTO.getEmail());
         claimsMap.put(SecurityConstants.USERNAME, loginUserDTO.getUsername());
+        claimsMap.put(SecurityConstants.USER_ACCOUNT, loginUserDTO.getUserAccount());
         // 3 生成TokenDTO
         TokenDTO tokenDTO = new TokenDTO();
         tokenDTO.setAccessToken(JwtUtil.createToken(claimsMap));

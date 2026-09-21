@@ -136,6 +136,7 @@ public class RedisService {
      * @return    删除结果
      */
     public boolean deleteObject(final String key){
+        if(key == null) return false;
         return redisTemplate.delete(key);
     }
 
