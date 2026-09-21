@@ -4,6 +4,5 @@ import lombok.Data;
 
 @Data
 public class AddAdminVO {
-    private Integer errCode;
     private String userAccount;
 }

@@ -25,11 +25,12 @@ public enum ResultCode {
     FAILED_NOT_EXISTS           (3003, "资源不存在"),
     FAILED_ALREADY_EXISTS       (3004, "资源已存在"),
 
-    FAILED_USER_EXISTS           (3101, "用户已存在"),
+    FAILED_USER_EXISTS          (3101, "用户已存在"),
     FAILED_USER_NOT_EXISTS      (3102, "用户不存在"),
     FAILED_LOGIN                (3103, "账号或密码错误"),
     FAILED_USER_BANNED          (3104, "您已被列入黑名单, 请联系管理员."),
     FAILED_USER_PHONE           (3105, "你输入的手机号有误"),
+    FAILED_ADMIN                (3106, "禁止删除初始管理员"),
 
     FAILED_FREQUENT             (3106, "操作频繁，请稍后重试"),
 

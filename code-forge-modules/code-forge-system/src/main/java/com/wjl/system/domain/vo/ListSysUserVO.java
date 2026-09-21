@@ -9,5 +9,4 @@ import lombok.Data;
 @Schema (description = "用户列表VO")
 public class ListSysUserVO {
     private List<SysUserVO> list;
-    private Integer errCode;
 }

@@ -9,11 +9,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
+import com.wjl.core.utils.ColorLog;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.domain.dto.TokenDTO;
+import com.wjl.exception.ServiceException;
 import com.wjl.security.service.TokenService;
 import com.wjl.system.domain.dto.AddAdminDTO;
+import com.wjl.system.domain.dto.ListSysUserDTO;
 import com.wjl.system.domain.dto.SysLoginDTO;
 import com.wjl.system.domain.vo.AddAdminVO;
 import com.wjl.system.domain.vo.ListSysUserVO;
@@ -43,8 +48,8 @@ public class SysUserService {
                 .eq(SysUser::getPassword, password)
         );
         if(sysUser == null){
-            sysLoginVO.setErrCode(3103);
-            return sysLoginVO;
+            //查无此用户
+            throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
         }
 
         LoginUserDTO loginUserDTO = new LoginUserDTO();
@@ -55,8 +60,6 @@ public class SysUserService {
 
         TokenDTO tokenDTO = tokenService.createToken(loginUserDTO);
         String token = tokenDTO.getAccessToken();
-        log.info("{}登录成功, token: {}", userAccount, token);
-        sysLoginVO.setErrCode(1000);
         sysLoginVO.setToken(token);
 
         return sysLoginVO;
@@ -68,8 +71,12 @@ public class SysUserService {
     }
 
     //添加管理员用户
-    public AddAdminVO addAdmin(AddAdminDTO addAdminDTO){
+    public AddAdminVO addAdmin(String token, AddAdminDTO addAdminDTO){
         AddAdminVO addAdminVO = new AddAdminVO();
+
+        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        Long userIdCreator = Long.valueOf(loginUserDTO.getUserId());
+
         String password = addAdminDTO.getPassword();
         String nickname = addAdminDTO.getNickname();
         SysUser sysUser = sysUserMapper.selectOne(
@@ -77,39 +84,36 @@ public class SysUserService {
                 .eq(SysUser::getNickName, nickname)
         );
         if(sysUser != null){
-            addAdminVO.setErrCode(3101);
-            return addAdminVO;
+            throw new ServiceException(3101, ResultCode.FAILED_USER_EXISTS.getMsg());
         }
 
-        String userAccount = UUID.randomUUID().toString().substring(0, 11);
+        // 前缀标识用户类型，后缀取雪花 ID 后 8 位保证唯一
+        String userAccount = "U" + IdWorker.getIdStr().substring(11);
+        long userId = IdWorker.getId(); // 时间戳 + 机器 ID + 序列号
         sysUser = new SysUser();
+        sysUser.setUserId(userId);
         sysUser.setNickName(nickname);
         sysUser.setPassword(password);
         sysUser.setUserAccount(userAccount);
         sysUser.setCreateTime(LocalDateTime.now());
-        sysUser.setCreateBy(1L);
-        sysUser.setUpdateBy(1L);
+        sysUser.setCreateBy(userIdCreator);
+        sysUser.setUpdateBy(userIdCreator);
         sysUser.setUpdateTime(LocalDateTime.now());
         try{
             sysUserMapper.insert(sysUser);
         }
         catch(Exception e){
-            addAdminVO.setErrCode(3000);
-            return addAdminVO;
+            ColorLog.error("添加管理员用户失败: {}", e.getMessage());
+            throw new ServiceException(2000, ResultCode.ERROR.getMsg());
         }
 
         addAdminVO.setUserAccount(userAccount);
-        addAdminVO.setErrCode(1000);
         return addAdminVO;
     }
 
     public SysUserVO info(String token){
         SysUserVO sysUserVO = new SysUserVO();
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        if(loginUserDTO == null){
-            sysUserVO.setErrCode(3001);
-            return sysUserVO;
-        }
         String userAccount = loginUserDTO.getUserAccount();
 
         SysUser sysUser = sysUserMapper.selectOne(
@@ -117,11 +121,9 @@ public class SysUserService {
                 .eq(SysUser::getUserAccount, userAccount)
         );
         if(sysUser == null){
-            sysUserVO.setErrCode(3102);
-            return sysUserVO;
+            throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
         }
         BeanCopyUtil.copyProperties(sysUser, sysUserVO);
-        sysUserVO.setErrCode(1000);
 
         return sysUserVO;
     }
@@ -129,37 +131,29 @@ public class SysUserService {
     public ListSysUserVO list(String token){
         ListSysUserVO listSysUserVO = new ListSysUserVO();
 
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        if(loginUserDTO == null){
-            listSysUserVO.setErrCode(3001);
-            return listSysUserVO;
-        }
-
         List<SysUser> sysUserList = sysUserMapper.selectList(
             new LambdaQueryWrapper<SysUser>()
         );
-        List<SysUserVO> users = new ArrayList<>();
-        BeanCopyUtil.copyListProperties(sysUserList, SysUserVO::new);
+        List<SysUserVO> users = BeanCopyUtil.copyListProperties(sysUserList, SysUserVO::new);
         listSysUserVO.setList(users);
 
         return listSysUserVO;
     }
 
     public int delete(String token, String userAccount){
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        if(loginUserDTO == null){
-            return 3001;
+        if(userAccount.equals("admin")){
+            throw new ServiceException(3106, ResultCode.FAILED_ADMIN.getMsg()); 
         }
-
         int cnt = sysUserMapper.delete(
             new LambdaQueryWrapper<SysUser>()
                 .eq(SysUser::getUserAccount, userAccount)
+                .ne(SysUser::getId, 1L)
         );
         if(cnt == 0){
-            return 3102;
+            throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
         }
         else{
-            return 1000;
+            return 1;
         }
     }
 }

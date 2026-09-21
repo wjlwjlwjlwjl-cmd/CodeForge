@@ -42,6 +42,21 @@
             <version>${jwt.version}</version>
         </dependency>
 
+        <!--
+            jjwt 0.9.1 内部依赖 javax.xml.bind.DatatypeConverter 做 Base64 编码，
+            该类在 JDK 9+ 已从 JDK 移除，需手动引入 jaxb-api + jaxb-runtime。
+        -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>${javax-xml-bind.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.glassfish.jaxb</groupId>
+            <artifactId>jaxb-runtime</artifactId>
+            <version>${org-glassfish-jaxb.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
