@@ -41,6 +41,41 @@ services:
         soft: 20000
         hard: 40000
 
+  code-forge-nacos:
+    container_name: code-forge-nacos
+    image: nacos/nacos-server:v2.2.2
+    environment:
+      - MODE=standalone
+      - JVM_XMS=512m
+      - JVM_XMX=512m
+      - JVM_XMN=256m
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=code-forge-mysql
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=frameworkjava_nacos_test
+      - MYSQL_SERVICE_USER=wjl
+      - MYSQL_SERVICE_PASSWORD=wjl@123
+    volumes:
+      - ../data/codeforgedata/nacos/logs/:/home/nacos/logs
+      - ../data/codeforgedata/nacos/tomcatlogs/:/home/bit/nacos/tomcat/logs/
+      - ./nacos/conf/application.properties:/home/nacos/conf/application.properties
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+      - "9849:9849"
+    restart: always
+    networks:
+      - codeforge_network
+    depends_on:
+      code-forge-mysql:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8848/nacos" ]
+      start_period: 30s
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
   code-forge-redis:
     container_name: code-forge-redis
     image: redis:7.0.15
