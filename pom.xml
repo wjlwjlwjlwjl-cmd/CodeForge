@@ -50,6 +50,8 @@
         <aliyun-oss.version>3.17.4</aliyun-oss.version>
         <redisson.version>3.31.0</redisson.version>
         <commons-collections4.version>4.4</commons-collections4.version>
+        <nacos.addr>192.168.251.128:8848</nacos.addr>
+        <run.env>test</run.env>
     </properties>
 
     <dependencies>
@@ -62,6 +64,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
         </dependency>
 
         <dependency>

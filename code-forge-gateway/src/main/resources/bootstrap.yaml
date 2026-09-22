@@ -1,0 +1,35 @@
+server:
+  port: 18080
+
+spring:
+  application:
+    name: code-forge-gateway
+  profiles:
+    active: ${RUN_ENV}
+  main:
+    web-application-type: reactive
+  cloud:
+    nacos:
+      discovery:
+        username: nacos
+        password: nacos
+        namespace: code-forge-${RUN_ENV}
+        server-addr: ${NACOS_ADDR}
+      config:
+        username: nacos
+        password: nacos
+        namespace: code-forge-${RUN_ENV}
+        server-addr: ${NACOS_ADDR}
+        file-extension: yaml
+        # 共享配置
+        shared-configs:
+          - data-id: share-gateway-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+            refresh: true
+          - data-id: share-redis-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+            refresh: true
+
+logging:
+  level:
+    com.alibaba.cloud.nacos: debug
+    com.alibaba.nacos: info
+    org.springframework.cloud.bootstrap: debug
