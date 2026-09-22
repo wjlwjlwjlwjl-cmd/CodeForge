@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 public class Question {
     @TableId(value="id", type= IdType.AUTO)
     private Long id;
-    private Long questionId;
     private String title;
     private Integer difficulty;
     private Integer timeLimit;

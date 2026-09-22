@@ -10,7 +10,7 @@ import lombok.Data;
 public class QuestionVO {
 
     @Schema (description = "题目id")
-    private Long questionId;
+    private Long id;
 
     @Schema (description = "题目标题")
     private String title;

@@ -3,6 +3,7 @@ package com.wjl.security.handler;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ColorLog;
 import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -44,6 +45,14 @@ public class GlobalExceptionHandler {
         ColorLog.debug("MethodArgumentTypeMismatchException: {}", e.getMessage());
         exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
         return R.error(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg());
+    }
+
+    // 参数校验失败
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public R<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, ServerWebExchange exchange) {
+        ColorLog.debug("MethodArgumentNotValidException: {}", e.getMessage());
+        exchange.getResponse().setStatusCode(HttpStatus.BAD_REQUEST);
+        return R.error(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
     }
 
     //其他异常

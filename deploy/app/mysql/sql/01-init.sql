@@ -18,7 +18,7 @@ USE `db_code_forge`;
 DROP TABLE IF EXISTS `tb_sys_user`;
 CREATE TABLE `tb_sys_user` (
     `id`           bigint        unsigned NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '主键id',
-    `user_id`      bigint(20)    unsigned NOT NULL COMMENT '用户id',
+    `user_id`      bigint(20)    unsigned NOT NULL COMMENT '用户id' UNIQUE KEY,
     `user_account` varchar(32)   DEFAULT NULL COMMENT '用户账号',
     `password`     varchar(100)  DEFAULT NULL COMMENT '用户密码',
     `nick_name`    varchar(32)   DEFAULT NULL COMMENT '昵称',
@@ -35,31 +35,28 @@ INSERT INTO tb_sys_user VALUES (0, 1, 'admin', 'admin@123', 'admin', 1, NOW(), 1
 # 题目信息表
 DROP TABLE IF EXISTS `tb_question`;
 CREATE TABLE `tb_question` (
-    id            bigint        unsigned NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '主键id',
-    question_id   bigint        unsigned NOT NULL COMMENT '题目id',
-    title         varchar(50)   NOT NULL COMMENT '题目标题',
-    difficulty    tinyint       NOT NULL COMMENT '题目难度1:简单  2：中等 3：困难',
-    time_limit    int           NOT NULL COMMENT '时间限制',
-    space_limit   int           NOT NULL COMMENT '空间限制',
-    content       varchar(1000) NOT NULL COMMENT '题目内容',
-    question_case varchar(1000) COMMENT '题目用例',
-    default_code  varchar(500)  NOT NULL COMMENT '默认代码块',
-    main_fuc      varchar(500)  NOT NULL COMMENT 'main函数',
-    create_by     bigint        unsigned NOT NULL COMMENT '创建人',
-    create_time   datetime      NOT NULL COMMENT '创建时间',
-    update_by     bigint        unsigned COMMENT '更新人',
-    update_time   datetime      COMMENT '更新时间',
-    UNIQUE KEY `question_id` (`question_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题目信息表';
+   id            bigint        unsigned NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '主键id',
+   title         varchar(50)   NOT NULL COMMENT '题目标题',
+   difficulty    tinyint       NOT NULL COMMENT '题目难度1:简单  2：中等 3：困难',
+   time_limit    int           NOT NULL COMMENT '时间限制',
+   space_limit   int           NOT NULL COMMENT '空间限制',
+   content       varchar(1000) NOT NULL COMMENT '题目内容',
+   question_case varchar(1000) COMMENT '题目用例',
+   default_code  varchar(500)  NOT NULL COMMENT '默认代码块',
+   main_fuc      varchar(500)  NOT NULL COMMENT 'main函数',
+   create_by     bigint        unsigned NOT NULL COMMENT '创建人',
+   create_time   datetime      NOT NULL COMMENT '创建时间',
+   update_by     bigint        unsigned COMMENT '更新人',
+   update_time   datetime      COMMENT '更新时间'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题目信息表' AUTO_INCREMENT=10000000;
 
 # 初始化模板题
 INSERT INTO `tb_question`
-    (question_id, title, difficulty, time_limit, space_limit,
+    (title, difficulty, time_limit, space_limit,
      content, question_case, default_code, main_fuc,
      create_by, create_time, update_by, update_time)
 VALUES
-    (1001,
-     'A + B Problem',
+    ('A + B Problem',
      1,
      1000,
      256,
