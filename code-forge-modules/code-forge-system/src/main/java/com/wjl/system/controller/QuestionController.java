@@ -3,7 +3,9 @@ package com.wjl.system.controller;
 import com.wjl.core.domain.R;
 import com.wjl.system.domain.question.dto.AddQuestionDTO;
 import com.wjl.system.domain.question.dto.ListQuestionDTO;
+import com.wjl.system.domain.question.dto.QuestionEditDTO;
 import com.wjl.system.domain.question.vo.ListQuestionVO;
+import com.wjl.system.domain.question.vo.QuestionDetailVO;
 import com.wjl.system.service.question.QuestionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,5 +27,20 @@ public class QuestionController {
     @PostMapping("/add")
     public R<String> add(@Validated @RequestBody AddQuestionDTO dto, @RequestHeader("Authorization") String token) {
         return R.success(questionService.add(dto, token));
+    }
+
+    @GetMapping("/detail")
+    public R<QuestionDetailVO> detail(@RequestParam Long id) {
+        return R.success(questionService.detail(id));
+    }
+
+    @PostMapping("/edit")
+    public R<String> edit(@Validated @RequestBody QuestionEditDTO dto, @RequestHeader("Authorization") String token) {
+        return R.success(questionService.edit(dto, token));
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public R<String> delete(@PathVariable Long id) {
+        return R.success(questionService.delete(id));
     }
 }

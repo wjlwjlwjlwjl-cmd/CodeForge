@@ -1,7 +1,5 @@
 package com.wjl.system.service.question;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.wjl.core.enums.ResultCode;
@@ -11,7 +9,9 @@ import com.wjl.exception.ServiceException;
 import com.wjl.security.service.TokenService;
 import com.wjl.system.domain.question.dto.AddQuestionDTO;
 import com.wjl.system.domain.question.dto.ListQuestionDTO;
+import com.wjl.system.domain.question.dto.QuestionEditDTO;
 import com.wjl.system.domain.question.vo.ListQuestionVO;
+import com.wjl.system.domain.question.vo.QuestionDetailVO;
 import com.wjl.system.domain.question.vo.QuestionVO;
 import com.wjl.system.entity.question.Question;
 import com.wjl.system.mapper.QuestionMapper;
@@ -62,15 +62,37 @@ public class QuestionService {
         return String.format("添加成功，题目编号：%d", question.getId());
     }
 
-    public String detail(Long id){
+    public QuestionDetailVO detail(Long id){
         Question question = questionMapper.selectById(id);
         if(question == null){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
-        return null;
+        QuestionDetailVO questionVO = new QuestionDetailVO();
+        BeanCopyUtil.copyProperties(question, questionVO);
+        return questionVO;
     }
 
-    private int getPages(int total, int pageSize){
-        return total % pageSize == 0 ? total / pageSize : total / pageSize + 1;
+    public String edit(QuestionEditDTO dto, String token){
+        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        String userId = loginUserDTO.getUserId();
+
+        Question question = new  Question();
+        question.setUpdateBy(Long.valueOf(userId));
+        question.setUpdateTime(LocalDateTime.now());
+
+        BeanCopyUtil.copyProperties(dto, question);
+        int ret = questionMapper.updateById(question);
+        if(ret != 1){
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        return String.format("题目 %d 更新成功",  question.getId());
+    }
+
+    public String delete(Long id){
+        int cnt = questionMapper.deleteById(id);
+        if(cnt != 1){
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        return String.format("题目 %d 删除成功", id);
     }
 }

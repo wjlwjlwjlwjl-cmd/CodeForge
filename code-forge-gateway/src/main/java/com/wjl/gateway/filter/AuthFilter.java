@@ -45,6 +45,7 @@ public class AuthFilter implements GlobalFilter{
         if(loginUserDTO == null){
             return unauthorized(exchange);
         }
+        tokenService.refreshToken(loginUserDTO); //在一定时间内，如果用户再次操作，重置登录态过期时间
 
         //校验登录信息
         if(loginUserDTO.getUserAccount().isBlank() || loginUserDTO.getUsername().isBlank() || loginUserDTO.getUserId().isBlank()){
