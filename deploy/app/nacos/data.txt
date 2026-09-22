@@ -1,0 +1,42 @@
+share-gateway-test.yaml
+
+spring:
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          lowerCaseServiceId: true
+          enabled: true
+      routes:
+        - id: code-forge-system
+          uri: lb://code-forge-system
+          predicates:
+            - Path=/system/**
+
+security:
+  ignore:
+    whites:
+      - /system/login
+
+===================================
+share-mysql-test.yaml
+
+spring:
+    datasource:
+        # 后续打 jar 包部署需要将ip改为docker域名
+        url: jdbc:mysql://192.168.251.128:3306/db_code_forge?useSSL=false&serverTimezone=UTC
+        username: wjl
+        password: wjl@123
+        driver-class-name: com.mysql.cj.jdbc.Driver
+
+===================================
+share-redis-test.yaml
+
+spring:
+    cache:
+        type: redis
+    data:
+        redis:
+            host: 192.168.251.128 # 这里后续打 jar 包上服务器后需要修改为容器名 code-forge-redis
+            port: 6379
+            password: wjl@123

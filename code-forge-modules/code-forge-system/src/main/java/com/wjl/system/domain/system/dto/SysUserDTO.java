@@ -1,13 +1,11 @@
-package com.wjl.system.domain.vo;
+package com.wjl.system.domain.system.dto;
 
 import java.time.LocalDateTime;
 
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 @Data 
-@Schema (description = "系统用户VO")
-public class SysUserVO {
+public class SysUserDTO {
     private Long id;
     private Long userId;
     private String userAccount;

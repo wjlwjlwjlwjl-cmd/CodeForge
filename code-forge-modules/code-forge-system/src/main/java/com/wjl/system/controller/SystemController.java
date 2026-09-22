@@ -1,7 +1,5 @@
 package com.wjl.system.controller;
 
-import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -13,15 +11,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wjl.core.domain.R;
-import com.wjl.core.enums.ResultCode;
-import com.wjl.core.utils.BeanCopyUtil;
-import com.wjl.system.domain.dto.AddAdminDTO;
-import com.wjl.system.domain.dto.ListSysUserDTO;
-import com.wjl.system.domain.dto.SysLoginDTO;
-import com.wjl.system.domain.vo.AddAdminVO;
-import com.wjl.system.domain.vo.ListSysUserVO;
-import com.wjl.system.domain.vo.SysLoginVO;
-import com.wjl.system.domain.vo.SysUserVO;
+import com.wjl.system.domain.system.dto.AddAdminDTO;
+import com.wjl.system.domain.system.dto.SysLoginDTO;
+import com.wjl.system.domain.system.vo.AddAdminVO;
+import com.wjl.system.domain.system.vo.ListSysUserVO;
+import com.wjl.system.domain.system.vo.SysLoginVO;
+import com.wjl.system.domain.system.vo.SysUserVO;
 import com.wjl.system.service.system.SysUserService;
 
 import org.springframework.web.bind.annotation.RequestBody;
@@ -33,7 +28,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 
 @RestController 
 @RequestMapping ("/system")
-@Tag (name = "系统用户管理 Controller")
+@Tag (name = "系统用户管理接口")
 public class SystemController {
     @Autowired 
     private SysUserService sysUserService;

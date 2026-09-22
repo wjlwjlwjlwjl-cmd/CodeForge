@@ -1,4 +1,4 @@
-package com.wjl.system.domain.vo;
+package com.wjl.system.domain.system.vo;
 
 import lombok.Data;
 

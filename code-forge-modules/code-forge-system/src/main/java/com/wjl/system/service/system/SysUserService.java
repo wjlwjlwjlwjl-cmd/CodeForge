@@ -1,9 +1,7 @@
 package com.wjl.system.service.system;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -17,13 +15,12 @@ import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.domain.dto.TokenDTO;
 import com.wjl.exception.ServiceException;
 import com.wjl.security.service.TokenService;
-import com.wjl.system.domain.dto.AddAdminDTO;
-import com.wjl.system.domain.dto.ListSysUserDTO;
-import com.wjl.system.domain.dto.SysLoginDTO;
-import com.wjl.system.domain.vo.AddAdminVO;
-import com.wjl.system.domain.vo.ListSysUserVO;
-import com.wjl.system.domain.vo.SysLoginVO;
-import com.wjl.system.domain.vo.SysUserVO;
+import com.wjl.system.domain.system.dto.AddAdminDTO;
+import com.wjl.system.domain.system.dto.SysLoginDTO;
+import com.wjl.system.domain.system.vo.AddAdminVO;
+import com.wjl.system.domain.system.vo.ListSysUserVO;
+import com.wjl.system.domain.system.vo.SysLoginVO;
+import com.wjl.system.domain.system.vo.SysUserVO;
 import com.wjl.system.entity.system.SysUser;
 import com.wjl.system.mapper.SysUserMapper;
 

@@ -1,8 +1,8 @@
-package com.wjl.system.domain.dto;
+package com.wjl.system.domain.system.dto;
 
 import java.util.List;
 
-import com.wjl.system.domain.vo.SysUserVO;
+import com.wjl.system.domain.system.vo.SysUserVO;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
