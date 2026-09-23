@@ -5,10 +5,9 @@ SET NAMES utf8mb4;
 USE `db_code_forge`;
 
 # 可重复执行：先清掉这批样例题（question_id 1~10，不影响 01-init.sql 的模板题 1001）
-DELETE FROM `tb_question` WHERE question_id BETWEEN 1 AND 10;
 
 INSERT INTO `tb_question`
-    (question_id, title, difficulty, time_limit, space_limit,
+    (id, title, difficulty, time_limit, space_limit,
      content, question_case, default_code, main_fuc,
      create_by, create_time, update_by, update_time)
 VALUES
