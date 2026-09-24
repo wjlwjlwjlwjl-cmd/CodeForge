@@ -50,7 +50,7 @@ public class SysUserService {
         }
 
         LoginUserDTO loginUserDTO = new LoginUserDTO();
-        loginUserDTO.setUserId(String.valueOf(sysUser.getUserId()));
+        loginUserDTO.setUserId(sysUser.getUserId());
         loginUserDTO.setEmail(null);
         loginUserDTO.setUsername(sysUser.getNickName());
         loginUserDTO.setUserAccount(sysUser.getUserAccount());

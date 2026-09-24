@@ -1,5 +1,6 @@
 package com.wjl.system.controller;
 
+import com.wjl.constants.SecurityConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -46,7 +47,7 @@ public class SystemController {
     @Operation(summary = "系统用户退出登录")
     @Parameter (name = "Authorization", description = "用户登录时返回的 jwt token")
     @ApiResponse (responseCode = "1000", description = "退出登录成功")
-    public R<Void> logout(@Validated @RequestHeader("Authorization") String token){
+    public R<Void> logout(@Validated @RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         sysUserService.logout(token);
         return R.success();
     }
@@ -58,7 +59,7 @@ public class SystemController {
     @ApiResponse (responseCode = "3001", description = "未授权")
     @ApiResponse (responseCode = "3101", description = "用户已存在")
     @ApiResponse (responseCode = "3000", description = "操作失败")
-    public R<AddAdminVO> add(@RequestHeader("Authorization") String token, @RequestBody AddAdminDTO addAdminDTO){
+    public R<AddAdminVO> add(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @RequestBody AddAdminDTO addAdminDTO){
         return R.success(sysUserService.addAdmin(token, addAdminDTO));
     }
 
@@ -67,7 +68,7 @@ public class SystemController {
     @ApiResponse (responseCode = "1000", description = "获取成功")
     @ApiResponse (responseCode = "3001", description = "未授权")
     @ApiResponse (responseCode = "3102", description = "用户不存在")
-    public R<SysUserVO> info(@RequestHeader("Authorization") String token){
+    public R<SysUserVO> info(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         return R.success(sysUserService.info(token));
     }
 
@@ -75,7 +76,7 @@ public class SystemController {
     @Operation(summary = "获取所有管理员用户信息")
     @ApiResponse (responseCode = "1000", description = "获取成功")
     @ApiResponse (responseCode = "3001", description = "未授权")
-    public R<ListSysUserVO> list(@RequestHeader("Authorization") String token){
+    public R<ListSysUserVO> list(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         return R.success(sysUserService.list(token));
     }
 
@@ -85,7 +86,7 @@ public class SystemController {
     @ApiResponse (responseCode = "1000", description = "删除成功")
     @ApiResponse (responseCode = "3001", description = "未授权")
     @ApiResponse (responseCode = "3102", description = "用户不存在")
-    public R<Integer> delete(@RequestHeader("Authorization") String token, @Validated @PathVariable ("userAccount") String userAccount){
+    public R<Integer> delete(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @Validated @PathVariable ("userAccount") String userAccount){
         return R.success(sysUserService.delete(token, userAccount));
     }
 }

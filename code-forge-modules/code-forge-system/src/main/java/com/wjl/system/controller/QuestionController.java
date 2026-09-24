@@ -1,5 +1,6 @@
 package com.wjl.system.controller;
 
+import com.wjl.constants.SecurityConstants;
 import com.wjl.core.domain.R;
 import com.wjl.system.domain.question.dto.AddQuestionDTO;
 import com.wjl.system.domain.question.dto.ListQuestionDTO;
@@ -25,7 +26,7 @@ public class QuestionController {
     }
 
     @PostMapping("/add")
-    public R<String> add(@Validated @RequestBody AddQuestionDTO dto, @RequestHeader("Authorization") String token) {
+    public R<String> add(@Validated @RequestBody AddQuestionDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(questionService.add(dto, token));
     }
 
@@ -35,7 +36,7 @@ public class QuestionController {
     }
 
     @PostMapping("/edit")
-    public R<String> edit(@Validated @RequestBody QuestionEditDTO dto, @RequestHeader("Authorization") String token) {
+    public R<String> edit(@Validated @RequestBody QuestionEditDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(questionService.edit(dto, token));
     }
 

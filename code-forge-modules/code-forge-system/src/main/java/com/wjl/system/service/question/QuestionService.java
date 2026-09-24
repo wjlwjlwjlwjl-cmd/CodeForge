@@ -74,10 +74,10 @@ public class QuestionService {
 
     public String edit(QuestionEditDTO dto, String token){
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        String userId = loginUserDTO.getUserId();
+        Long userId = loginUserDTO.getUserId();
 
         Question question = new  Question();
-        question.setUpdateBy(Long.valueOf(userId));
+        question.setUpdateBy(userId);
         question.setUpdateTime(LocalDateTime.now());
 
         BeanCopyUtil.copyProperties(dto, question);
