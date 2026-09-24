@@ -1,5 +1,7 @@
 package com.wjl.system.service.exam;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
@@ -9,6 +11,7 @@ import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.exception.ServiceException;
 import com.wjl.security.service.TokenService;
 import com.wjl.system.domain.exam.dto.ExamAddDTO;
+import com.wjl.system.domain.exam.dto.ExamEditDTO;
 import com.wjl.system.domain.exam.dto.ExamQueryDTO;
 import com.wjl.system.domain.exam.dto.ExamQuestionAdd;
 import com.wjl.system.domain.exam.vo.ExamListVO;
@@ -19,6 +22,7 @@ import com.wjl.system.entity.question.Question;
 import com.wjl.system.mapper.ExamMapper;
 import com.wjl.system.mapper.ExamQuestionMapper;
 import com.wjl.system.mapper.QuestionMapper;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -107,15 +111,100 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         return String.format("成功添加%d条题目", questions.size());
     }
 
+    public String questionDelete(String token, Long examId, Long questionId){
+        checkExam(examId);
+        int cnt = examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>()
+                .eq(ExamQuestion::getExamId, examId)
+                .eq(ExamQuestion::getQuestionId, questionId));
+        if(cnt == 0){
+            throw new ServiceException(ResultCode.EXAM_NOT_HAS_QUESTION.getCode(), ResultCode.EXAM_NOT_HAS_QUESTION.getMsg());
+        }
+
+        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        Long userId = loginUserDTO.getUserId();
+
+        examMapper.update(new LambdaUpdateWrapper<Exam>()
+                .eq(Exam::getExamId, examId)
+                .set(Exam::getUpdateTime, LocalDateTime.now())
+                .set(Exam::getUpdateBy, userId)
+        );
+        return String.format("成功删除%d条题目", cnt);
+    }
+
+    public ExamVO examDetail(Long examId){
+        ExamVO examVO = new ExamVO();
+        Exam exam = examMapper.selectById(examId);
+        BeanUtils.copyProperties(exam, examVO);
+        return examVO;
+    }
+
+    public String examEdit(String token, ExamEditDTO examEditDTO){
+        Long examId = examEditDTO.getExamId();
+        checkExam(examId);
+
+        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+
+        examMapper.update(new LambdaUpdateWrapper<Exam>()
+                .eq(Exam::getExamId, examId)
+                .set(Exam::getStartTime, examEditDTO.getStartTime())
+                .set(Exam::getEndTime, examEditDTO.getEndTime())
+                .set(Exam::getTitle, examEditDTO.getTitle())
+                .set(Exam::getUpdateBy, loginUserDTO.getUserId())
+                .set(Exam::getUpdateTime, LocalDateTime.now())
+        );
+        return String.format("更新%d竞赛成功", examId);
+    }
+
+    public String examDelete(Long examId){
+        checkExam(examId);
+        //先删除竞赛信息
+        examMapper.deleteById(examId);
+        examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>().eq(ExamQuestion::getExamId, examId));
+        return String.format("成功删除%d的竞赛信息", examId);
+    }
+
+    public String examPublish(String token, Long examId){
+        checkExam(examId);
+        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        Long userId = loginUserDTO.getUserId();
+        examMapper.update(new LambdaUpdateWrapper<Exam>()
+                .eq(Exam::getExamId, examId)
+                .set(Exam::getStatus, 1)
+                .set(Exam::getUpdateTime, LocalDateTime.now())
+                .set(Exam::getUpdateBy, userId)
+        );
+        return String.format("成功发布%d", examId);
+    }
+
+    public String examPublishCancel(String token, Long examId){
+        checkExam(examId);
+        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        Long userId = loginUserDTO.getUserId();
+        examMapper.update(new LambdaUpdateWrapper<Exam>()
+                .eq(Exam::getExamId, examId)
+                .set(Exam::getStatus, 0)
+                .set(Exam::getUpdateTime, LocalDateTime.now())
+                .set(Exam::getUpdateBy, userId)
+        );
+        return String.format("成功取消发布%d", examId);
+    }
+
     private void checkExam(Long examId) {
         Exam exam = examMapper.selectById(examId);
+        //竞赛不存在
         if(exam ==  null){
             throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(),ResultCode.EXAM_NOT_EXISTS.getMsg());
         }
+
+        //竞赛状态检查
+        if(exam.getStatus() == 1){
+            throw new ServiceException(ResultCode.EXAM_IS_PUBLISH.getCode(),ResultCode.EXAM_IS_PUBLISH.getMsg());
+        }
+
+        //竞赛时间异常
         LocalDateTime startTime = exam.getStartTime();
         LocalDateTime endTime = exam.getEndTime();
         LocalDateTime currentTime = LocalDateTime.now();
-
         if(startTime.isBefore(currentTime)){
             throw new ServiceException(ResultCode.EXAM_STARTED.getCode(),ResultCode.EXAM_STARTED.getMsg());
         }
