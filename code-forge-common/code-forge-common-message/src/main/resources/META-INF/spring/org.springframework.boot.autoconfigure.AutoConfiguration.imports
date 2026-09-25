@@ -1,0 +1,2 @@
+com.nexus.nexuscommonmessage.config.EmailConfig
+com.nexus.nexuscommonmessage.service.EmailService

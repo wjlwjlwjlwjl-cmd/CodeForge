@@ -75,3 +75,20 @@ CREATE TABLE tb_exam_question (
     update_time datetime comment '更新时间',
     PRIMARY KEY (exam_question_id)
 )ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='竞赛题目表' AUTO_INCREMENT 30000000;
+
+-- C 端用户表
+CREATE TABLE tb_user (
+    user_id bigint UNSIGNED AUTO_INCREMENT COMMENT '用户id（主键）',
+    nick_name varchar(20) comment '用户昵称',
+    head_image varchar(100) comment '用户头像',
+    sex tinyint comment '1: 男  0：女',
+    email varchar(20) NOT NULL comment '邮箱',
+    school_name varchar(20) default null comment '学校',
+    major_name varchar(20) default null comment '专业',
+    introduce varchar(100) default "这个人很懒，什么都没有留下" comment '个人介绍',
+    status tinyint default 1 comment '用户状态0: 拉黑  1：正常',
+    create_time datetime NOT NULL comment '创建时间',
+    update_by bigint UNSIGNED comment '更新人',
+    update_time datetime comment '更新时间',
+    PRIMARY KEY (`user_id`)
+)AUTO_INCREMENT 40000000 ENGINE=INNODB default charset=utf8mb4 comment="C端用户表";

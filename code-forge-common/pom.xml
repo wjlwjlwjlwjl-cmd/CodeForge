@@ -19,6 +19,7 @@
         <module>code-forge-common-redis</module>
         <module>code-forge-common-security</module>
         <module>code-forge-common-domain</module>
+        <module>code-forge-common-message</module>
     </modules>
 
     <properties>
