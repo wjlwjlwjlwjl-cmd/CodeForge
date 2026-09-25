@@ -14,7 +14,6 @@ public class ExamQuestion {
     private Long examQuestionId;
     private Long questionId;
     private Long examId;
-    private Integer questionOrder;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
     private Long createBy;

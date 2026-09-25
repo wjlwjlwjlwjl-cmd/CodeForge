@@ -64,6 +64,14 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         LocalDateTime startTime = examAddDTO.getStartTime();
         LocalDateTime endTime = examAddDTO.getEndTime();
 
+        LocalDateTime now = LocalDateTime.now();
+        if(startTime.isBefore(now)) {
+            throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getCode(), ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getMsg());
+        }
+        if(startTime.isAfter(endTime)) {
+            throw new ServiceException(ResultCode.EXAM_START_TIME_AFTER_END_TIME.getCode(), ResultCode.EXAM_START_TIME_AFTER_END_TIME.getMsg());
+        }
+
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
@@ -84,7 +92,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     public String questionAdd(String token, ExamQuestionAdd examQuestionAdd) {
         LinkedHashSet<Long> questions = examQuestionAdd.getQuestions();
         Long examId = examQuestionAdd.getExamId();
-        checkExam(examId); //竞赛存在性、时间检查
+        checkExam(examId, false); //竞赛存在性、时间检查
 
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
@@ -92,7 +100,19 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         //只要提供的若干题目id中有不匹配的，直接抛异常
         List<Question> exists = questionMapper.selectBatchIds(questions);
         if(exists.size() != questions.size()){
-            throw new ServiceException("请检查题目 ID 合法性");
+            throw new ServiceException(ResultCode.EXAM_QUESTION_NOT_EXISTS.getCode(), "请检查题目 ID 合法性");
+        }
+
+        //如果添加已经添加过的题目，那么直接跑异常
+        for(Question question : exists){
+            Long questionId = question.getId();
+            List<ExamQuestion> list = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
+                    .eq(ExamQuestion::getExamId, examId)
+                    .eq(ExamQuestion::getQuestionId, questionId)
+            );
+            if(!list.isEmpty()){
+                throw new ServiceException(ResultCode.EXAM_QUESTION_EXISTS.getCode(), ResultCode.EXAM_QUESTION_EXISTS.getMsg());
+            }
         }
 
         Set<ExamQuestion> examQuestions = new HashSet<>();
@@ -112,7 +132,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String questionDelete(String token, Long examId, Long questionId){
-        checkExam(examId);
+        checkExam(examId, false);
         int cnt = examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>()
                 .eq(ExamQuestion::getExamId, examId)
                 .eq(ExamQuestion::getQuestionId, questionId));
@@ -140,7 +160,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
     public String examEdit(String token, ExamEditDTO examEditDTO){
         Long examId = examEditDTO.getExamId();
-        checkExam(examId);
+        checkExam(examId, false);
 
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
 
@@ -156,7 +176,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String examDelete(Long examId){
-        checkExam(examId);
+        checkExam(examId, false);
         //先删除竞赛信息
         examMapper.deleteById(examId);
         examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>().eq(ExamQuestion::getExamId, examId));
@@ -164,7 +184,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String examPublish(String token, Long examId){
-        checkExam(examId);
+        checkExam(examId, false);
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
@@ -177,7 +197,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String examPublishCancel(String token, Long examId){
-        checkExam(examId);
+        checkExam(examId, true);
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
@@ -189,11 +209,15 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         return String.format("成功取消发布%d", examId);
     }
 
-    private void checkExam(Long examId) {
+    private void checkExam(Long examId, boolean force) {
         Exam exam = examMapper.selectById(examId);
         //竞赛不存在
         if(exam ==  null){
             throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(),ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+
+        if(force){
+            return;
         }
 
         //竞赛状态检查

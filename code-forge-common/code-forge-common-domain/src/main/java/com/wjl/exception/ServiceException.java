@@ -13,10 +13,12 @@ public class ServiceException extends RuntimeException {
     public ServiceException(Integer errCode) {
         super("服务异常");
         this.errCode = errCode;
+        this.errMsg = "服务异常";
     }
 
     public ServiceException(String errMsg) {
         super(errMsg);
+        this.errMsg = errMsg;
     }
 
     public Integer getErrCode() {

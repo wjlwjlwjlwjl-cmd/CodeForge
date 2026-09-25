@@ -29,7 +29,10 @@ public class GlobalExceptionHandler {
     public R<?> handleServiceException(ServiceException e, HttpServletRequest request) {
         String uri = request.getRequestURI();
         ColorLog.debug("ServiceException: {}, URI: {}", e.getMessage(), uri);
-        return R.error(e.getErrCode(), e.getErrMsg());
+        // 防御性兜底：单参构造的 ServiceException 可能未携带错误码/错误信息字段
+        Integer code = e.getErrCode() != null ? e.getErrCode() : ResultCode.FAILED.getCode();
+        String msg = e.getErrMsg() != null ? e.getErrMsg() : e.getMessage();
+        return R.error(code, msg);
     }
 
     // 请求方法不支持

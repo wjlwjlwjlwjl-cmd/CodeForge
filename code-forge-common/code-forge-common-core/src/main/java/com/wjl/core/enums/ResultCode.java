@@ -58,6 +58,8 @@ public enum ResultCode {
 
     EXAM_IS_PUBLISH                     (3208, "竞赛已经发布不能进行编辑、删除操作"),
 
+    EXAM_QUESTION_EXISTS                    (3209, "竞赛题目已存在"),
+
 
     USER_EXAM_HAS_ENTER                 (3301, "用户已经报过名，无需重复报名"),
 
