@@ -74,7 +74,7 @@ public class QuestionService {
 
     public String edit(QuestionEditDTO dto, String token){
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        Long userId = loginUserDTO.getUserId();
+        Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         Question question = new  Question();
         question.setUpdateBy(userId);

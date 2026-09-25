@@ -65,7 +65,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         LocalDateTime endTime = examAddDTO.getEndTime();
 
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        Long userId = loginUserDTO.getUserId();
+        Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         Exam exam = new Exam();
         exam.setTitle(title);
@@ -87,7 +87,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         checkExam(examId); //竞赛存在性、时间检查
 
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        Long userId = loginUserDTO.getUserId();
+        Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         //只要提供的若干题目id中有不匹配的，直接抛异常
         List<Question> exists = questionMapper.selectBatchIds(questions);
@@ -121,7 +121,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         }
 
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        Long userId = loginUserDTO.getUserId();
+        Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)
@@ -166,7 +166,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     public String examPublish(String token, Long examId){
         checkExam(examId);
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        Long userId = loginUserDTO.getUserId();
+        Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)
                 .set(Exam::getStatus, 1)
@@ -179,7 +179,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     public String examPublishCancel(String token, Long examId){
         checkExam(examId);
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
-        Long userId = loginUserDTO.getUserId();
+        Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)
                 .set(Exam::getStatus, 0)

@@ -10,7 +10,7 @@ public class LoginUserDTO {
     /**
      * 用户id
      */
-    private Long userId;
+    private String userId;
 
     /**
      * 邮箱
