@@ -10,11 +10,9 @@ import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.exception.ServiceException;
 import com.wjl.security.service.TokenService;
-import com.wjl.system.domain.exam.dto.ExamAddDTO;
-import com.wjl.system.domain.exam.dto.ExamEditDTO;
-import com.wjl.system.domain.exam.dto.ExamQueryDTO;
-import com.wjl.system.domain.exam.dto.ExamQuestionAdd;
+import com.wjl.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.vo.ExamListVO;
+import com.wjl.system.domain.exam.vo.ExamQuestionListVO;
 import com.wjl.system.domain.exam.vo.ExamVO;
 import com.wjl.system.entity.exam.Exam;
 import com.wjl.system.entity.exam.ExamQuestion;
@@ -57,6 +55,32 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         examListVO.setTotal(pageInfo.getTotal());
         examListVO.setPages(pageInfo.getPages());
         return examListVO;
+    }
+
+    public ExamQuestionListVO examListQuestion(ExamQuestionListDTO dto){
+        ExamQuestionListVO examQuestionListVO = new ExamQuestionListVO();
+        Long examId = dto.getExamId();
+        Integer pageNum = dto.getPageNum();
+        Integer pageSize = dto.getPageSize();
+
+        PageHelper.startPage(pageNum, pageSize);
+        List<ExamQuestion> exams = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
+                .eq(ExamQuestion::getExamId, examId)
+        );
+        PageInfo<ExamQuestion> pageInfo = new PageInfo<>(exams);
+
+        List<Long> questionIds = new ArrayList<>();
+        for(ExamQuestion examQuestion: exams){
+            questionIds.add(examQuestion.getQuestionId());
+        }
+        List<Question> questions = questionMapper.selectBatchIds(questionIds);
+        examQuestionListVO.setList(questions);
+        examQuestionListVO.setPageNum(pageInfo.getPageNum());
+        examQuestionListVO.setPages(pageInfo.getPages());
+        examQuestionListVO.setPageSize(pageInfo.getPageSize());
+        examQuestionListVO.setTotal(pageInfo.getTotal());
+
+        return examQuestionListVO;
     }
 
     public String examAdd(String token, ExamAddDTO examAddDTO) {

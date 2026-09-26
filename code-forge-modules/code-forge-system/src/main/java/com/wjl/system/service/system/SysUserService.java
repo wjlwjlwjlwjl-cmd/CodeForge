@@ -75,7 +75,7 @@ public class SysUserService {
     public AddAdminVO addAdmin(String token, AddAdminDTO addAdminDTO){
         AddAdminVO addAdminVO = new AddAdminVO();
 
-        LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userIdCreator = Long.valueOf(loginUserDTO.getUserId());
 
         String password = addAdminDTO.getPassword();

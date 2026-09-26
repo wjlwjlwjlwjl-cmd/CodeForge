@@ -2,11 +2,9 @@ package com.wjl.system.controller;
 
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.domain.R;
-import com.wjl.system.domain.exam.dto.ExamAddDTO;
-import com.wjl.system.domain.exam.dto.ExamEditDTO;
-import com.wjl.system.domain.exam.dto.ExamQueryDTO;
-import com.wjl.system.domain.exam.dto.ExamQuestionAdd;
+import com.wjl.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.vo.ExamListVO;
+import com.wjl.system.domain.exam.vo.ExamQuestionListVO;
 import com.wjl.system.domain.exam.vo.ExamVO;
 import com.wjl.system.service.exam.ExamService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -26,6 +24,12 @@ public class ExamController {
     @Operation(description = "获取所有竞赛")
     public R<ExamListVO> list(ExamQueryDTO examQueryDTO){
         return R.success(examService.examList(examQueryDTO));
+    }
+
+    @GetMapping("/listQuestion")
+    @Operation(description = "获取竞赛的所有题目")
+    public R<ExamQuestionListVO> listQuestion(ExamQuestionListDTO dto){
+        return R.success(examService.examListQuestion(dto));
     }
 
     @PostMapping("/b/add")

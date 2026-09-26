@@ -1,5 +1,6 @@
 package com.wjl.security.service;
 
+import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -146,8 +147,14 @@ public class TokenService {
      */
     public void delLoginUser(String token) {
         if (StringUtils.isNotEmpty(token)) {
+            String userType = JwtUtil.getUserType(token);
             String userId = JwtUtil.getUserId(token);
-            redisService.deleteObject(getBTokenKey(userId));
+            if(userType.equals(SecurityConstants.ADMIN)){
+                redisService.deleteObject(getBTokenKey(userId));
+            }
+            else{
+                redisService.deleteObject(getCTokenKey(userId));
+            }
         }
     }
 
@@ -160,11 +167,8 @@ public class TokenService {
         loginUserDTO.setExpireTime(loginUserDTO.getLoginTime() + EXPIRE_TIME * MILLIS_MINUTE);
         // 根据随机产生用户标识生成key
         String tokenKey = getBTokenKey(loginUserDTO.getUserId());
-        if(redisService.hasKey(tokenKey)){
-            // 生成loginUserDTO缓存
-            redisService.setCacheObject(tokenKey, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
-            ColorLog.info("刷新B端{}", tokenKey);
-        }
+        redisService.setCacheObject(tokenKey, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
+        ColorLog.info("刷新B端{}", tokenKey);
     }
 
     public void refreshCToken(LoginUserDTO loginUserDTO) {
@@ -172,11 +176,8 @@ public class TokenService {
         loginUserDTO.setExpireTime(loginUserDTO.getLoginTime() + EXPIRE_TIME * MILLIS_MINUTE);
         // 根据随机产生用户标识生成key
         String tokenKey = getCTokenKey(loginUserDTO.getUserId());
-        if(redisService.hasKey(tokenKey)){
-            // 生成loginUserDTO缓存
-            redisService.setCacheObject(tokenKey, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
-            ColorLog.info("刷新C端{}", tokenKey);
-        }
+        redisService.setCacheObject(tokenKey, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
+        ColorLog.info("刷新C端{}", tokenKey);
     }
 
     /**

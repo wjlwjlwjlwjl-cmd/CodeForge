@@ -20,7 +20,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     public R<?> handleRuntimeException(RuntimeException ex, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.debug("RuntimeException: {}, URI: {}", ex.getMessage(), uri);
+        ColorLog.error("RuntimeException: {}, URI: {}", ex.getMessage(), uri);
         return R.error(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
     }
 
@@ -28,7 +28,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ServiceException.class)
     public R<?> handleServiceException(ServiceException e, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.debug("ServiceException: {}, URI: {}", e.getMessage(), uri);
+        ColorLog.error("ServiceException: {}, URI: {}", e.getMessage(), uri);
         // 防御性兜底：单参构造的 ServiceException 可能未携带错误码/错误信息字段
         Integer code = e.getErrCode() != null ? e.getErrCode() : ResultCode.FAILED.getCode();
         String msg = e.getErrMsg() != null ? e.getErrMsg() : e.getMessage();
@@ -39,7 +39,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public R<?> handleMethodNotSupported(HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.debug("HttpRequestMethodNotSupportedException: {}, URI: {}", e.getMessage(), uri);
+        ColorLog.error("HttpRequestMethodNotSupportedException: {}, URI: {}", e.getMessage(), uri);
         return R.error(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg());
     }
 
@@ -47,7 +47,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
     public R<?> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.debug("MethodArgumentTypeMismatchException: {}, URI: {}", e.getMessage(), uri);
+        ColorLog.error("MethodArgumentTypeMismatchException: {}, URI: {}", e.getMessage(), uri);
         return R.error(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg());
     }
 
@@ -55,7 +55,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public R<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.debug("MethodArgumentNotValidException: {}, URI: {}", e.getMessage(), uri);
+        ColorLog.error("MethodArgumentNotValidException: {}, URI: {}", e.getMessage(), uri);
         return R.error(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
     }
 
@@ -63,7 +63,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public R<?> handleException(Exception e, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.debug("Exception: {}, URI: {}", e.getMessage(), uri);
+        ColorLog.error("Exception: {}, URI: {}", e.getMessage(), uri);
         return R.error(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
     }
 }
