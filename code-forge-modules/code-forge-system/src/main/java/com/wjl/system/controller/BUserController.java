@@ -3,7 +3,7 @@ package com.wjl.system.controller;
 import com.wjl.core.domain.R;
 import com.wjl.system.domain.user.dto.b.UserDTO;
 import com.wjl.system.domain.user.dto.b.UserQueryDTO;
-import com.wjl.system.domain.user.vo.UserListVO;
+import com.wjl.system.domain.user.vo.b.UserListVO;
 import com.wjl.system.service.user.BUserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestMapping;

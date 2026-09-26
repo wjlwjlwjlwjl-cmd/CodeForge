@@ -1,8 +1,10 @@
 package com.wjl.system.service.user;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.wjl.constants.CacheConstants;
 import com.wjl.core.utils.BCryptPwdUtil;
+import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.EmailValidateUtil;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.domain.dto.TokenDTO;
@@ -11,8 +13,10 @@ import com.wjl.security.service.TokenService;
 import com.wjl.service.EmailService;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.exception.ServiceException;
+import com.wjl.system.domain.user.dto.c.UserAddInfoDTO;
 import com.wjl.system.domain.user.dto.c.UserLoginDTO;
 import com.wjl.system.domain.user.dto.c.UserRegisterDTO;
+import com.wjl.system.domain.user.vo.c.UserDetailVO;
 import com.wjl.system.entity.user.CUser;
 import com.wjl.system.mapper.CUserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -100,7 +104,37 @@ public class CUserService {
         loginUserDTO.setEmail(email);
         loginUserDTO.setUserId(String.valueOf(cUser.getUserId()));
         loginUserDTO.setUsername(cUser.getNickName());
+        loginUserDTO.setUserAccount(email);
         TokenDTO tokenDTO = tokenService.createToken(loginUserDTO);
         return tokenDTO.getAccessToken();
+    }
+
+    public String addUserInfo(String token, UserAddInfoDTO dto){
+        String schoolName = dto.getSchoolName();
+        String majorName = dto.getMajorName();
+        String introduce = dto.getIntroduce();
+        String userId = tokenService.getLoginUser(token).getUserId();
+        int cnt = cUserMapper.update(new LambdaUpdateWrapper<CUser>()
+                .eq(CUser::getUserId, userId)
+                .set(CUser::getSchoolName, schoolName)
+                .set(CUser::getMajorName, majorName)
+                .set(CUser::getIntroduce, introduce)
+                .set(CUser::getUpdateBy, userId)
+                .set(CUser::getUpdateTime, LocalDateTime.now())
+        );
+        if(cnt != 1){
+            throw new ServiceException(ResultCode.FAILED_USER_NOT_EXISTS.getCode(), ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
+        }
+        return "用户信息更新成功";
+    }
+
+    public UserDetailVO detail(String token){
+        UserDetailVO userDetailVO = new UserDetailVO();
+        String userId = tokenService.getLoginUser(token).getUserId();
+        CUser cUser = cUserMapper.selectOne(new LambdaQueryWrapper<CUser>()
+                .eq(CUser::getUserId, userId)
+        );
+        BeanCopyUtil.copyProperties(cUser, userDetailVO);
+        return userDetailVO;
     }
 }
