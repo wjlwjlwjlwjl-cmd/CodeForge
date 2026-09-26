@@ -7,6 +7,7 @@ import com.wjl.core.utils.ServletUtil;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.gateway.config.WhiteListConfig;
 import com.wjl.security.service.TokenService;
+import com.wjl.security.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
@@ -48,32 +49,51 @@ public class AuthFilter implements GlobalFilter{
 
         //接下来，根据请求路径特点判断jwt鉴权方式
         if(path.contains("/b/")){
-            //管理员操作，需要身份为管理员
+            //普通用户，不予授权
+            if(!JwtUtil.getUserType(token).equals(SecurityConstants.ADMIN)){
+                return unauthorized(exchange);
+            }
+
+            //声称是B端用户，那么进一步校验
             LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
             if(loginUserDTO == null){
                 return unauthorized(exchange);
             }
-            tokenService.refreshCToken(loginUserDTO); //在一定时间内，如果用户再次操作，重置登录态过期时间
-            if(!loginUserDTO.getUserType().equals(SecurityConstants.ADMIN)){
-                return unauthorized(exchange); //普通用户无权进行管理员操作
-            }
 
-            //校验登录信息
-            if(loginUserDTO.getUserAccount().isBlank() || loginUserDTO.getUsername().isBlank() || loginUserDTO.getUserId().isBlank()){
+            if(!loginUserDTO.getUserAccount().equals(JwtUtil.getEmailOrAccount(token))
+                    || !loginUserDTO.getUsername().equals(JwtUtil.getUserName(token))
+                    || !loginUserDTO.getUserId().equals(JwtUtil.getUserId(token))
+                    || !loginUserDTO.getUserType().equals(JwtUtil.getUserType(token))){
                 return unauthorized(exchange);
             }
+
+            tokenService.refreshBToken(loginUserDTO); //在一定时间内，如果用户再次操作，重置登录态过期时间
         }
         else{
-            //普通操作，无需判断身份
-            LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
-            if(loginUserDTO == null){
-                return unauthorized(exchange);
+            String userType = JwtUtil.getUserType(token);
+            if(userType.equals(SecurityConstants.ADMIN)){
+                LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
+                if(loginUserDTO == null){
+                    return unauthorized(exchange);
+                }
+                if(!loginUserDTO.getUserAccount().equals(JwtUtil.getEmailOrAccount(token))
+                        || !loginUserDTO.getUsername().equals(JwtUtil.getUserName(token))
+                        || !loginUserDTO.getUserId().equals(JwtUtil.getUserId(token))
+                        || !loginUserDTO.getUserType().equals(JwtUtil.getUserType(token))){
+                    return unauthorized(exchange);
+                }
             }
-            tokenService.refreshCToken(loginUserDTO); //在一定时间内，如果用户再次操作，重置登录态过期时间
-
-            //校验登录信息（对于普通用户，目前采取的思路：直接将email作为用户账号）
-            if(loginUserDTO.getUserAccount().isBlank() || loginUserDTO.getUsername().isBlank() || loginUserDTO.getUserId().isBlank()){
-                return unauthorized(exchange);
+            else{
+                LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
+                if(loginUserDTO == null){
+                    return unauthorized(exchange);
+                }
+                if(!loginUserDTO.getUserAccount().equals(JwtUtil.getEmailOrAccount(token))
+                        || !loginUserDTO.getUsername().equals(JwtUtil.getUserName(token))
+                        || !loginUserDTO.getUserId().equals(JwtUtil.getUserId(token))
+                        || !loginUserDTO.getUserType().equals(JwtUtil.getUserType(token))){
+                    return unauthorized(exchange);
+                }
             }
         }
 

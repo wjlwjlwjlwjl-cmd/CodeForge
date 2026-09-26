@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import com.wjl.core.utils.ColorLog;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -14,7 +15,6 @@ import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.domain.dto.TokenDTO;
 import com.wjl.redis.service.RedisService;
 import com.wjl.security.utils.JwtUtil;
-import com.wjl.security.utils.SecurityUtil;
 
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -76,6 +76,7 @@ public class TokenService {
         TokenDTO tokenDTO = new TokenDTO();
         tokenDTO.setAccessToken(JwtUtil.createToken(claimsMap));
         tokenDTO.setExpires(EXPIRE_TIME);
+
         return tokenDTO;
     }
 
@@ -111,6 +112,7 @@ public class TokenService {
             if (StringUtils.isNotEmpty(token)) {
                 String userId = JwtUtil.getUserId(token);
                 user = redisService.getCacheObject(getBTokenKey(userId), LoginUserDTO.class);
+                ColorLog.info("使用 {} 进行B端鉴权", getBTokenKey(userId));
                 return user;
             }
         } catch (Exception e) {
@@ -128,6 +130,7 @@ public class TokenService {
             if (StringUtils.isNotEmpty(token)) {
                 String userId = JwtUtil.getUserId(token);
                 user = redisService.getCacheObject(getCTokenKey(userId), LoginUserDTO.class);
+                ColorLog.info("使用 {} 进行C端鉴权", getCTokenKey(userId));
                 return user;
             }
         } catch (Exception e) {
@@ -149,22 +152,6 @@ public class TokenService {
     }
 
     /**
-     * 设置用户身份信息，允许登录
-     * @param loginUserDTO 用户信息
-     */
-    public void setBLoginUser(LoginUserDTO loginUserDTO) {
-        if (loginUserDTO != null && StringUtils.isNotEmpty(loginUserDTO.getUserId())) {
-            refreshBToken(loginUserDTO);
-        }
-    }
-
-    public void setCLoginUser(LoginUserDTO loginUserDTO) {
-        if (loginUserDTO != null && StringUtils.isNotEmpty(loginUserDTO.getUserId())) {
-            refreshCToken(loginUserDTO);
-        }
-    }
-
-    /**
      * 缓存用户信息设置令牌有效期
      * @param loginUserDTO 用户信息
      */
@@ -172,23 +159,29 @@ public class TokenService {
         loginUserDTO.setLoginTime(System.currentTimeMillis());
         loginUserDTO.setExpireTime(loginUserDTO.getLoginTime() + EXPIRE_TIME * MILLIS_MINUTE);
         // 根据随机产生用户标识生成key
-        String userId = getBTokenKey(loginUserDTO.getUserId());
-        // 生成loginUserDTO缓存
-        redisService.setCacheObject(userId, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
+        String tokenKey = getBTokenKey(loginUserDTO.getUserId());
+        if(redisService.hasKey(tokenKey)){
+            // 生成loginUserDTO缓存
+            redisService.setCacheObject(tokenKey, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
+            ColorLog.info("刷新B端{}", tokenKey);
+        }
     }
 
     public void refreshCToken(LoginUserDTO loginUserDTO) {
         loginUserDTO.setLoginTime(System.currentTimeMillis());
         loginUserDTO.setExpireTime(loginUserDTO.getLoginTime() + EXPIRE_TIME * MILLIS_MINUTE);
         // 根据随机产生用户标识生成key
-        String userId = getCTokenKey(loginUserDTO.getUserId());
-        // 生成loginUserDTO缓存
-        redisService.setCacheObject(userId, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
+        String tokenKey = getCTokenKey(loginUserDTO.getUserId());
+        if(redisService.hasKey(tokenKey)){
+            // 生成loginUserDTO缓存
+            redisService.setCacheObject(tokenKey, loginUserDTO, EXPIRE_TIME, TimeUnit.MINUTES);
+            ColorLog.info("刷新C端{}", tokenKey);
+        }
     }
 
     /**
      * 获取token key的信息
-     * @param userId token
+     * @param  userId 用户 id
      * @return tokenKey
      */
     public String getBTokenKey(String userId) {

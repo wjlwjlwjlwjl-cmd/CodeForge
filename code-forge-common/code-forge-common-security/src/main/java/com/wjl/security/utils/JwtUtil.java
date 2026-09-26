@@ -1,5 +1,7 @@
 package com.wjl.security.utils;
 
+import com.wjl.core.enums.ResultCode;
+import com.wjl.exception.ServiceException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -34,6 +36,9 @@ public class JwtUtil {
      * @return 数据声明
      */
     public static Claims parseToken(String token) {
+        if(token == null){
+            throw new ServiceException(ResultCode.FAILED_UNAUTHORIZED.getCode(), ResultCode.FAILED_UNAUTHORIZED.getMsg());
+        }
         return Jwts.parser().setSigningKey(secret).parseClaimsJws(token).getBody();
     }
 
@@ -48,15 +53,6 @@ public class JwtUtil {
     }
 
     /**
-     * 根据数据声明获取用户标识
-     * @param claims 数据声明
-     * @return 用户标识
-     */
-    public static String getUserId(Claims claims) {
-        return getValue(claims, SecurityConstants.USER_ID);
-    }
-
-    /**
      * 根据令牌获取用户名称
      * @param token 令牌
      * @return 用户标识
@@ -66,32 +62,19 @@ public class JwtUtil {
         return getValue(claims, SecurityConstants.USERNAME);
     }
 
-    /**
-     * 根据数据声明获取用户名称
-     * @param claims 数据声明
-     * @return 用户标识
-     */
-    public static String getUserName(Claims claims) {
-        return getValue(claims, SecurityConstants.USERNAME);
-    }
-
-    /**
-     * 根据令牌获取用户邮箱
-     * @param token 令牌
-     * @return 用户标识
-     */
-    public static String getEmail(String token) {
+    public static String getUserType(String token){
         Claims claims = parseToken(token);
-        return getValue(claims, SecurityConstants.EMAIL);
+        return getValue(claims, SecurityConstants.USERTYPE);
     }
 
-    /**
-     * 根据数据声明获取用户邮箱
-     * @param claims 数据声明
-     * @return 用户标识
-     */
-    public static String getEmail(Claims claims) {
-        return getValue(claims, SecurityConstants.EMAIL);
+    public static String getEmailOrAccount(String token){
+        Claims claims = parseToken(token);
+        if(getUserType(token).equals(SecurityConstants.ADMIN)){
+            return getValue(claims, SecurityConstants.USER_ACCOUNT);
+        }
+        else{
+            return getValue(claims, SecurityConstants.EMAIL);
+        }
     }
 
     public static String getValue(Claims claims, String key) {
