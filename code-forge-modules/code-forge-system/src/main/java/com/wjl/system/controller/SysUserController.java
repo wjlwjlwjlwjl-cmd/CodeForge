@@ -30,11 +30,11 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 @RestController 
 @RequestMapping ("/system")
 @Tag (name = "系统用户管理接口")
-public class SystemController {
+public class SysUserController {
     @Autowired 
     private SysUserService sysUserService;
     
-    @PostMapping ("/login")
+    @PostMapping ("/b/login")
     @Operation (summary = "系统用户登录")
     @Parameter (name = "loginDTO", description = "登录参数，提供用户昵称 + 密码")
     @ApiResponse (responseCode = "1000", description = "登录成功")
@@ -43,7 +43,7 @@ public class SystemController {
         return R.success(sysUserService.login(loginDTO));
     }
 
-    @DeleteMapping("/logout")
+    @DeleteMapping("/b/logout")
     @Operation(summary = "系统用户退出登录")
     @Parameter (name = "Authorization", description = "用户登录时返回的 jwt token")
     @ApiResponse (responseCode = "1000", description = "退出登录成功")
@@ -52,7 +52,7 @@ public class SystemController {
         return R.success();
     }
 
-    @PostMapping ("/add")
+    @PostMapping ("/b/add")
     @Operation(summary = "添加一个管理员用户")
     @Parameter (name = "addAdminDTO", description = "添加管理员用户参数，提供用户昵称 + 密码，如果成功，返回管理员用户账号")
     @ApiResponse (responseCode = "1000", description = "添加成功")
@@ -63,7 +63,7 @@ public class SystemController {
         return R.success(sysUserService.addAdmin(token, addAdminDTO));
     }
 
-    @GetMapping ("/info")
+    @GetMapping ("/b/info")
     @Operation(summary = "获取当前用户信息")
     @ApiResponse (responseCode = "1000", description = "获取成功")
     @ApiResponse (responseCode = "3001", description = "未授权")
@@ -72,21 +72,21 @@ public class SystemController {
         return R.success(sysUserService.info(token));
     }
 
-    @GetMapping ("/list")
+    @GetMapping ("/b/list")
     @Operation(summary = "获取所有管理员用户信息")
     @ApiResponse (responseCode = "1000", description = "获取成功")
     @ApiResponse (responseCode = "3001", description = "未授权")
-    public R<ListSysUserVO> list(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
-        return R.success(sysUserService.list(token));
+    public R<ListSysUserVO> list(){
+        return R.success(sysUserService.list());
     }
 
-    @DeleteMapping("/delete/{userAccount}")
+    @DeleteMapping("/b/delete/{userAccount}")
     @Operation(summary = "删除一个管理员用户")
     @Parameter (name = "userAccount", description = "管理员用户 id")
     @ApiResponse (responseCode = "1000", description = "删除成功")
     @ApiResponse (responseCode = "3001", description = "未授权")
     @ApiResponse (responseCode = "3102", description = "用户不存在")
     public R<Integer> delete(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @Validated @PathVariable ("userAccount") String userAccount){
-        return R.success(sysUserService.delete(token, userAccount));
+        return R.success(sysUserService.delete(userAccount));
     }
 }

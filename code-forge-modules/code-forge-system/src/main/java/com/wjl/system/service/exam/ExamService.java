@@ -72,7 +72,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             throw new ServiceException(ResultCode.EXAM_START_TIME_AFTER_END_TIME.getCode(), ResultCode.EXAM_START_TIME_AFTER_END_TIME.getMsg());
         }
 
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         Exam exam = new Exam();
@@ -94,7 +94,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         Long examId = examQuestionAdd.getExamId();
         checkExam(examId, false); //竞赛存在性、时间检查
 
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         //只要提供的若干题目id中有不匹配的，直接抛异常
@@ -140,7 +140,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             throw new ServiceException(ResultCode.EXAM_NOT_HAS_QUESTION.getCode(), ResultCode.EXAM_NOT_HAS_QUESTION.getMsg());
         }
 
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         examMapper.update(new LambdaUpdateWrapper<Exam>()
@@ -162,7 +162,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         Long examId = examEditDTO.getExamId();
         checkExam(examId, false);
 
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
 
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)
@@ -185,7 +185,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
     public String examPublish(String token, Long examId){
         checkExam(examId, false);
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)
@@ -198,7 +198,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
     public String examPublishCancel(String token, Long examId){
         checkExam(examId, true);
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)

@@ -3,6 +3,7 @@ package com.wjl.system.service.system;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.wjl.constants.SecurityConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -39,6 +40,7 @@ public class SysUserService {
         SysLoginVO sysLoginVO = new SysLoginVO();
         String userAccount = loginDTO.getUserAccount();
         String password = loginDTO.getPassword();
+
         BUser bUser = bUserMapper.selectOne(
             new LambdaQueryWrapper<BUser>()
                 .eq(BUser::getUserAccount, userAccount)
@@ -49,13 +51,15 @@ public class SysUserService {
             throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
         }
 
+        //签发 Admin jwt token
         LoginUserDTO loginUserDTO = new LoginUserDTO();
         loginUserDTO.setUserId(String.valueOf(bUser.getUserId()));
         loginUserDTO.setEmail(null);
         loginUserDTO.setUsername(bUser.getNickName());
         loginUserDTO.setUserAccount(bUser.getUserAccount());
+        loginUserDTO.setUserType(SecurityConstants.ADMIN);
 
-        TokenDTO tokenDTO = tokenService.createToken(loginUserDTO);
+        TokenDTO tokenDTO = tokenService.createBToken(loginUserDTO);
         String token = tokenDTO.getAccessToken();
         sysLoginVO.setToken(token);
 
@@ -64,14 +68,14 @@ public class SysUserService {
 
     //登出
     public void logout(String token){
-        tokenService.delLoginUser(token);
+        tokenService.delBLoginUser(token);
     }
 
     //添加管理员用户
     public AddAdminVO addAdmin(String token, AddAdminDTO addAdminDTO){
         AddAdminVO addAdminVO = new AddAdminVO();
 
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
         Long userIdCreator = Long.valueOf(loginUserDTO.getUserId());
 
         String password = addAdminDTO.getPassword();
@@ -110,7 +114,7 @@ public class SysUserService {
 
     public SysUserVO info(String token){
         SysUserVO sysUserVO = new SysUserVO();
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         String userAccount = loginUserDTO.getUserAccount();
 
         BUser bUser = bUserMapper.selectOne(
@@ -125,7 +129,7 @@ public class SysUserService {
         return sysUserVO;
     }
 
-    public ListSysUserVO list(String token){
+    public ListSysUserVO list(){
         ListSysUserVO listSysUserVO = new ListSysUserVO();
 
         List<BUser> bUserList = bUserMapper.selectList(
@@ -137,7 +141,7 @@ public class SysUserService {
         return listSysUserVO;
     }
 
-    public int delete(String token, String userAccount){
+    public int delete(String userAccount){
         if(userAccount.equals("admin")){
             throw new ServiceException(3106, ResultCode.FAILED_ADMIN.getMsg()); 
         }

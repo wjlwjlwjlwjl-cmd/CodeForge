@@ -13,6 +13,11 @@ public class LoginUserDTO {
     private String userId;
 
     /**
+     * 用户类型（B端/C端）
+     */
+    private String userType;
+
+    /**
      * 邮箱
      */
     private String email;

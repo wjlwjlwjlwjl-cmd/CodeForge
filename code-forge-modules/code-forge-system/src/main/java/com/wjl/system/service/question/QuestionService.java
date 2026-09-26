@@ -48,7 +48,7 @@ public class QuestionService {
     }
 
     public String add(AddQuestionDTO dto, String token) {
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         Question question = new Question();
@@ -73,7 +73,7 @@ public class QuestionService {
     }
 
     public String edit(QuestionEditDTO dto, String token){
-        LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
         Question question = new  Question();

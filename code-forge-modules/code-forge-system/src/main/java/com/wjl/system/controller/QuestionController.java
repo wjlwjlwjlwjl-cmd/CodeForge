@@ -25,7 +25,7 @@ public class QuestionController {
         return R.success(questionService.list(dto));
     }
 
-    @PostMapping("/add")
+    @PostMapping("/b/add")
     public R<String> add(@Validated @RequestBody AddQuestionDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(questionService.add(dto, token));
     }
@@ -35,12 +35,12 @@ public class QuestionController {
         return R.success(questionService.detail(id));
     }
 
-    @PostMapping("/edit")
+    @PostMapping("/b/edit")
     public R<String> edit(@Validated @RequestBody QuestionEditDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(questionService.edit(dto, token));
     }
 
-    @DeleteMapping("/delete/{id}")
+    @DeleteMapping("/b/delete/{id}")
     public R<String> delete(@PathVariable Long id) {
         return R.success(questionService.delete(id));
     }

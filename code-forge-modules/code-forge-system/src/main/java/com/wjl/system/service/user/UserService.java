@@ -2,7 +2,9 @@ package com.wjl.system.service.user;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
+import com.github.pagehelper.PageHelper;
 import com.wjl.constants.CacheConstants;
+import com.wjl.constants.SecurityConstants;
 import com.wjl.core.utils.BCryptPwdUtil;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.EmailValidateUtil;
@@ -13,9 +15,13 @@ import com.wjl.security.service.TokenService;
 import com.wjl.service.EmailService;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.exception.ServiceException;
+import com.wjl.system.domain.user.dto.b.UserDTO;
+import com.wjl.system.domain.user.dto.b.UserQueryDTO;
 import com.wjl.system.domain.user.dto.c.UserAddInfoDTO;
 import com.wjl.system.domain.user.dto.c.UserLoginDTO;
 import com.wjl.system.domain.user.dto.c.UserRegisterDTO;
+import com.wjl.system.domain.user.vo.b.UserListVO;
+import com.wjl.system.domain.user.vo.b.UserVO;
 import com.wjl.system.domain.user.vo.c.UserDetailVO;
 import com.wjl.system.entity.user.CUser;
 import com.wjl.system.mapper.CUserMapper;
@@ -24,9 +30,10 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
-public class CUserService {
+public class UserService {
     @Autowired
     private EmailService emailService;
 
@@ -38,6 +45,33 @@ public class CUserService {
 
     @Autowired
     private RedisService redisService;
+
+    public UserListVO list(UserQueryDTO userQueryDTO) {
+        UserListVO userListVO = new UserListVO();
+
+        int pageNum = userQueryDTO.getPageNum();
+        int pageSize = userQueryDTO.getPageSize();
+        PageHelper.startPage(pageNum, pageSize);
+
+        List<CUser> cUsers = cUserMapper.selectUserList(userQueryDTO);
+        List<UserVO> list = BeanCopyUtil.copyListProperties(cUsers, UserVO::new);
+        userListVO.setList(list);
+
+        return userListVO;
+    }
+
+    public String updateStatus(UserDTO userDTO) {
+        Long userId = userDTO.getUserId();
+        Integer status = userDTO.getStatus();
+        int cnt = cUserMapper.update(new LambdaUpdateWrapper<CUser>()
+                .eq(CUser::getUserId, userId)
+                .set(CUser::getStatus, status)
+        );
+        if(cnt < 0){
+            throw new ServiceException(ResultCode.FAILED_USER_NOT_EXISTS.getCode(), ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
+        }
+        return String.format("成功更新%d状态", userId);
+    }
 
     public Boolean sendCode(String email){
         if(!emailService.sendVerifyCode(email)){
@@ -99,13 +133,14 @@ public class CUserService {
             throw new ServiceException(ResultCode.FAILED_LOGIN.getCode(),ResultCode.FAILED_LOGIN.getMsg());
         }
 
-        // 用户身份合法，记录登录态
+        // 用户身份合法，签发 token
         LoginUserDTO loginUserDTO = new LoginUserDTO();
         loginUserDTO.setEmail(email);
         loginUserDTO.setUserId(String.valueOf(cUser.getUserId()));
         loginUserDTO.setUsername(cUser.getNickName());
         loginUserDTO.setUserAccount(email);
-        TokenDTO tokenDTO = tokenService.createToken(loginUserDTO);
+        loginUserDTO.setUserType(SecurityConstants.CONSUMER);
+        TokenDTO tokenDTO = tokenService.createCToken(loginUserDTO);
         return tokenDTO.getAccessToken();
     }
 
@@ -113,7 +148,7 @@ public class CUserService {
         String schoolName = dto.getSchoolName();
         String majorName = dto.getMajorName();
         String introduce = dto.getIntroduce();
-        String userId = tokenService.getLoginUser(token).getUserId();
+        String userId = tokenService.getCLoginUser(token).getUserId();
         int cnt = cUserMapper.update(new LambdaUpdateWrapper<CUser>()
                 .eq(CUser::getUserId, userId)
                 .set(CUser::getSchoolName, schoolName)
@@ -130,7 +165,7 @@ public class CUserService {
 
     public UserDetailVO detail(String token){
         UserDetailVO userDetailVO = new UserDetailVO();
-        String userId = tokenService.getLoginUser(token).getUserId();
+        String userId = tokenService.getCLoginUser(token).getUserId();
         CUser cUser = cUserMapper.selectOne(new LambdaQueryWrapper<CUser>()
                 .eq(CUser::getUserId, userId)
         );

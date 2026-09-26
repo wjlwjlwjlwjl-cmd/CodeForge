@@ -12,7 +12,12 @@ public class TokenConstants {
     public final static String PREFIX = "Bearer ";
 
     /**
-     * 登录token   缓存的key
+     * B端登录token   缓存的key
      */
-    public final static String LOGIN_TOKEN_KEY = "logintoken:";
+    public final static String B_LOGIN_TOKEN_KEY = "logintoken:b";
+
+    /**
+     * C端登录token
+     */
+    public final static String C_LOGIN_TOKEN_KEY = "logintoken:c";
 }
