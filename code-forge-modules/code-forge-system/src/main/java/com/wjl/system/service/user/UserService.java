@@ -60,12 +60,14 @@ public class UserService {
         return userListVO;
     }
 
-    public String updateStatus(UserDTO userDTO) {
+    public String updateStatus(UserDTO userDTO, String token) {
         Long userId = userDTO.getUserId();
         Integer status = userDTO.getStatus();
         int cnt = cUserMapper.update(new LambdaUpdateWrapper<CUser>()
                 .eq(CUser::getUserId, userId)
                 .set(CUser::getStatus, status)
+                .set(CUser::getUpdateTime, LocalDateTime.now())
+                .set(CUser::getUpdateBy, userId)
         );
         if(cnt < 0){
             throw new ServiceException(ResultCode.FAILED_USER_NOT_EXISTS.getCode(), ResultCode.FAILED_USER_NOT_EXISTS.getMsg());

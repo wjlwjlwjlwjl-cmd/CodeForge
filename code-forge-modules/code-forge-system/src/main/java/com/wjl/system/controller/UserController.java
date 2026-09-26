@@ -26,8 +26,8 @@ public class UserController {
     }
 
     @RequestMapping("/b/update")
-    public R<String> updateStatus(UserDTO userDTO) {
-        return R.success(userService.updateStatus(userDTO));
+    public R<String> updateStatus(UserDTO userDTO, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
+        return R.success(userService.updateStatus(userDTO, token));
     }
 
     @RequestMapping("/sendCode")
