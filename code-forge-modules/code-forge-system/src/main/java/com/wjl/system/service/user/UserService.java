@@ -144,6 +144,10 @@ public class UserService {
         return tokenDTO.getAccessToken();
     }
 
+    public void logout(String token){
+        tokenService.delLoginUser(token);
+    }
+
     public String addUserInfo(String token, UserAddInfoDTO dto){
         String schoolName = dto.getSchoolName();
         String majorName = dto.getMajorName();

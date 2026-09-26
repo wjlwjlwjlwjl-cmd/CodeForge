@@ -45,6 +45,12 @@ public class UserController {
         return R.success(userService.login(dto));
     }
 
+    @DeleteMapping("/logout")
+    public R<Void> logout(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
+        userService.logout(token);
+        return R.success();
+    }
+
     @PostMapping("/addInfo")
     public R<String> addInfo(@Validated @RequestBody UserAddInfoDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         return R.success(userService.addUserInfo(token, dto));

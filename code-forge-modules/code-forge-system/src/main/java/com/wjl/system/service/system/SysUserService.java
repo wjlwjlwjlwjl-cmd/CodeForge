@@ -68,7 +68,7 @@ public class SysUserService {
 
     //登出
     public void logout(String token){
-        tokenService.delBLoginUser(token);
+        tokenService.delLoginUser(token);
     }
 
     //添加管理员用户

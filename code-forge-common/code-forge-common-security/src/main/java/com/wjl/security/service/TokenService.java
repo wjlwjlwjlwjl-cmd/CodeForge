@@ -91,6 +91,7 @@ public class TokenService {
         claimsMap.put(SecurityConstants.EMAIL, loginUserDTO.getEmail());
         claimsMap.put(SecurityConstants.USERNAME, loginUserDTO.getUsername());
         claimsMap.put(SecurityConstants.USERTYPE, loginUserDTO.getUserType());
+        claimsMap.put(SecurityConstants.USER_ACCOUNT, loginUserDTO.getEmail()); //为了保证一致性，对于C端用户采取将邮箱作为账号
         TokenDTO tokenDTO = new TokenDTO();
         tokenDTO.setAccessToken(JwtUtil.createToken(claimsMap));
         tokenDTO.setExpires(EXPIRE_TIME);
@@ -140,17 +141,10 @@ public class TokenService {
      * 根据令牌删除用户登录态
      * @param token 令牌
      */
-    public void delBLoginUser(String token) {
+    public void delLoginUser(String token) {
         if (StringUtils.isNotEmpty(token)) {
             String userId = JwtUtil.getUserId(token);
             redisService.deleteObject(getBTokenKey(userId));
-        }
-    }
-
-    public void delCLoginUser(String token) {
-        if (StringUtils.isNotEmpty(token)) {
-            String userId = JwtUtil.getUserId(token);
-            redisService.deleteObject(getCTokenKey(userId));
         }
     }
 
