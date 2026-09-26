@@ -25,3 +25,5 @@ spring:
                       refresh: true
                     - data-id: share-mysql-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
                       refresh: true
+                    - data-id: share-email-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+                      refresh: true

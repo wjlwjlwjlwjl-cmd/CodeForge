@@ -1,4 +1,4 @@
-package com.nexus.nexuscommonmessage;
+package com.wjl;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

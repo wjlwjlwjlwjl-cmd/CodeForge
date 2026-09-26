@@ -80,9 +80,9 @@ CREATE TABLE tb_exam_question (
 CREATE TABLE tb_user (
     user_id bigint UNSIGNED AUTO_INCREMENT COMMENT '用户id（主键）',
     nick_name varchar(20) comment '用户昵称',
-    head_image varchar(100) comment '用户头像',
     sex tinyint comment '1: 男  0：女',
-    email varchar(20) NOT NULL comment '邮箱',
+    email varchar(20) NOT NULL comment '邮箱' UNIQUE KEY,
+    password varchar(60) NOT NULL comment '密码',
     school_name varchar(20) default null comment '学校',
     major_name varchar(20) default null comment '专业',
     introduce varchar(100) default "这个人很懒，什么都没有留下" comment '个人介绍',

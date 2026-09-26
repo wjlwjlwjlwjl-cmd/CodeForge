@@ -206,7 +206,7 @@ CREATE TABLE `tenant_info`
   DEFAULT CHARSET = utf8
   COLLATE = utf8_bin COMMENT ='tenant_info';
 
-CREATE TABLE `users`
+CREATE TABLE `cUsers`
 (
     `username` varchar(50)  NOT NULL PRIMARY KEY COMMENT 'username',
     `password` varchar(500) NOT NULL COMMENT 'password',
@@ -228,7 +228,7 @@ CREATE TABLE `permissions`
     UNIQUE INDEX `uk_role_permission` (`role`, `resource`, `action`) USING BTREE
 );
 
-INSERT INTO users (username, password, enabled)
+INSERT INTO cUsers (username, password, enabled)
 VALUES ('nacos', '$2a$10$EuWPZHzz32dJN7jexM34MOeYirDdFAZm2kuWj7VEOJhhZkDrxfvUu', TRUE);
 
 INSERT INTO roles (username, role)

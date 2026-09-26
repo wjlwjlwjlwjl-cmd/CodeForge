@@ -1,4 +1,4 @@
-package com.wjl.system.domain.user.dto;
+package com.wjl.system.domain.user.dto.b;
 
 import com.wjl.domain.dto.BasePageDTO;
 import lombok.Data;

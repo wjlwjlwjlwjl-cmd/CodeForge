@@ -29,7 +29,7 @@ public enum ResultCode {
     FAILED_USER_NOT_EXISTS      (3102, "用户不存在"),
     FAILED_LOGIN                (3103, "账号或密码错误"),
     FAILED_USER_BANNED          (3104, "您已被列入黑名单, 请联系管理员."),
-    FAILED_USER_PHONE           (3105, "你输入的手机号有误"),
+    FAILED_USER_EMAIL           (3105, "你输入的邮箱有误"),
     FAILED_ADMIN                (3106, "禁止删除初始管理员"),
 
     FAILED_FREQUENT             (3106, "操作频繁，请稍后重试"),

@@ -12,7 +12,7 @@ import lombok.Data;
 @Data 
 @TableName ("tb_sys_user")
 @Schema (description = "系统用户")
-public class SysUser {
+public class BUser {
     @TableId (value="id", type=IdType.AUTO)
     private Long id;
     private Long userId;

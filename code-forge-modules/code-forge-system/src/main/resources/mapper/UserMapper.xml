@@ -2,8 +2,8 @@
 <!DOCTYPE mapper
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.wjl.system.mapper.UserMapper">
-    <select id="selectUserList" resultType="com.wjl.system.entity.user.User">
+<mapper namespace="com.wjl.system.mapper.CUserMapper">
+    <select id="selectUserList" resultType="com.wjl.system.entity.user.CUser">
         select user_id, nick_name, head_image, sex, email, school_name,
         major_name, introduce, status, create_time, update_time, update_by
         from tb_user

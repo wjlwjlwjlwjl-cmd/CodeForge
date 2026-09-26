@@ -1,2 +1,2 @@
-com.nexus.nexuscommonmessage.config.EmailConfig
-com.nexus.nexuscommonmessage.service.EmailService
+com.wjl.config.EmailConfig
+com.wjl.service.EmailService

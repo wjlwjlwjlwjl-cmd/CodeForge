@@ -21,8 +21,8 @@ import com.wjl.system.domain.system.vo.AddAdminVO;
 import com.wjl.system.domain.system.vo.ListSysUserVO;
 import com.wjl.system.domain.system.vo.SysLoginVO;
 import com.wjl.system.domain.system.vo.SysUserVO;
-import com.wjl.system.entity.system.SysUser;
-import com.wjl.system.mapper.SysUserMapper;
+import com.wjl.system.entity.system.BUser;
+import com.wjl.system.mapper.BUserMapper;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j 
 public class SysUserService {
     @Autowired 
-    private SysUserMapper sysUserMapper;
+    private BUserMapper bUserMapper;
     @Autowired
     private TokenService tokenService;
 
@@ -39,21 +39,21 @@ public class SysUserService {
         SysLoginVO sysLoginVO = new SysLoginVO();
         String userAccount = loginDTO.getUserAccount();
         String password = loginDTO.getPassword();
-        SysUser sysUser = sysUserMapper.selectOne(
-            new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUserAccount, userAccount)
-                .eq(SysUser::getPassword, password)
+        BUser bUser = bUserMapper.selectOne(
+            new LambdaQueryWrapper<BUser>()
+                .eq(BUser::getUserAccount, userAccount)
+                .eq(BUser::getPassword, password)
         );
-        if(sysUser == null){
+        if(bUser == null){
             //查无此用户
             throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
         }
 
         LoginUserDTO loginUserDTO = new LoginUserDTO();
-        loginUserDTO.setUserId(String.valueOf(sysUser.getUserId()));
+        loginUserDTO.setUserId(String.valueOf(bUser.getUserId()));
         loginUserDTO.setEmail(null);
-        loginUserDTO.setUsername(sysUser.getNickName());
-        loginUserDTO.setUserAccount(sysUser.getUserAccount());
+        loginUserDTO.setUsername(bUser.getNickName());
+        loginUserDTO.setUserAccount(bUser.getUserAccount());
 
         TokenDTO tokenDTO = tokenService.createToken(loginUserDTO);
         String token = tokenDTO.getAccessToken();
@@ -76,28 +76,28 @@ public class SysUserService {
 
         String password = addAdminDTO.getPassword();
         String nickname = addAdminDTO.getNickname();
-        SysUser sysUser = sysUserMapper.selectOne(
-            new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getNickName, nickname)
+        BUser bUser = bUserMapper.selectOne(
+            new LambdaQueryWrapper<BUser>()
+                .eq(BUser::getNickName, nickname)
         );
-        if(sysUser != null){
+        if(bUser != null){
             throw new ServiceException(3101, ResultCode.FAILED_USER_EXISTS.getMsg());
         }
 
         // 前缀标识用户类型，后缀取雪花 ID 后 8 位保证唯一
         String userAccount = "U" + IdWorker.getIdStr().substring(11);
         long userId = IdWorker.getId(); // 时间戳 + 机器 ID + 序列号
-        sysUser = new SysUser();
-        sysUser.setUserId(userId);
-        sysUser.setNickName(nickname);
-        sysUser.setPassword(password);
-        sysUser.setUserAccount(userAccount);
-        sysUser.setCreateTime(LocalDateTime.now());
-        sysUser.setCreateBy(userIdCreator);
-        sysUser.setUpdateBy(userIdCreator);
-        sysUser.setUpdateTime(LocalDateTime.now());
+        bUser = new BUser();
+        bUser.setUserId(userId);
+        bUser.setNickName(nickname);
+        bUser.setPassword(password);
+        bUser.setUserAccount(userAccount);
+        bUser.setCreateTime(LocalDateTime.now());
+        bUser.setCreateBy(userIdCreator);
+        bUser.setUpdateBy(userIdCreator);
+        bUser.setUpdateTime(LocalDateTime.now());
         try{
-            sysUserMapper.insert(sysUser);
+            bUserMapper.insert(bUser);
         }
         catch(Exception e){
             ColorLog.error("添加管理员用户失败: {}", e.getMessage());
@@ -113,14 +113,14 @@ public class SysUserService {
         LoginUserDTO loginUserDTO = tokenService.getLoginUser(token);
         String userAccount = loginUserDTO.getUserAccount();
 
-        SysUser sysUser = sysUserMapper.selectOne(
-            new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUserAccount, userAccount)
+        BUser bUser = bUserMapper.selectOne(
+            new LambdaQueryWrapper<BUser>()
+                .eq(BUser::getUserAccount, userAccount)
         );
-        if(sysUser == null){
+        if(bUser == null){
             throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
         }
-        BeanCopyUtil.copyProperties(sysUser, sysUserVO);
+        BeanCopyUtil.copyProperties(bUser, sysUserVO);
 
         return sysUserVO;
     }
@@ -128,10 +128,10 @@ public class SysUserService {
     public ListSysUserVO list(String token){
         ListSysUserVO listSysUserVO = new ListSysUserVO();
 
-        List<SysUser> sysUserList = sysUserMapper.selectList(
-            new LambdaQueryWrapper<SysUser>()
+        List<BUser> bUserList = bUserMapper.selectList(
+            new LambdaQueryWrapper<BUser>()
         );
-        List<SysUserVO> users = BeanCopyUtil.copyListProperties(sysUserList, SysUserVO::new);
+        List<SysUserVO> users = BeanCopyUtil.copyListProperties(bUserList, SysUserVO::new);
         listSysUserVO.setList(users);
 
         return listSysUserVO;
@@ -141,10 +141,10 @@ public class SysUserService {
         if(userAccount.equals("admin")){
             throw new ServiceException(3106, ResultCode.FAILED_ADMIN.getMsg()); 
         }
-        int cnt = sysUserMapper.delete(
-            new LambdaQueryWrapper<SysUser>()
-                .eq(SysUser::getUserAccount, userAccount)
-                .ne(SysUser::getId, 1L)
+        int cnt = bUserMapper.delete(
+            new LambdaQueryWrapper<BUser>()
+                .eq(BUser::getUserAccount, userAccount)
+                .ne(BUser::getId, 1L)
         );
         if(cnt == 0){
             throw new ServiceException(3102, ResultCode.FAILED_USER_NOT_EXISTS.getMsg());
