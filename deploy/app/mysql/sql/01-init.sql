@@ -48,9 +48,10 @@ CREATE TABLE `tb_question` (
     create_time   datetime      NOT NULL COMMENT '创建时间',
     update_by     bigint        unsigned COMMENT '更新人',
     update_time   datetime      COMMENT '更新时间'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题目信息表' AUTO_INCREMENT=10000000;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='题目信息表';
 
 -- 竞赛信息表
+DROP TABLE IF EXISTS `tb_exam`;
 CREATE TABLE tb_exam (
     exam_id bigint UNSIGNED AUTO_INCREMENT comment '竞赛id（主键）',
     title varchar(50) NOT NULL comment '竞赛标题',
@@ -62,9 +63,10 @@ CREATE TABLE tb_exam (
     update_by bigint UNSIGNED comment '更新人',
     update_time datetime comment '更新时间',
     PRIMARY KEY (exam_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='竞赛信息表' AUTO_INCREMENT 20000000;
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='竞赛信息表';
 
 -- 竞赛题目表
+DROP TABLE IF EXISTS tb_exam_question;
 CREATE TABLE tb_exam_question (
     exam_question_id bigint UNSIGNED AUTO_INCREMENT comment '竞赛题目关系id（主键）',
     question_id bigint UNSIGNED NOT NULL comment '题目id（题目表主键）',
@@ -74,9 +76,10 @@ CREATE TABLE tb_exam_question (
     update_by bigint UNSIGNED comment '更新人',
     update_time datetime comment '更新时间',
     PRIMARY KEY (exam_question_id)
-)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='竞赛题目表' AUTO_INCREMENT 30000000;
+)ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='竞赛题目表';
 
 -- C 端用户表
+DROP TABLE IF EXISTS tb_user;
 CREATE TABLE tb_user (
     user_id bigint UNSIGNED AUTO_INCREMENT COMMENT '用户id（主键）',
     nick_name varchar(20) comment '用户昵称',
@@ -91,4 +94,18 @@ CREATE TABLE tb_user (
     update_by bigint UNSIGNED comment '更新人',
     update_time datetime comment '更新时间',
     PRIMARY KEY (`user_id`)
-)AUTO_INCREMENT 40000000 ENGINE=INNODB default charset=utf8mb4 comment="C端用户表";
+)ENGINE=INNODB default charset=utf8mb4 comment="C端用户表";
+
+-- 竞赛报名表
+create table tb_user_exam(
+    user_exam_id bigint unsigned NOT NULL COMMENT '用户竞赛关系id',
+    user_id bigint unsigned NOT NULL COMMENT '用户id',
+    exam_id bigint unsigned NOT NULL COMMENT '竞赛id',
+    score int unsigned COMMENT '得分',
+    exam_rank  int unsigned COMMENT '排名',
+    create_by    bigint unsigned not null  comment '创建人',
+    create_time  datetime not null comment '创建时间',
+    update_by    bigint unsigned  comment '更新人',
+    update_time  datetime comment '更新时间',
+    primary key(user_exam_id)
+)ENGINE=INNODB default charset=utf8mb4 comment="竞赛报名表";
