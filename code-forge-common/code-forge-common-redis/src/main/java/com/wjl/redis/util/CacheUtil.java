@@ -7,4 +7,8 @@ public class CacheUtil {
     public static String getQuestionListPageKey(int pageNum){
         return CacheConstants.QUESTION_LIST_PAGE_PREFIX + pageNum + ":";
     }
+
+    public static String getExamListPageKey(int pageNum){
+        return CacheConstants.EXAM_LIST_PAGE_PREFIX + pageNum + ":";
+    }
 }

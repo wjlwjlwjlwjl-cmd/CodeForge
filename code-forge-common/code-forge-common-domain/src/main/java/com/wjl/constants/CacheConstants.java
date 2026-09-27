@@ -43,4 +43,9 @@ public class CacheConstants {
     public final static String QUESTION_PREFIX = "question:";
     public final static long QUESTION_EXPIRATION = 30; //min
 
+    /**
+     * 竞赛信息缓存
+     */
+    public final static String EXAM_LIST_PAGE_PREFIX = "exam:list:page:";
+    public final static long EXAM_LIST_PAGE_EXPIRATION = 5; //min
 }

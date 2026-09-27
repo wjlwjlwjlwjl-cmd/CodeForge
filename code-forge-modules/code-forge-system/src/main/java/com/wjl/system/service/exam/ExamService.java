@@ -5,11 +5,14 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.wjl.constants.CacheConstants;
 import com.wjl.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.exception.ServiceException;
+import com.wjl.redis.service.RedisService;
+import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
 import com.wjl.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.vo.ExamListVO;
@@ -27,6 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
@@ -38,15 +42,24 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     private QuestionMapper questionMapper;
     @Autowired
     private TokenService tokenService;
+    @Autowired 
+    private RedisService redisService;
 
     public ExamListVO examList(ExamQueryDTO examQueryDTO) {
         ExamListVO examListVO = new ExamListVO();
-
         Integer pageNum =  examQueryDTO.getPageNum();
         Integer pageSize = CommonConstants.PAGE_SIZE;
-        PageHelper.startPage(pageNum, pageSize);
-        List<Exam> exams = examMapper.selectList(null);
 
+        String cacheKey = CacheUtil.getExamListPageKey(examQueryDTO.getPageNum());
+        List<Exam> exams = new ArrayList<>();
+        if(redisService.hasKey(cacheKey)){
+            exams = redisService.getCacheList(cacheKey, Exam.class);
+        }
+        else{
+            PageHelper.startPage(pageNum, pageSize);
+            exams = examMapper.selectList(null);
+            redisService.setCacheObject(cacheKey, exams, CacheConstants.EXAM_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
+        }
         List<ExamVO> examVOs = BeanCopyUtil.copyListProperties(exams, ExamVO::new);
         PageInfo<ExamVO> pageInfo = new PageInfo<>(examVOs);
 
