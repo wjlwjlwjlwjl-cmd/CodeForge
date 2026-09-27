@@ -1,10 +1,9 @@
 package com.wjl.friend.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.wjl.friend.entity.exam.UserExam;
 import org.apache.ibatis.annotations.Mapper;
+import com.wjl.friend.entity.user.User;
 
 @Mapper
-public interface UserExamMapper extends BaseMapper<UserExam> {
-
+public interface UserMapper extends BaseMapper<User> {
 }

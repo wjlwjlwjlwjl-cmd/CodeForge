@@ -1,4 +1,4 @@
-package com.wjl.friend.domain.entity;
+package com.wjl.friend.entity.exam;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
