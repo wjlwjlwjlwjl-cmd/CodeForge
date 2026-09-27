@@ -3,6 +3,7 @@ package com.wjl.system.service.user;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.wjl.constants.CacheConstants;
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.utils.BCryptPwdUtil;
@@ -52,10 +53,15 @@ public class UserService {
         int pageNum = userQueryDTO.getPageNum();
         int pageSize = userQueryDTO.getPageSize();
         PageHelper.startPage(pageNum, pageSize);
-
         List<CUser> cUsers = cUserMapper.selectUserList(userQueryDTO);
+        PageInfo<CUser> pageInfo = new PageInfo<>(cUsers);
         List<UserVO> list = BeanCopyUtil.copyListProperties(cUsers, UserVO::new);
+
         userListVO.setList(list);
+        userListVO.setPageNum(pageInfo.getPageNum());
+        userListVO.setPages(pageInfo.getPages());
+        userListVO.setPageSize(pageInfo.getPageSize());
+        userListVO.setTotal(pageInfo.getTotal());
 
         return userListVO;
     }
@@ -154,7 +160,11 @@ public class UserService {
         String schoolName = dto.getSchoolName();
         String majorName = dto.getMajorName();
         String introduce = dto.getIntroduce();
-        String userId = tokenService.getCLoginUser(token).getUserId();
+        LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
+        if(loginUserDTO == null){
+            return "管理员用户不得修改用户个人信息";
+        }
+        String userId = loginUserDTO.getUserId();
         int cnt = cUserMapper.update(new LambdaUpdateWrapper<CUser>()
                 .eq(CUser::getUserId, userId)
                 .set(CUser::getSchoolName, schoolName)

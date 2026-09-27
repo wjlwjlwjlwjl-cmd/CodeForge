@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.wjl.system.mapper.CUserMapper">
     <select id="selectUserList" resultType="com.wjl.system.entity.user.CUser">
-        select user_id, nick_name, head_image, sex, email, school_name,
+        select user_id, nick_name, sex, email, school_name,
         major_name, introduce, status, create_time, update_time, update_by
         from tb_user
         <where>

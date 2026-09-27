@@ -8,7 +8,6 @@ import java.time.LocalDateTime;
 public class UserVO{
     private Long userId;
     private String nickName;
-    private String headImage;
     private Integer sex;
     private String email;
     private String schoolName;

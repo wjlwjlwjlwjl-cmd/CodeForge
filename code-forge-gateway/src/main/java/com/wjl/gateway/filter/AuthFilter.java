@@ -83,7 +83,7 @@ public class AuthFilter implements GlobalFilter{
                     return unauthorized(exchange);
                 }
             }
-            else{
+            else if(userType.equals(SecurityConstants.CONSUMER)){
                 LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
                 if(loginUserDTO == null){
                     return unauthorized(exchange);
@@ -94,6 +94,9 @@ public class AuthFilter implements GlobalFilter{
                         || !loginUserDTO.getUserType().equals(JwtUtil.getUserType(token))){
                     return unauthorized(exchange);
                 }
+            }
+            else{
+                return unauthorized(exchange);
             }
         }
 
