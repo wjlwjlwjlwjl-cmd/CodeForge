@@ -32,8 +32,15 @@ public class CacheConstants {
     public final static long USER_INFO_EXPIRATION = 30; //min
 
     /**
+     * 题目列表分页缓存
+     */
+    public final static String QUESTION_LIST_PAGE_PREFIX = "question:list:page:";
+    public final static long QUESTION_LIST_PAGE_EXPIRATION = 5; //min
+
+    /**
      * 题目信息缓存
      */
     public final static String QUESTION_PREFIX = "question:";
     public final static long QUESTION_EXPIRATION = 30; //min
+
 }

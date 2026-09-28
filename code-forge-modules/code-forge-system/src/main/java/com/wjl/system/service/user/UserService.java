@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
 import com.wjl.constants.CacheConstants;
+import com.wjl.constants.CommonConstants;
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.utils.BCryptPwdUtil;
 import com.wjl.core.utils.BeanCopyUtil;
@@ -51,7 +52,7 @@ public class UserService {
         UserListVO userListVO = new UserListVO();
 
         int pageNum = userQueryDTO.getPageNum();
-        int pageSize = userQueryDTO.getPageSize();
+        int pageSize = CommonConstants.PAGE_SIZE;
         PageHelper.startPage(pageNum, pageSize);
         List<CUser> cUsers = cUserMapper.selectUserList(userQueryDTO);
         PageInfo<CUser> pageInfo = new PageInfo<>(cUsers);

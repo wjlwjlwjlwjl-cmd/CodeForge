@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.wjl.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.domain.dto.LoginUserDTO;
@@ -42,7 +43,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         ExamListVO examListVO = new ExamListVO();
 
         Integer pageNum =  examQueryDTO.getPageNum();
-        Integer pageSize = examQueryDTO.getPageSize();
+        Integer pageSize = CommonConstants.PAGE_SIZE;
         PageHelper.startPage(pageNum, pageSize);
         List<Exam> exams = examMapper.selectList(null);
 
@@ -61,7 +62,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         ExamQuestionListVO examQuestionListVO = new ExamQuestionListVO();
         Long examId = dto.getExamId();
         Integer pageNum = dto.getPageNum();
-        Integer pageSize = dto.getPageSize();
+        Integer pageSize = CommonConstants.PAGE_SIZE;
 
         PageHelper.startPage(pageNum, pageSize);
         List<ExamQuestion> exams = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()

@@ -17,4 +17,8 @@ public class CommonConstants {
      * 空字符串
      */
     public final static String EMPTY_STR = "";
+    /**
+     * 页大小
+     */
+    public final static int PAGE_SIZE = 10;
 }
