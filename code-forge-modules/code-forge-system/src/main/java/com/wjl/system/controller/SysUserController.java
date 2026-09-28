@@ -63,6 +63,11 @@ public class SysUserController {
         return R.success(sysUserService.addAdmin(token, addAdminDTO));
     }
 
+    /**
+     * 需要做 Redis 缓存
+     * @param token
+     * @return
+     */
     @GetMapping ("/b/info")
     @Operation(summary = "获取当前用户信息")
     @ApiResponse (responseCode = "1000", description = "获取成功")

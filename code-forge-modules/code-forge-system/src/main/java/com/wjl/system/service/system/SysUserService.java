@@ -2,8 +2,11 @@ package com.wjl.system.service.system;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
+import com.wjl.constants.CacheConstants;
 import com.wjl.constants.SecurityConstants;
+import com.wjl.redis.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,9 +37,12 @@ public class SysUserService {
     private BUserMapper bUserMapper;
     @Autowired
     private TokenService tokenService;
+    @Autowired
+    private RedisService redisService;
 
     // 登录
     public SysLoginVO login(SysLoginDTO loginDTO) {
+        //因为管理员用户特殊性，不做登录信息的 Redis 缓存
         SysLoginVO sysLoginVO = new SysLoginVO();
         String userAccount = loginDTO.getUserAccount();
         String password = loginDTO.getPassword();
@@ -117,6 +123,13 @@ public class SysUserService {
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         String userAccount = loginUserDTO.getUserAccount();
 
+        //先从缓存中获取
+        String cacheKey = CacheConstants.USER_INFO_PREFIX + userAccount;
+        if(redisService.hasKey(cacheKey)){
+            return redisService.getCacheObject(cacheKey, SysUserVO.class);
+        }
+
+        //缓存中没有从数据库获取
         BUser bUser = bUserMapper.selectOne(
             new LambdaQueryWrapper<BUser>()
                 .eq(BUser::getUserAccount, userAccount)
@@ -126,10 +139,13 @@ public class SysUserService {
         }
         BeanCopyUtil.copyProperties(bUser, sysUserVO);
 
+        //数据库更新到缓存
+        redisService.setCacheObject(cacheKey, sysUserVO, CacheConstants.USER_INFO_EXPIRATION, TimeUnit.SECONDS);
         return sysUserVO;
     }
 
     public ListSysUserVO list(){
+        //获取所有管理员用户信息，因为一致性问题，直接哦才能够db获取
         ListSysUserVO listSysUserVO = new ListSysUserVO();
 
         List<BUser> bUserList = bUserMapper.selectList(
@@ -145,6 +161,10 @@ public class SysUserService {
         if(userAccount.equals("admin")){
             throw new ServiceException(3106, ResultCode.FAILED_ADMIN.getMsg()); 
         }
+
+        //从缓存中删除
+        redisService.deleteObject(CacheConstants.USER_INFO_PREFIX + userAccount);
+
         int cnt = bUserMapper.delete(
             new LambdaQueryWrapper<BUser>()
                 .eq(BUser::getUserAccount, userAccount)

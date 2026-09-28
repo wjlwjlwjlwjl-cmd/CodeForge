@@ -10,7 +10,7 @@ public class CacheConstants {
     public final static String CACHE_SPLIT_COLON = ":";
 
     /**
-     * 缓存有效期，默认720（分钟）
+     * 缓存有效期，默认720（分钟），12h
      */
     public final static long EXPIRATION = 720;
 
@@ -23,4 +23,11 @@ public class CacheConstants {
      * 验证码缓存前缀
      */
     public final static String VERIFY_PREFIX = "verify:code:";
+
+    /**
+     * 用户信息前缀
+     * 管理员用户：prefix+account
+     */
+    public final static String USER_INFO_PREFIX = "user:info:";
+    public final static long USER_INFO_EXPIRATION = 30; //min
 }
