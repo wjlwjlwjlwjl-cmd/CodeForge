@@ -30,4 +30,10 @@ public class CacheConstants {
      */
     public final static String USER_INFO_PREFIX = "user:info:";
     public final static long USER_INFO_EXPIRATION = 30; //min
+
+    /**
+     * 题目信息缓存
+     */
+    public final static String QUESTION_PREFIX = "question:";
+    public final static long QUESTION_EXPIRATION = 30; //min
 }

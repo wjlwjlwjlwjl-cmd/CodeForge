@@ -2,10 +2,12 @@ package com.wjl.system.service.question;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.wjl.constants.CacheConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.exception.ServiceException;
+import com.wjl.redis.service.RedisService;
 import com.wjl.security.service.TokenService;
 import com.wjl.system.domain.question.dto.AddQuestionDTO;
 import com.wjl.system.domain.question.dto.ListQuestionDTO;
@@ -27,6 +29,8 @@ public class QuestionService {
     private QuestionMapper questionMapper;
     @Autowired
     private TokenService tokenService;
+    @Autowired
+    private RedisService redisService;
 
     public ListQuestionVO list(ListQuestionDTO listQuestionDTO) {
         ListQuestionVO listQuestionVO = new ListQuestionVO();
@@ -63,11 +67,19 @@ public class QuestionService {
     }
 
     public QuestionDetailVO detail(Long id){
+        QuestionDetailVO questionVO = new QuestionDetailVO();
+        String cacheKey = CacheConstants.QUESTION_PREFIX + id;
+        if(redisService.hasKey(cacheKey)){
+            Question question = redisService.getCacheObject(cacheKey, Question.class);
+            BeanCopyUtil.copyProperties(question, questionVO);
+            return questionVO;
+        }
+
         Question question = questionMapper.selectById(id);
         if(question == null){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
-        QuestionDetailVO questionVO = new QuestionDetailVO();
+        redisService.setCacheObject(cacheKey, question);
         BeanCopyUtil.copyProperties(question, questionVO);
         return questionVO;
     }
@@ -76,15 +88,18 @@ public class QuestionService {
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
 
-        Question question = new  Question();
+        Question question = new Question();
         question.setUpdateBy(userId);
         question.setUpdateTime(LocalDateTime.now());
 
         BeanCopyUtil.copyProperties(dto, question);
-        int ret = questionMapper.updateById(question);
+        int ret = questionMapper.updateById(question); //更新数据库
         if(ret != 1){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
+
+        //更新缓存
+        redisService.setCacheObject(CacheConstants.QUESTION_PREFIX + question.getId(), questionMapper.selectById(dto.getId()));
         return String.format("题目 %d 更新成功",  question.getId());
     }
 
@@ -93,6 +108,7 @@ public class QuestionService {
         if(cnt != 1){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
+        redisService.deleteObject(CacheConstants.QUESTION_PREFIX + id);
         return String.format("题目 %d 删除成功", id);
     }
 }
