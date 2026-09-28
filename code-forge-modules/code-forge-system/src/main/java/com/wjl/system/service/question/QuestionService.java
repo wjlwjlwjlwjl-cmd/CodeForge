@@ -51,8 +51,8 @@ public class QuestionService {
             //数据库获取并更新缓存
             PageHelper.startPage(pageNum, pageSize);
             questions = questionMapper.selectList(null);
-
             redisService.setCacheList(cacheKey, questions);
+            redisService.expire(cacheKey, CacheConstants.QUESTION_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }
 
         PageInfo<Question> pageInfo = new PageInfo<>(questions);
@@ -101,7 +101,7 @@ public class QuestionService {
         if(question == null){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
-        redisService.setCacheObject(cacheKey, question, CacheConstants.QUESTION_EXPIRATION, TimeUnit.SECONDS);
+        redisService.setCacheObject(cacheKey, question, CacheConstants.QUESTION_EXPIRATION, TimeUnit.MINUTES);
         BeanCopyUtil.copyProperties(question, questionVO);
         return questionVO;
     }
@@ -119,9 +119,6 @@ public class QuestionService {
         if(ret != 1){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
-
-        //更新缓存
-        redisService.setCacheObject(CacheConstants.QUESTION_PREFIX + question.getId(), questionMapper.selectById(dto.getId()), CacheConstants.QUESTION_EXPIRATION, TimeUnit.SECONDS);
 
         redisService.scan(CacheConstants.QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
             redisService.deleteObject(key);
