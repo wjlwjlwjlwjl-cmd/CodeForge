@@ -9,6 +9,7 @@ import com.wjl.constants.CacheConstants;
 import com.wjl.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
+import com.wjl.core.utils.ColorLog;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.exception.ServiceException;
 import com.wjl.redis.service.RedisService;
@@ -18,12 +19,15 @@ import com.wjl.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.vo.ExamListVO;
 import com.wjl.system.domain.exam.vo.ExamQuestionListVO;
 import com.wjl.system.domain.exam.vo.ExamVO;
+import com.wjl.system.domain.question.vo.QuestionDetailVO;
+import com.wjl.system.domain.question.vo.QuestionVO;
 import com.wjl.system.entity.exam.Exam;
 import com.wjl.system.entity.exam.ExamQuestion;
 import com.wjl.system.entity.question.Question;
 import com.wjl.system.mapper.ExamMapper;
 import com.wjl.system.mapper.ExamQuestionMapper;
 import com.wjl.system.mapper.QuestionMapper;
+import com.wjl.system.service.question.QuestionService;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -45,20 +49,33 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     @Autowired 
     private RedisService redisService;
 
+    @Autowired
+    private QuestionService questionService;
+
+    /**
+     * 竞赛服务设计三个缓存列表
+     * 1. 竞赛列表缓存
+     * 2. 竞赛题目列表缓存（examId，缓存的是所有 questionId）
+     * 3. 竞赛信息缓存
+     *
+     * 测试主要从两方面出发：竞赛操作导致的一致性，题目操作导致的一致性
+     */
+
     public ExamListVO examList(ExamQueryDTO examQueryDTO) {
         ExamListVO examListVO = new ExamListVO();
         Integer pageNum =  examQueryDTO.getPageNum();
         Integer pageSize = CommonConstants.PAGE_SIZE;
 
-        String cacheKey = CacheUtil.getExamListPageKey(examQueryDTO.getPageNum());
-        List<Exam> exams = new ArrayList<>();
+        String cacheKey = CacheUtil.getExamListPageKey(pageNum);
+        List<Exam> exams;
         if(redisService.hasKey(cacheKey)){
             exams = redisService.getCacheList(cacheKey, Exam.class);
         }
         else{
             PageHelper.startPage(pageNum, pageSize);
             exams = examMapper.selectList(null);
-            redisService.setCacheObject(cacheKey, exams, CacheConstants.EXAM_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
+            redisService.setCacheList(cacheKey, exams);
+            redisService.expire(cacheKey, CacheConstants.EXAM_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }
         List<ExamVO> examVOs = BeanCopyUtil.copyListProperties(exams, ExamVO::new);
         PageInfo<ExamVO> pageInfo = new PageInfo<>(examVOs);
@@ -71,23 +88,41 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         return examListVO;
     }
 
+    //加载一个竞赛的所有问题
     public ExamQuestionListVO examListQuestion(ExamQuestionListDTO dto){
         ExamQuestionListVO examQuestionListVO = new ExamQuestionListVO();
         Long examId = dto.getExamId();
         Integer pageNum = dto.getPageNum();
         Integer pageSize = CommonConstants.PAGE_SIZE;
-
-        PageHelper.startPage(pageNum, pageSize);
-        List<ExamQuestion> exams = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
-                .eq(ExamQuestion::getExamId, examId)
-        );
-        PageInfo<ExamQuestion> pageInfo = new PageInfo<>(exams);
-
         List<Long> questionIds = new ArrayList<>();
-        for(ExamQuestion examQuestion: exams){
-            questionIds.add(examQuestion.getQuestionId());
+
+        //缓存一个竞赛的所有问题的 questionId，这样如果题目发生更改，那么就不需要失效竞赛题目列表的缓存
+        String cacheKey = CacheUtil.getExamQuestionListPageKey(pageNum, examId);
+        if(redisService.hasKey(cacheKey)){
+            questionIds = redisService.getCacheList(cacheKey, Long.class);
         }
-        List<Question> questions = questionMapper.selectBatchIds(questionIds);
+        else{
+            List<ExamQuestion> exams;
+            PageHelper.startPage(pageNum, pageSize);
+            exams = examQuestionMapper.selectList(new LambdaQueryWrapper<ExamQuestion>()
+                    .eq(ExamQuestion::getExamId, examId)
+            );
+            for(ExamQuestion examQuestion: exams){
+                questionIds.add(examQuestion.getQuestionId());
+            }
+            redisService.setCacheList(cacheKey, questionIds);
+            redisService.expire(cacheKey, CacheConstants.EXAM_QUESTION_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
+        }
+
+        List<QuestionVO> questions = new ArrayList<>();
+        for(Long questionId: questionIds){
+            QuestionDetailVO item = questionService.detail(questionId);
+            QuestionVO quest = new QuestionVO();
+            BeanCopyUtil.copyProperties(item, quest);
+            questions.add(quest);
+        }
+
+        PageInfo<QuestionVO> pageInfo = new PageInfo<>(questions);
         examQuestionListVO.setList(questions);
         examQuestionListVO.setPageNum(pageInfo.getPageNum());
         examQuestionListVO.setPages(pageInfo.getPages());
@@ -97,6 +132,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         return examQuestionListVO;
     }
 
+    //添加一个竞赛
     public String examAdd(String token, ExamAddDTO examAddDTO) {
         String title = examAddDTO.getTitle();
         LocalDateTime startTime = examAddDTO.getStartTime();
@@ -124,10 +160,18 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
         examMapper.insert(exam);
 
+        //让竞赛列表缓存失效
+        redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
+            redisService.deleteObject(key);
+        });
+        ColorLog.debug("竞赛列表缓存失效");
+
         return String.format("%s，竞赛新建成功", title);
     }
 
     public String questionAdd(String token, ExamQuestionAdd examQuestionAdd) {
+        //当给一个竞赛添加题目时，需要让这个竞赛的题目列表缓存失效
+
         LinkedHashSet<Long> questions = examQuestionAdd.getQuestions();
         Long examId = examQuestionAdd.getExamId();
         checkExam(examId, false); //竞赛存在性、时间检查
@@ -166,6 +210,12 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         }
         saveBatch(examQuestions);
 
+        String pattern = String.format("exam:%d:list:page:*", examId);
+        redisService.scan(pattern, 100, key -> {
+            redisService.deleteObject(key);
+        });
+        ColorLog.debug("竞赛题目列表失效");
+
         return String.format("成功添加%d条题目", questions.size());
     }
 
@@ -186,12 +236,26 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
                 .set(Exam::getUpdateTime, LocalDateTime.now())
                 .set(Exam::getUpdateBy, userId)
         );
+
+        String pattern = String.format("exam:%d:list:page:*", examId);
+        redisService.scan(pattern, 100, key -> {
+            redisService.deleteObject(key);
+        });
+        ColorLog.debug("竞赛题目列表失效");
         return String.format("成功删除%d条题目", cnt);
     }
 
     public ExamVO examDetail(Long examId){
         ExamVO examVO = new ExamVO();
-        Exam exam = examMapper.selectById(examId);
+        Exam exam;
+        String cacheKey = CacheUtil.getExamKey(examId);
+        if(redisService.hasKey(cacheKey)){
+            exam = redisService.getCacheObject(cacheKey, Exam.class);
+        }
+        else{
+            exam = examMapper.selectById(examId);
+            redisService.setCacheObject(cacheKey, exam, CacheConstants.EXAM_EXPIRATION, TimeUnit.MINUTES);
+        }
         BeanUtils.copyProperties(exam, examVO);
         return examVO;
     }
@@ -210,6 +274,13 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
                 .set(Exam::getUpdateBy, loginUserDTO.getUserId())
                 .set(Exam::getUpdateTime, LocalDateTime.now())
         );
+
+        //有两个缓存需要失效：竞赛列表缓存以及竞赛信息缓存
+        redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
+            redisService.deleteObject(key);
+        });
+        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+
         return String.format("更新%d竞赛成功", examId);
     }
 
@@ -218,6 +289,18 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         //先删除竞赛信息
         examMapper.deleteById(examId);
         examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>().eq(ExamQuestion::getExamId, examId));
+
+        redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
+            redisService.deleteObject(key);
+        });
+
+        String pattern = String.format("exam:%d:list:page:*", examId);
+        redisService.scan(pattern, 100, key -> {
+            redisService.deleteObject(key);
+        });
+
+        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+
         return String.format("成功删除%d的竞赛信息", examId);
     }
 
@@ -231,6 +314,12 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
                 .set(Exam::getUpdateTime, LocalDateTime.now())
                 .set(Exam::getUpdateBy, userId)
         );
+
+        redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
+            redisService.deleteObject(key);
+        });
+        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+
         return String.format("成功发布%d", examId);
     }
 
@@ -244,6 +333,12 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
                 .set(Exam::getUpdateTime, LocalDateTime.now())
                 .set(Exam::getUpdateBy, userId)
         );
+
+        redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
+            redisService.deleteObject(key);
+        });
+        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+
         return String.format("成功取消发布%d", examId);
     }
 
