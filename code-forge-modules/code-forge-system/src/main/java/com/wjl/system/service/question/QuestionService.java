@@ -41,13 +41,13 @@ public class QuestionService {
         int pageNum = listQuestionDTO.getPageNum(); //页码
         int pageSize = CommonConstants.PAGE_SIZE; //每页条数
 
-        List<Question> questions;
+        List<Question> questions = null;
         //先尝试从 redis 获取
         String cacheKey = CacheUtil.getQuestionListPageKey(pageNum);
         if(redisService.hasKey(cacheKey)){
             questions = redisService.getCacheList(cacheKey, Question.class);
         }
-        else{
+        if(questions == null){
             //数据库获取并更新缓存
             PageHelper.startPage(pageNum, pageSize);
             questions = questionMapper.selectList(null);

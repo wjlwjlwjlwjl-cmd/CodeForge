@@ -11,6 +11,9 @@ import lombok.ToString;
 @ToString //生成 toString 方法
 public class BeanCopyUtil extends BeanUtils{
     public static <S, T> List<T> copyListProperties(List<S> sources, Supplier<T> target) {
+        if(sources == null){
+            return null;
+        }
         List<T> list = new ArrayList<>(sources.size());
         for (S source : sources) {
             if(source == null) continue;

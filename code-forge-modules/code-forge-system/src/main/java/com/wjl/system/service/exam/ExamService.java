@@ -63,15 +63,16 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
     public ExamListVO examList(ExamQueryDTO examQueryDTO) {
         ExamListVO examListVO = new ExamListVO();
-        Integer pageNum =  examQueryDTO.getPageNum();
-        Integer pageSize = CommonConstants.PAGE_SIZE;
+        int pageNum = Optional.ofNullable(examQueryDTO.getPageNum()).orElse(1);
+        int pageSize = CommonConstants.PAGE_SIZE;
 
         String cacheKey = CacheUtil.getExamListPageKey(pageNum);
-        List<Exam> exams;
+        ColorLog.debug(cacheKey);
+        List<Exam> exams = null;
         if(redisService.hasKey(cacheKey)){
             exams = redisService.getCacheList(cacheKey, Exam.class);
         }
-        else{
+        if(exams == null){
             PageHelper.startPage(pageNum, pageSize);
             exams = examMapper.selectList(null);
             redisService.setCacheList(cacheKey, exams);
@@ -118,6 +119,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         for(Long questionId: questionIds){
             QuestionDetailVO item = questionService.detail(questionId);
             QuestionVO quest = new QuestionVO();
+            if(item == null) continue;
             BeanCopyUtil.copyProperties(item, quest);
             questions.add(quest);
         }
@@ -256,6 +258,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             exam = examMapper.selectById(examId);
             redisService.setCacheObject(cacheKey, exam, CacheConstants.EXAM_EXPIRATION, TimeUnit.MINUTES);
         }
+        if(exam == null) return null;
         BeanUtils.copyProperties(exam, examVO);
         return examVO;
     }
@@ -279,7 +282,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
             redisService.deleteObject(key);
         });
-        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+        redisService.deleteObject(CacheUtil.getExamKey(examId));
 
         return String.format("更新%d竞赛成功", examId);
     }
@@ -299,7 +302,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             redisService.deleteObject(key);
         });
 
-        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+        redisService.deleteObject(CacheUtil.getExamKey(examId));
 
         return String.format("成功删除%d的竞赛信息", examId);
     }
@@ -318,7 +321,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
             redisService.deleteObject(key);
         });
-        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+        redisService.deleteObject(CacheUtil.getExamKey(examId));
 
         return String.format("成功发布%d", examId);
     }
@@ -337,7 +340,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
             redisService.deleteObject(key);
         });
-        redisService.deleteObject(CacheConstants.EXAM_PREFIX + "*");
+        redisService.deleteObject(CacheUtil.getExamKey(examId));
 
         return String.format("成功取消发布%d", examId);
     }

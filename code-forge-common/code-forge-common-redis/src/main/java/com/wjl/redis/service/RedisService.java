@@ -147,6 +147,7 @@ public class RedisService {
      * @return
      */
     public boolean deleteObject(final Collection<String> keys){
+        if(keys == null) return true;
         return redisTemplate.delete(keys) > 0;
     }
 
@@ -162,6 +163,7 @@ public class RedisService {
      * @param obj   缓存对象
      */
     public <T> void setCacheObject(final String key, T obj){
+        if(obj == null) return;
         redisTemplate.opsForValue().set(key, obj);
     }
 
@@ -175,6 +177,7 @@ public class RedisService {
      * @param unit      时间颗粒度
      */
     public <T> void setCacheObject(final String key, T obj, long timeout, TimeUnit unit){
+        if(obj == null) return;
         redisTemplate.opsForValue().set(key, obj, timeout, unit);
     }
 
@@ -188,6 +191,9 @@ public class RedisService {
      * @param unit
      */
     public <T> void setCacheObjectIfAbsent(final String key, T obj, long timeout, TimeUnit unit){
+        if(obj == null){
+            return;
+        }
         redisTemplate.opsForValue().setIfAbsent(key, obj, timeout, unit);
     }
 
@@ -199,6 +205,7 @@ public class RedisService {
      * @param obj
      */
     public <T> void setCacheObjectIfAbsent(final String key, T obj){
+        if(obj == null) return;
         redisTemplate.opsForValue().setIfAbsent(key, obj);
     }
 
@@ -247,6 +254,9 @@ public class RedisService {
      * @return          添加元素后 list 长度
      */
     public <T> long setCacheList(final String key, final List<T> dataList){
+        if(dataList == null || dataList.isEmpty()){
+            return 0;
+        }
         Long count = redisTemplate.opsForList().rightPushAll(key, dataList);
         return count == null ? 0 : count;
     }
@@ -259,6 +269,7 @@ public class RedisService {
      * @param value 添加元素
      */
     public <T> void leftPushForList(final String key, final T value){
+        if(value == null) return;
         redisTemplate.opsForList().leftPush(key, value);
     }
 
@@ -270,6 +281,7 @@ public class RedisService {
      * @param value 添加元素
      */
     public <T> void rightPushForList(final String key, final T value){
+        if(value == null) return;
         redisTemplate.opsForList().rightPush(key, value);
     }
 
@@ -299,6 +311,7 @@ public class RedisService {
      * @param value     移除元素
      */
     public <T> void removeForList(final String key, T value){
+        if(value == null) return;
         redisTemplate.opsForList().remove(key, 1L, value);
     }
 
@@ -310,6 +323,7 @@ public class RedisService {
      * @param value     移除的元素
      */
     public <T> void removeAllForList(final String key, T value){
+        if(value == null) return;
         redisTemplate.opsForList().remove(key, 0, value);
     }
 
@@ -331,6 +345,9 @@ public class RedisService {
      * @param value
      */
     public <T> void setElementAtIndex(final String key, int index, T value){
+        if(value == null){
+            return;
+        }
         redisTemplate.opsForList().set(key, index, value);
     }
 
@@ -422,6 +439,7 @@ public class RedisService {
      * @param objs  要插入的一个或多个元素
      */
     public void addMember(final String key, Object... objs){
+        if(objs == null) return;
         redisTemplate.opsForSet().add(key, objs);
     }
 
@@ -432,6 +450,7 @@ public class RedisService {
      * @param objs  要删除的一个或多个元素
      */
     public void deleteMember(final String key, Object... objs){
+        if(objs == null) return;
         redisTemplate.opsForSet().remove(key, objs);
     }
 
@@ -460,6 +479,7 @@ public class RedisService {
      * @param seqNo     seqNo，元素分数
      */
     public void addMemberZSet(final String key, Object obj, double seqNo){
+        if(obj == null) return;
         redisTemplate.opsForZSet().add(key, obj, seqNo);
     }
 
@@ -470,6 +490,7 @@ public class RedisService {
      * @param obj   要移除的对象
      */
     public void delMemberZSet(final String key, Object obj){
+        if(obj == null) return;
         redisTemplate.opsForZSet().remove(key, obj);
     }
 
@@ -522,6 +543,9 @@ public class RedisService {
      * @param dataMap   承载着所有需要存放的键值对的 Map
      */
     public <T> void setCacheHash(final String key, final Map<String, T> dataMap){
+        if(dataMap == null || dataMap.isEmpty()){
+            return;
+        }
         redisTemplate.opsForHash().putAll(key, dataMap); 
     }
 
@@ -534,6 +558,9 @@ public class RedisService {
      * @param value     键值对值
      */
     public <T> void setCacheMapValue(final String key, final String hKey, T value){
+        if(hKey == null || value == null){
+            return;
+        }
         redisTemplate.opsForHash().put(key, hKey, value);
     }
 
@@ -545,6 +572,7 @@ public class RedisService {
      * @return          是否删除成功
      */
     public boolean deleteCacheMapValue(final String key, final String hKey){
+        if(hKey == null) return true;
         return redisTemplate.opsForHash().delete(key, hKey) > 0;
     }
 
@@ -570,6 +598,7 @@ public class RedisService {
      * @return      获取结果
      */
     public <T> T getCacheMapValue(final String key, final String hKey){
+        if(hKey == null) return null;
         HashOperations<String, String, T> operations = redisTemplate.opsForHash();
         return operations.get(key, hKey);
     }
