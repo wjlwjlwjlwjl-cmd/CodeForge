@@ -1,9 +1,5 @@
 USE db_code_forge;
-insert into tb_user(nick_name, sex, email, school_name, major_name, introduce, status, create_time, update_by, update_time)
-values
-(
-    "小明", NULL, 1, "123@456.com", "Fudan University", "CS", "Hello World", 1, now(), null,null
-),
-(
-    "Bad People", NULL, 0, "456@123.com", "Fudan University", "SE", "Hello World", 0, now(), NULL,NULL
-);
+
+INSERT INTO tb_user (nick_name, sex, email, password, school_name, major_name, introduce, status, create_time, update_by, update_time)
+VALUES
+    ('wwjjll', 1, '25300120122@m.fudan.edu.cn', '$2a$10$TzP7Ylu8OkWoEHmEvraPO.rxix2l88rFaC3Cd4ELQfO5T1VDHQ9KC', 'Fudan University', 'CS', '这个人很懒，什么都没有留下', 1, '2026-09-29 08:02:38', NULL, NULL);

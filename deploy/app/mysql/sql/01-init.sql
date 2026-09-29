@@ -84,7 +84,7 @@ CREATE TABLE tb_user (
     user_id bigint UNSIGNED AUTO_INCREMENT COMMENT '用户id（主键）',
     nick_name varchar(20) comment '用户昵称',
     sex tinyint comment '1: 男  0：女',
-    email varchar(20) NOT NULL comment '邮箱' UNIQUE KEY,
+    email varchar(80) NOT NULL comment '邮箱' UNIQUE KEY,
     password varchar(60) NOT NULL comment '密码',
     school_name varchar(20) default null comment '学校',
     major_name varchar(20) default null comment '专业',
@@ -97,6 +97,7 @@ CREATE TABLE tb_user (
 )ENGINE=INNODB default charset=utf8mb4 comment="C端用户表";
 
 -- 竞赛报名表
+DROP TABLE IF EXISTS `tb_user_exam`;
 create table tb_user_exam(
     user_exam_id bigint unsigned NOT NULL COMMENT '用户竞赛关系id',
     user_id bigint unsigned NOT NULL COMMENT '用户id',

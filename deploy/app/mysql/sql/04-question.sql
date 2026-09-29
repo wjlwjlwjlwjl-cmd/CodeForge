@@ -1,3 +1,5 @@
+USE `db_code_forge`;
+
 INSERT INTO tb_question (title, difficulty, time_limit, space_limit, content, question_case, default_code, main_fuc, create_by, create_time, update_by, update_time) VALUES
    ('1.两数之和',1,1000,128,'给定一个整数数组 nums 和一个整数目标值 target，请你在该数组中找出 和为目标值 target 的那两个整数，并返回它们的数组下标。你可以假设每种输入只会对应一个答案。但是，数组中同一个元素在答案里不能重复出现。','输入:nums = [2,7,11,15], target = 9 输出:[0,1]','class Solution {public int[] twoSum(int[] nums, int target) {}}','public static void main(String[] args) {Solution s=new Solution();int[] res=s.twoSum(new int[]{2,7,11,15},9);System.out.println(res[0]+","+res[1]);}',1,'2026-09-28 10:00:00',null,null),
    ('2.两数相加',2,1000,128,'给你两个非空的链表，表示两个非负的整数。它们每位数字都是按照逆序的方式存储的，并且每个节点只能存储一位数字。请你将两个数相加，并以相同形式返回一个表示和的链表。','输入:l1 = [2,4,3], l2 = [5,6,4] 输出:[7,0,8]','class ListNode{int val;ListNode next;ListNode(){}ListNode(int v){val=v;}}class Solution {public ListNode addTwoNumbers(ListNode l1, ListNode l2) {}}','public static void main(String[] args) {Solution s=new Solution();}',1,'2026-09-28 10:00:00',null,null),

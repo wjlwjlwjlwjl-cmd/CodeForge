@@ -53,7 +53,7 @@ public class CacheConstants {
      * 竞赛题目列表分页缓存
      */
     public final static String EXAM_QUESTION_LIST_PAGE_PREFIX = "exam:%d:list:page:%d";
-    public final static long EXAM_QUESTION_LIST_PAGE_EXPIRATION = 5;
+    public final static long EXAM_QUESTION_LIST_PAGE_EXPIRATION = 30;
 
     /**
      * 竞赛信息缓存
