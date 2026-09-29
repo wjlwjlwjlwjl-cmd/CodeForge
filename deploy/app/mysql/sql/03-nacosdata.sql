@@ -5,6 +5,9 @@ use `frameworkjava_nacos_test`;
 INSERT INTO config_info (data_id,group_id,content,md5,gmt_create,gmt_modified,src_user,src_ip,app_name,tenant_id,c_desc,c_use,effect,`type`,c_schema,encrypted_data_key) VALUES
     ('share-gateway-test.yaml','DEFAULT_GROUP','spring:
   cloud:
+    nacos:
+      config:
+        refresh-enabled: false
     gateway:
       discovery:
         locator:
@@ -15,16 +18,24 @@ INSERT INTO config_info (data_id,group_id,content,md5,gmt_create,gmt_modified,sr
           uri: lb://code-forge-system
           predicates:
             - Path=/system/**
+
         - id: code-forge-question
           uri: lb://code-forge-system
           predicates:
             - Path=/question/**
+
         - id: code-forge-exam
           uri: lb://code-forge-system
           predicates:
             - Path=/exam/**
-        - id: code-forge-user
+
+        - id: code-forge-user-b
           uri: lb://code-forge-system
+          predicates:
+            - Path=/user/b/**
+
+        - id: code-forge-user-c
+          uri: lb://code-forge-friend
           predicates:
             - Path=/user/**
 
@@ -34,7 +45,7 @@ security:
       - /system/b/login
       - /user/register
       - /user/sendCode
-      - /user/login','b6168845d390c1237c8c621745cc24eb',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
+      - /user/login','baf5a2de1c31f744f66eeb535966316d',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 
     ('share-mysql-test.yaml','DEFAULT_GROUP','spring:
     datasource:
