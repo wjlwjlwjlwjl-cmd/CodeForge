@@ -25,11 +25,11 @@ public class CacheConstants {
     public final static String VERIFY_PREFIX = "verify:code:";
 
     /**
-     * 用户信息前缀
+     * B 端用户信息前缀
      * 管理员用户：prefix+account
      */
     public final static String USER_INFO_PREFIX = "user:info:";
-    public final static long USER_INFO_EXPIRATION = 30; //min
+    public final static long USER_INFO_EXPIRATION = 15; //min
 
     /**
      * 题目列表分页缓存
@@ -60,4 +60,10 @@ public class CacheConstants {
      */
     public final static String EXAM_PREFIX = "exam:";
     public final static long EXAM_EXPIRATION = 30;
+
+    /**
+     * C端用户信息缓存
+     */
+    public final static String USER_INFO_PREFIX_C = "user:info:c:%s";
+    public final static long USER_INFO_C_EXPIRATION = 15;
 }

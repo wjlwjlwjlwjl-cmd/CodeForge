@@ -19,4 +19,8 @@ public class CacheUtil {
     public static String getExamKey(Long examId){
         return CacheConstants.EXAM_PREFIX + examId;
     }
+
+    public static String getUserInfoCKey(String userId){
+        return String.format(CacheConstants.USER_INFO_PREFIX_C, userId);
+    }
 }

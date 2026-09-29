@@ -1,4 +1,4 @@
-package com.wjl.system.domain.user.dto.c;
+package com.wjl.friend.domain.user.dto;
 
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

@@ -1,4 +1,4 @@
-package com.wjl.system.domain.user.dto.c;
+package com.wjl.friend.domain.user.dto;
 
 import lombok.Data;
 import org.hibernate.validator.constraints.Length;

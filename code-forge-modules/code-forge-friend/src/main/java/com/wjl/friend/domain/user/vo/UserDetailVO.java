@@ -1,4 +1,4 @@
-package com.wjl.system.domain.user.vo.c;
+package com.wjl.friend.domain.user.vo;
 
 import lombok.Data;
 
