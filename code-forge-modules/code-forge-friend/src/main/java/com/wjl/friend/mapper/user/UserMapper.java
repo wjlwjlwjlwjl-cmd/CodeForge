@@ -1,4 +1,4 @@
-package com.wjl.friend.mapper;
+package com.wjl.friend.mapper.user;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Mapper;

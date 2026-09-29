@@ -19,7 +19,7 @@ import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
 import com.wjl.friend.domain.user.dto.UserLoginDTO;
 import com.wjl.friend.entity.user.User;
-import com.wjl.friend.mapper.UserMapper;
+import com.wjl.friend.mapper.user.UserMapper;
 import com.wjl.service.EmailService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;

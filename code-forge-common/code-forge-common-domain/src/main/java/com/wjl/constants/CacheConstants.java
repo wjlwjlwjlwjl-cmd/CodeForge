@@ -66,4 +66,10 @@ public class CacheConstants {
      */
     public final static String USER_INFO_PREFIX_C = "user:info:c:%s";
     public final static long USER_INFO_C_EXPIRATION = 15;
+
+    /**
+     * 竞赛报名信息缓存
+     */
+    public final static String USER_EXAM_PREFIX = "user:%d:exam:%d";
+    public final static long USER_EXAM_EXPIRATION = 30;
 }
