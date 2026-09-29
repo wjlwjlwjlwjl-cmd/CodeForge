@@ -62,7 +62,7 @@ security:
         redis:
             host: 127.0.0.1 # 这里后续打 jar 包上服务器后需要修改为容器名 code-forge-redis
             port: 6379
-            password: wjl@123','25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'')
+            password: wjl@123','25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 
     ('share-email-test.yaml','DEFAULT_GROUP','email:
     host: smtp.qq.com

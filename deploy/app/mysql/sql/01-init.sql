@@ -36,7 +36,7 @@ INSERT INTO tb_sys_user VALUES (0, 1, 'admin', 'admin@123', 'admin', 1, NOW(), 1
 DROP TABLE IF EXISTS `tb_question`;
 CREATE TABLE `tb_question` (
     id            bigint        unsigned NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '主键id',
-    title         varchar(50)   NOT NULL COMMENT '题目标题',
+    title         varchar(100)   NOT NULL COMMENT '题目标题',
     difficulty    tinyint       NOT NULL COMMENT '题目难度1:简单  2：中等 3：困难',
     time_limit    int           NOT NULL COMMENT '时间限制',
     space_limit   int           NOT NULL COMMENT '空间限制',
@@ -54,7 +54,7 @@ CREATE TABLE `tb_question` (
 DROP TABLE IF EXISTS `tb_exam`;
 CREATE TABLE tb_exam (
     exam_id bigint UNSIGNED AUTO_INCREMENT comment '竞赛id（主键）',
-    title varchar(50) NOT NULL comment '竞赛标题',
+    title varchar(100) NOT NULL comment '竞赛标题',
     start_time datetime NOT NULL comment '竞赛开始时间',
     end_time datetime NOT NULL comment '竞赛结束时间',
     status tinyint NOT NULL default '0' comment '是否发布 0：未发布  1：已发布',
