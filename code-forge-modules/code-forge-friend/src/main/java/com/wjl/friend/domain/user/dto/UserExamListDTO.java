@@ -7,5 +7,4 @@ import lombok.Setter;
 @Setter
 @Getter
 public class UserExamListDTO extends BasePageDTO {
-    private Long examId;
 }

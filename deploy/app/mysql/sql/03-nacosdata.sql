@@ -1,5 +1,5 @@
-# 1. 初始化nacos配置数据
-# 注意： 此前如果修改过nacos外接数据库名称，此处需确保名称一致
+-- 1. 初始化nacos配置数据
+-- 注意： 此前如果修改过nacos外接数据库名称，此处需确保名称一致
 
 use `frameworkjava_nacos_test`;
 INSERT INTO config_info (data_id,group_id,content,md5,gmt_create,gmt_modified,src_user,src_ip,app_name,tenant_id,c_desc,c_use,effect,`type`,c_schema,encrypted_data_key) VALUES
@@ -49,7 +49,6 @@ security:
 
     ('share-mysql-test.yaml','DEFAULT_GROUP','spring:
     datasource:
-        # 后续打 jar 包部署需要将ip改为docker域名
         url: jdbc:mysql://127.0.0.1:3306/db_code_forge?useSSL=false&serverTimezone=UTC
         username: wjl
         password: wjl@123
@@ -60,7 +59,7 @@ security:
         type: redis
     data:
         redis:
-            host: 127.0.0.1 # 这里后续打 jar 包上服务器后需要修改为容器名 code-forge-redis
+            host: 127.0.0.1
             port: 6379
             password: wjl@123','25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 

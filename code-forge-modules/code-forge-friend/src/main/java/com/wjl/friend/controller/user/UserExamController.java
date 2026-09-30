@@ -2,13 +2,15 @@ package com.wjl.friend.controller.user;
 
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.domain.R;
+import com.wjl.friend.domain.user.dto.UserExamListDTO;
 import com.wjl.friend.domain.user.vo.UserExamListVO;
 import com.wjl.friend.service.user.UserExamService;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/exam")
+@RequestMapping("/user")
 public class UserExamController {
     @Autowired
     private UserExamService userExamService;
@@ -20,7 +22,8 @@ public class UserExamController {
     }
 
     @GetMapping("/list/mine")
-    public R<UserExamListVO> getUserExamList(UserExamListVO dto){
-        return null;
+    @Operation(description = "获取用户报名的所有竞赛")
+    public R<UserExamListVO> getUserExamList(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, UserExamListDTO dto){
+        return R.success(userExamService.getUserExamList(token, dto));
     }
 }

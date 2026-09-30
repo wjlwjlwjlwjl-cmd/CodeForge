@@ -99,7 +99,7 @@ CREATE TABLE tb_user (
 -- 竞赛报名表
 DROP TABLE IF EXISTS `tb_user_exam`;
 create table tb_user_exam(
-    user_exam_id bigint unsigned NOT NULL COMMENT '用户竞赛关系id',
+    user_exam_id bigint unsigned primary key auto_increment COMMENT '用户竞赛关系id',
     user_id bigint unsigned NOT NULL COMMENT '用户id',
     exam_id bigint unsigned NOT NULL COMMENT '竞赛id',
     score int unsigned COMMENT '得分',
@@ -108,5 +108,5 @@ create table tb_user_exam(
     create_time  datetime not null comment '创建时间',
     update_by    bigint unsigned  comment '更新人',
     update_time  datetime comment '更新时间',
-    primary key(user_exam_id)
+    unique (user_id, exam_id)
 )ENGINE=INNODB default charset=utf8mb4 comment="竞赛报名表";
