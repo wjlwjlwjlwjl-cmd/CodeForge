@@ -6,11 +6,13 @@ import com.wjl.friend.domain.user.dto.UserExamListDTO;
 import com.wjl.friend.domain.user.vo.UserExamListVO;
 import com.wjl.friend.service.user.UserExamService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/user")
+@Tag(name="C端用户竞赛操作")
+@RequestMapping("/user/exam")
 public class UserExamController {
     @Autowired
     private UserExamService userExamService;

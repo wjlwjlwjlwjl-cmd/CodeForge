@@ -39,6 +39,11 @@ INSERT INTO config_info (data_id,group_id,content,md5,gmt_create,gmt_modified,sr
           predicates:
             - Path=/user/**
 
+        - id: code-forge-user-exam
+          uri: lb://code-forge-friend
+          predicates:
+            - Path=/user/exam/**
+
 security:
   ignore:
     whites:
@@ -48,11 +53,11 @@ security:
       - /user/login','baf5a2de1c31f744f66eeb535966316d',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 
     ('share-mysql-test.yaml','DEFAULT_GROUP','spring:
-    datasource:
-        url: jdbc:mysql://127.0.0.1:3306/db_code_forge?useSSL=false&serverTimezone=UTC
-        username: wjl
-        password: wjl@123
-        driver-class-name: com.mysql.cj.jdbc.Driver','d34fe9ab37cd64d8caeb2f0d53be1da8',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/db_code_forge?useSSL=false&serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf8
+    username: wjl
+    password: wjl@123
+    driver-class-name: com.mysql.cj.jdbc.Driver','d34fe9ab37cd64d8caeb2f0d53be1da8',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 
     ('share-redis-test.yaml','DEFAULT_GROUP','spring:
     cache:
