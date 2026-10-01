@@ -1,4 +1,5 @@
 USE db_code_forge;
+SET NAMES utf8mb4;
 
 INSERT INTO tb_user (nick_name, sex, email, password, school_name, major_name, introduce, status, create_time, update_by, update_time)
 VALUES

@@ -366,7 +366,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         LocalDateTime endTime = exam.getEndTime();
         LocalDateTime currentTime = LocalDateTime.now();
         if(startTime.isBefore(currentTime)){
-            throw new ServiceException(ResultCode.EXAM_STARTED.getCode(),ResultCode.EXAM_STARTED.getMsg());
+            throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getCode(),ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getMsg());
         }
         if(endTime.isBefore(currentTime)){
             throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(),ResultCode.EXAM_IS_FINISH.getMsg());

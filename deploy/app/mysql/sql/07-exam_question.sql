@@ -1,4 +1,5 @@
 USE `db_code_forge`;
+SET NAMES utf8mb4;
 INSERT INTO tb_exam_question (question_id, exam_id, create_by, create_time, update_by, update_time)
 VALUES
 -- exam_id=1 分配 question_id 1~10

@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 USE db_code_forge;
 -- 默认以 admin 的身份插入初始数据
 

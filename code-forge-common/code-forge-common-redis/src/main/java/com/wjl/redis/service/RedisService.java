@@ -36,14 +36,14 @@ public class RedisService {
     //*************** */
 
     /**
-     * 设置键值对过期时间（默认时间颗粒度秒）
+     * 设置键值对过期时间（默认时间颗粒度分钟）
      * 
      * @param key       键
      * @param timeout   值
      * @return          是否成功设置键值对
      */
     public boolean expire(final String key, final long timeout){
-        return redisTemplate.expire(key, timeout, TimeUnit.SECONDS);
+        return redisTemplate.expire(key, timeout, TimeUnit.MINUTES);
     }
 
     /**

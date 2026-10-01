@@ -1,3 +1,4 @@
+SET NAMES utf8mb4;
 USE `db_code_forge`;
 
 INSERT INTO tb_question (title, difficulty, time_limit, space_limit, content, question_case, default_code, main_fuc, create_by, create_time, update_by, update_time) VALUES

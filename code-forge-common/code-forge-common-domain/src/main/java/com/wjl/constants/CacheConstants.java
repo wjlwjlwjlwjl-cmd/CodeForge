@@ -70,6 +70,13 @@ public class CacheConstants {
     /**
      * 竞赛报名信息缓存
      */
-    public final static String USER_EXAM_PREFIX = "user:%d:exam:";
+    public final static String USER_EXAM_PREFIX = "user:%d:exam";
     public final static long USER_EXAM_EXPIRATION = 30;
+
+    /**
+     * 竞赛状态缓存
+     */
+    public final static String EXAM_UNSTART = "exam:unstart"; //还未开始的竞赛
+    public final static String EXAM_UNFINISH = "exam:unfinish"; //还未结束的竞赛
+    public final static String EXAM_FINISHED = "exam:finished"; //已经结束的竞赛
 }

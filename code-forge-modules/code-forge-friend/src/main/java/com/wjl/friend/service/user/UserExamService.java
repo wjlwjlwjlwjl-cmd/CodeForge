@@ -45,8 +45,11 @@ public class UserExamService {
         String userId = loginUserDTO.getUserId();
 
         Exam exam = examMapper.selectById(examId);
-        if(exam == null){
+        if(exam == null){ //竞赛不存在
             throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        if(LocalDateTime.now().isAfter(exam.getEndTime())){ //竞赛结束，禁止报名
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
         }
 
         UserExam userExam = new UserExam();
@@ -57,7 +60,7 @@ public class UserExamService {
         try{
             userExamMapper.insert(userExam);
         }
-        catch(DuplicateKeyException e){
+        catch(DuplicateKeyException e){ //用户已经报名（联合唯一键）
             throw new ServiceException(ResultCode.USER_EXAM_HAS_ENTER.getCode(), ResultCode.USER_EXAM_HAS_ENTER.getMsg());
         }
 
@@ -84,7 +87,7 @@ public class UserExamService {
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         Integer pageNum = dto.getPageNum();
         int pageSize = CommonConstants.PAGE_SIZE;
-        String cacheKey =  CacheUtil.getUserExamKey(userId);
+        String cacheKey = CacheUtil.getUserExamKey(userId);
 
         List<UserExamVO> list;
         if(redisService.hasKey(cacheKey)){

@@ -5,11 +5,13 @@ GRANT REPLICATION SLAVE, REPLICATION CLIENT ON *.* TO 'wjl'@'%';
 CREATE DATABASE IF NOT EXISTS `db_code_forge` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 CREATE DATABASE IF NOT EXISTS `frameworkjava_nacos_test` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
 CREATE DATABASE IF NOT EXISTS `frameworkjava_test` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+CREATE DATABASE IF NOT EXISTS xxl_job DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- 授权
 GRANT ALL PRIVILEGES ON db_code_forge.* TO 'wjl'@'%';
 GRANT ALL PRIVILEGES ON frameworkjava_nacos_test.* TO 'wjl'@'%';
 GRANT ALL PRIVILEGES ON frameworkjava_test.* TO 'wjl'@'%';
+GRANT ALL PRIVILEGES ON xxl_job.* TO 'wjl'@'%';
 FLUSH PRIVILEGES;
 
 USE `db_code_forge`;

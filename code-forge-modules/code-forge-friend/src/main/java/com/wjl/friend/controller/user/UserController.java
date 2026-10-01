@@ -2,6 +2,7 @@ package com.wjl.friend.controller.user;
 
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.domain.R;
+import com.wjl.core.utils.ColorLog;
 import com.wjl.friend.domain.user.dto.UserAddInfoDTO;
 import com.wjl.friend.domain.user.dto.UserLoginDTO;
 import com.wjl.friend.domain.user.dto.UserRegisterDTO;
@@ -48,6 +49,8 @@ public class UserController {
 
     @GetMapping("/detail")
     public R<UserDetailVO> detail(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
-        return R.success(userService.detail(token));
+        UserDetailVO userDetailVO = userService.detail(token);
+        ColorLog.info(userDetailVO.getIntroduce());
+        return R.success(userDetailVO);
     }
 }
