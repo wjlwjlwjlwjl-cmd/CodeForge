@@ -2,6 +2,7 @@
 -- 注意： 此前如果修改过nacos外接数据库名称，此处需确保名称一致
 
 use `frameworkjava_nacos_test`;
+SET NAMES utf8mb4;
 INSERT INTO config_info (data_id,group_id,content,md5,gmt_create,gmt_modified,src_user,src_ip,app_name,tenant_id,c_desc,c_use,effect,`type`,c_schema,encrypted_data_key) VALUES
     ('share-gateway-test.yaml','DEFAULT_GROUP','spring:
   cloud:
