@@ -8,8 +8,12 @@ import com.wjl.constants.CacheConstants;
 import com.wjl.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
+import com.wjl.core.utils.ColorLog;
 import com.wjl.domain.dto.LoginUserDTO;
 import com.wjl.exception.ServiceException;
+import com.wjl.friend.domain.exam.dto.ExamListSortByTimeDTO;
+import com.wjl.friend.domain.exam.vo.ExamListVO;
+import com.wjl.friend.domain.exam.vo.ExamVO;
 import com.wjl.friend.domain.user.dto.UserExamListDTO;
 import com.wjl.friend.domain.user.vo.UserExamListVO;
 import com.wjl.friend.domain.user.vo.UserExamVO;
@@ -27,6 +31,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class UserExamService {
@@ -76,7 +81,7 @@ public class UserExamService {
             List<UserExamVO> list = new ArrayList<>();
             list.add(userExamVO);
             redisService.setCacheList(cacheKey, list);
-            redisService.expire(cacheKey, CacheConstants.USER_EXAM_EXPIRATION);
+            redisService.expire(cacheKey, CacheConstants.USER_EXAM_EXPIRATION, TimeUnit.MINUTES);
         }
     }
 
@@ -91,7 +96,7 @@ public class UserExamService {
 
         List<UserExamVO> list;
         if(redisService.hasKey(cacheKey)){
-             list = redisService.getCacheList(cacheKey, UserExamVO.class);
+            list = redisService.getCacheList(cacheKey, UserExamVO.class);
         }
         else{
             //从数据库获取
@@ -100,9 +105,12 @@ public class UserExamService {
             List<UserExam> tmp = userExamMapper.selectList(new LambdaQueryWrapper<UserExam>()
                     .eq(UserExam::getUserId, userId)
             );
+            if(tmp.isEmpty()){
+                return null;
+            }
             list = BeanCopyUtil.copyListProperties(tmp, UserExamVO::new);
             redisService.setCacheList(cacheKey, list);
-            redisService.expire(cacheKey, CacheConstants.USER_EXAM_EXPIRATION);
+            redisService.expire(cacheKey, CacheConstants.USER_EXAM_EXPIRATION, TimeUnit.MINUTES);
         }
 
         PageInfo<UserExamVO> pageInfo = new PageInfo<>(list);
@@ -113,5 +121,34 @@ public class UserExamService {
         userExamListVO.setPages(pageInfo.getPages());
 
         return userExamListVO;
+    }
+
+    public ExamListVO getExamListSortByTime(ExamListSortByTimeDTO dto){
+        ExamListVO examListVO = new ExamListVO();
+
+        Integer pageNum = dto.getPageNum();
+        Integer pageSize = CommonConstants.PAGE_SIZE;
+        Integer option = dto.getOption();
+        String cacheKey;
+        switch(option){
+            case 0:
+                cacheKey = CacheConstants.EXAM_UNSTART;
+                break;
+            case 1:
+                cacheKey = CacheConstants.EXAM_UNFINISH;
+                break;
+            case 2:
+                cacheKey = CacheConstants.EXAM_FINISHED;
+                break;
+            default:
+                throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+        }
+        List<ExamVO> examVOs = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * pageNum - 1, ExamVO.class);
+
+        examListVO.setList(examVOs);
+        examListVO.setPageNum(pageNum);
+        examListVO.setPageSize(pageSize);
+
+        return examListVO;
     }
 }

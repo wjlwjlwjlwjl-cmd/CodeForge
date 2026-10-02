@@ -20,6 +20,7 @@
         <module>code-forge-common-security</module>
         <module>code-forge-common-domain</module>
         <module>code-forge-common-message</module>
+        <module>code-forge-common-es</module>
     </modules>
 
     <properties>

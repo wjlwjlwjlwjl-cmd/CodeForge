@@ -1,4 +1,12 @@
 package com.wjl.friend.domain.exam.vo;
 
-public class ExamListVO {
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+public class ExamListVO{
+    private Integer pageSize;
+    private Integer pageNum;
+    private List<ExamVO> list;
 }

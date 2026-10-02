@@ -2,12 +2,15 @@ package com.wjl.friend.controller.user;
 
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.domain.R;
+import com.wjl.friend.domain.exam.dto.ExamListSortByTimeDTO;
+import com.wjl.friend.domain.exam.vo.ExamListVO;
 import com.wjl.friend.domain.user.dto.UserExamListDTO;
 import com.wjl.friend.domain.user.vo.UserExamListVO;
 import com.wjl.friend.service.user.UserExamService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -18,6 +21,7 @@ public class UserExamController {
     private UserExamService userExamService;
 
     @PostMapping("/signUp")
+    @Operation(description = "C 端用户报名竞赛")
     public R<Void> signUp(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, Long examId){
         userExamService.signUp(token,examId);
         return R.success();
@@ -27,5 +31,11 @@ public class UserExamController {
     @Operation(description = "获取用户报名的所有竞赛")
     public R<UserExamListVO> getUserExamList(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, UserExamListDTO dto){
         return R.success(userExamService.getUserExamList(token, dto));
+    }
+
+    @GetMapping("/list/queue")
+    @Operation(description = "根据时间划分获取竞赛列表：0-未开始的竞赛 1-开始但未结束的竞赛 2-已经结束的竞赛")
+    public R<ExamListVO> getExamListSortByTime(@Validated ExamListSortByTimeDTO dto){
+        return R.success(userExamService.getExamListSortByTime(dto));
     }
 }

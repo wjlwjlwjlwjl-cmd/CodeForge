@@ -6,11 +6,15 @@ import com.wjl.core.utils.ColorLog;
 import com.wjl.exception.ServiceException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.validation.BeanPropertyBindingResult;
+import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+
+import java.beans.BeanProperty;
 
 @RestControllerAdvice
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
@@ -51,7 +55,7 @@ public class GlobalExceptionHandler {
         return R.error(ResultCode.FAILED.getCode(), ResultCode.FAILED.getMsg());
     }
 
-    // @RequestBody 参数校验失败 @Valid
+    // @RequestBody 参数校验失败
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public R<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
         String uri = request.getRequestURI();
@@ -59,11 +63,19 @@ public class GlobalExceptionHandler {
         return R.error(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
     }
 
+    // @Validated 绑定失败
+    @ExceptionHandler(BindException.class)
+    public R<?> handleBindException(BindException e, HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        ColorLog.debug("BindException: {}, URI: {}", e.getMessage(), uri);
+        return R.error(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+    }
+
     // 兜底捕获所有其他异常
     @ExceptionHandler(Exception.class)
     public R<?> handleException(Exception e, HttpServletRequest request) {
         String uri = request.getRequestURI();
-        ColorLog.error("Exception: {}, URI: {}", e.getMessage(), uri);
+        ColorLog.debug("Exception: {}, URI: {}", e.getMessage(), uri);
         return R.error(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
     }
 }
