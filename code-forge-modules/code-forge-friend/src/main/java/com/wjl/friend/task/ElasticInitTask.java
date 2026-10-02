@@ -7,13 +7,12 @@ import com.wjl.friend.entity.elasticsearch.QuestionDocument;
 import com.wjl.friend.entity.question.Question;
 import com.wjl.friend.mapper.question.QuestionMapper;
 import com.wjl.friend.repository.elasticsearch.QuestionRepository;
-import org.apache.ibatis.annotations.Mapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
+import java.awt.*;
 import java.util.List;
 
 /**
@@ -21,7 +20,7 @@ import java.util.List;
  */
 @Component
 public class ElasticInitTask {
-    @Mapper
+    @Autowired
     private QuestionMapper questionMapper;
 
     @Autowired
@@ -31,6 +30,9 @@ public class ElasticInitTask {
     @EventListener(ApplicationReadyEvent.class)
     public void importElasticData(){
         ColorLog.info("开始导入 MySQL 题目数据");
+
+        questionRepository.deleteAll();
+
         //题目采取分页的方式导入
         int pageNum = 1;
         int pageSize = 100;
@@ -41,7 +43,6 @@ public class ElasticInitTask {
             if(questions == null || questions.isEmpty()){
                 break;
             }
-
             List<QuestionDocument> questionDocuments = BeanCopyUtil.copyListProperties(questions, QuestionDocument::new);
             questionRepository.saveAll(questionDocuments);
             if(questions.size() < pageSize){
@@ -59,14 +60,14 @@ public class ElasticInitTask {
     "mappings": {
       "properties": {
         "id": {
-          "type": "long"
+          "type": "long"，作为最后结果返回
         },
         "title": {
-          "type": "text", 倒排索引
+          "type": "text", 倒排索引，命中分数为3
           "analyzer": "smartcn"
         },
         "content": {
-          "type": "text", 倒排索引
+          "type": "text", 倒排索引，命中分数为1
           "analyzer": "smartcn"
         },
         "difficulty": {

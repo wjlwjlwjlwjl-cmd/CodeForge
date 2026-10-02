@@ -8,6 +8,10 @@ public class CacheUtil {
         return CacheConstants.QUESTION_LIST_PAGE_PREFIX + pageNum;
     }
 
+    public static String getQuestionKey(Long qId){
+        return CacheConstants.QUESTION_PREFIX + qId;
+    }
+
     public static String getExamListPageKey(int pageNum){
         return CacheConstants.EXAM_LIST_PAGE_PREFIX + pageNum;
     }

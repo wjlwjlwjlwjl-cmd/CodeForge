@@ -1,10 +1,12 @@
 package com.wjl.friend.entity.elasticsearch;
 
+import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.elasticsearch.annotations.Document;
 import org.springframework.data.elasticsearch.annotations.Field;
 import org.springframework.data.elasticsearch.annotations.FieldType;
 
+@Data
 @Document(
         indexName="oj_question", //这里交给 springboot 创建索引
         createIndex = true

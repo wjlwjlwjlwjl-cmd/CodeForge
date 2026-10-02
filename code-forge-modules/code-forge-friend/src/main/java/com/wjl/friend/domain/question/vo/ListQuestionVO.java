@@ -1,4 +1,4 @@
-package com.wjl.system.domain.question.vo;
+package com.wjl.friend.domain.question.vo;
 
 import com.wjl.domain.vo.BasePageVO;
 import io.swagger.v3.oas.annotations.media.Schema;
