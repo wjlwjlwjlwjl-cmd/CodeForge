@@ -16,6 +16,7 @@ public class User {
     private Integer sex;
     private String email;
     private String password; //带盐值的哈希
+    private String avatarName; //oss 文件名
     private String schoolName;
     private String majorName;
     private String introduce;

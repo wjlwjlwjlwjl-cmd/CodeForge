@@ -4,6 +4,10 @@ server:
 spring:
     application:
         name: code-forge-friend
+    servlet:
+        multipart:
+            max-file-size: 2MB,
+            max-request-size: 2MB
     profiles:
         active: ${RUN_ENV}
     cloud:
