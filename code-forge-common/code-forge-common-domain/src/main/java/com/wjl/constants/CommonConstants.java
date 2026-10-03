@@ -30,4 +30,18 @@ public class CommonConstants {
      * 用户头像尺寸限制
      */
     public static final long MAX_SIZE = 2 * 1024 * 1024;
+
+    /**
+     * docker-java 容器端口选择最大重试次数
+     */
+    public static final Integer MAX_RETRY = 10;
+
+    /**
+     * docker-java 容器端口随机尝试范围
+     */
+    public static final Integer MAX_PORT = 20000;
+    public static final Integer MIN_PORT = 40000;
+
+    public static final String CPP_IMAGE = "gcc:13-bookworm";
+    public static final String JAVA_IMAGE = "eclipse-temurin:17-jdk-jammy";
 }

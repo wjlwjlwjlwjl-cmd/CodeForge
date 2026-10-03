@@ -1,0 +1,7 @@
+oj:
+  docker:
+    host: tcp://localhost:2375
+    timeout: 30s
+    images:
+      java: openjdk:17-jdk
+      cpp: gcc:late
