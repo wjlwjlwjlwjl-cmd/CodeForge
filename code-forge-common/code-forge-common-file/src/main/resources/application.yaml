@@ -1,0 +1,6 @@
+aliyun:
+  oss:
+    endpoint: https://oss-cn-shanghai.aliyuncs.com
+    access-key-id: LTAI5t6bk8JXdsoRJEWP6R6b
+    access-key-secret: IP8wF8NBfCewROnpSJCwWHhs0PDFRI
+    bucket-name: code-forge

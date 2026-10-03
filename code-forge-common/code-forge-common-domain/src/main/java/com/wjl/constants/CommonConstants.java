@@ -21,4 +21,8 @@ public class CommonConstants {
      * 页大小
      */
     public final static int PAGE_SIZE = 10;
+    /**
+     * oss 预签名过期时间
+     */
+    public final static long PRESIGNED_SIGNATURE_EXPIRE_SECONDS = 300 * 1000L;
 }
