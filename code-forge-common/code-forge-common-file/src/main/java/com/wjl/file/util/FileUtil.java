@@ -22,6 +22,13 @@ public class FileUtil {
     @Value("${aliyun.oss.bucket-name}")
     private String bucketName;
 
+    public Boolean exists(String fileName){
+        if(fileName == null || fileName.isEmpty()){
+            return false;
+        }
+        return ossClient.doesObjectExist(bucketName, fileName);
+    }
+
     /**
      * 上传文件
      *
@@ -54,6 +61,7 @@ public class FileUtil {
      * @param fileName 需要删除的文件名
      */
     public void deleteFile(String fileName) {
+        if(fileName == null || fileName.isBlank()) return;
         ossClient.deleteObject(bucketName, fileName);
     }
 
@@ -64,6 +72,8 @@ public class FileUtil {
      * @param file 需要更新文件内容
      */
     public void updateFile(String fileName, MultipartFile file) {
+        if(fileName == null || fileName.isBlank()) return;
+        if(file == null || file.isEmpty()) return;
         try{
             ossClient.putObject(bucketName, fileName, file.getInputStream());
         }
@@ -78,6 +88,7 @@ public class FileUtil {
      * @param objectName 需要获取的文件名称
      */
     public String getPresignedUrl(String objectName){
+        if(objectName == null || objectName.isBlank()) return null;
         Date expiration = new Date(System.currentTimeMillis() + CommonConstants.PRESIGNED_SIGNATURE_EXPIRE_SECONDS);
         URL url = ossClient.generatePresignedUrl(bucketName, objectName, expiration);
         return url.toString();

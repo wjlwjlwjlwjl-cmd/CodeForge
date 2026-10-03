@@ -3,6 +3,7 @@ package com.wjl.friend.controller.user;
 import com.wjl.constants.SecurityConstants;
 import com.wjl.core.domain.R;
 import com.wjl.core.utils.ColorLog;
+import com.wjl.domain.vo.AvatarUploadVO;
 import com.wjl.friend.domain.user.dto.UserAddInfoDTO;
 import com.wjl.friend.domain.user.dto.UserLoginDTO;
 import com.wjl.friend.domain.user.dto.UserRegisterDTO;
@@ -13,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 模块登录后，可以允许进行竞赛的报名操作
@@ -59,7 +61,23 @@ public class UserController {
     @Operation(description = "获取用户详细信息")
     public R<UserDetailVO> detail(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         UserDetailVO userDetailVO = userService.detail(token);
-        ColorLog.info(userDetailVO.getIntroduce());
         return R.success(userDetailVO);
+    }
+
+    ////////////// 待测试接口 ////////////////
+    @GetMapping("/avatar")
+    @Operation(description = "获取用户头像预签名url，前端自行在规定时间内到oss完成文件下载")
+    public R<String> avatar(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
+        return R.success(userService.getAvatarUrl(token));
+    }
+
+    // 前端完成三层校验：
+    // 1. 文件大小限制
+    // 2. 文件类型限制  "image/jpeg", "image/jpg", "image/png", "image/webp"
+    // 3. 文件尺寸限制 200×200 ~ 2000×2000
+    @PostMapping("/avatar/upload")
+    @Operation(description = "上传用户头像")
+    public R<AvatarUploadVO> avatarUpload(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, MultipartFile avatar){
+        return R.success(userService.avatarUpload(token, avatar));
     }
 }

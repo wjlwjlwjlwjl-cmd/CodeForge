@@ -5,11 +5,6 @@ package com.wjl.constants;
  */
 public class CacheConstants {
     /**
-     * 缓存分割符
-     */
-    public final static String CACHE_SPLIT_COLON = ":";
-
-    /**
      * 缓存有效期，默认720（分钟），12h
      */
     public final static long EXPIRATION = 720;
