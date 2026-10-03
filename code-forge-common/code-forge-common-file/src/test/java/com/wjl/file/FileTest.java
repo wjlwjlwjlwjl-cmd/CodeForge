@@ -45,4 +45,10 @@ public class FileTest {
             ColorLog.error(e.getMessage());
         }
     }
+
+    @Test
+    public void testGetPresignedUrl(){
+        String fileName = "3e33fd48-04d3-4b09-b1bd-7e08654b7d81.png";
+        ColorLog.info(fileUtil.getPresignedUrl(fileName));
+    }
 }

@@ -88,6 +88,7 @@ CREATE TABLE tb_user (
     sex tinyint comment '1: 男  0：女',
     email varchar(80) NOT NULL comment '邮箱' UNIQUE KEY,
     password varchar(60) NOT NULL comment '密码',
+    avatar_name varchar(100) default null comment '头像oss文件名',
     school_name varchar(20) default null comment '学校',
     major_name varchar(20) default null comment '专业',
     introduce varchar(100) default "这个人很懒，什么都没有留下" comment '个人介绍',

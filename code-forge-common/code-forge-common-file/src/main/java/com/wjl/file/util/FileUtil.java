@@ -1,6 +1,8 @@
 package com.wjl.file.util;
 
 import com.aliyun.oss.OSS;
+import com.wjl.constants.CacheConstants;
+import com.wjl.constants.CommonConstants;
 import com.wjl.core.utils.ColorLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,8 +72,14 @@ public class FileUtil {
         }
     }
 
-    public void getPresignedUrl(String objectName){
-        Date expiration = new Date(System.currentTimeMillis() +  * 1000L);
-        URL url = ossClient.generatePresignedUrl(bucketName, objectName, )
+    /**
+     * 前段获取预签名，有前端自行请求oss，超时时间5分钟
+     *
+     * @param objectName 需要获取的文件名称
+     */
+    public String getPresignedUrl(String objectName){
+        Date expiration = new Date(System.currentTimeMillis() + CommonConstants.PRESIGNED_SIGNATURE_EXPIRE_SECONDS);
+        URL url = ossClient.generatePresignedUrl(bucketName, objectName, expiration);
+        return url.toString();
     }
 }
