@@ -88,7 +88,14 @@ security:
   elasticsearch:
     uris: http://localhost:9200
     username: elastic
-    password: wjl@123','25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
+    password: wjl@123','25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
+
+    ('share-oss-test.yaml','DEFAULT_GROUP','aliyun:
+  oss:
+    endpoint: https://oss-cn-shanghai.aliyuncs.com
+    access-key-id: {Access Id}
+    access-key-secret: {Access Key}
+    bucket-name: code-forge',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
 
 INSERT INTO tenant_info (kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES
     ('1','code-forge-test','code-forge-test','Test Environment','nacos',unix_timestamp()*1000,unix_timestamp()*1000);
