@@ -2,6 +2,8 @@ package com.wjl.file.config;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.wjl.core.utils.ColorLog;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +16,11 @@ public class OSSConfig {
     private String accessKeyId;
     @Value("${aliyun.oss.access-key-secret}")
     private String accessKeySecret;
+
+    @PostConstruct
+    public void info(){
+        ColorLog.info("AccessId: {}, AccessKeySecret: {}", accessKeyId, accessKeySecret);
+    }
 
     @Bean
     public OSS ossClient() {

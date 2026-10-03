@@ -222,13 +222,13 @@ public class UserService {
         try{
             java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(avatar.getInputStream());
             if (image == null) {
-                throw new RuntimeException("不是有效图片");
+                return AvatarUploadVO.getErrVO(AvatarErrMsg.AVATAR_EMPTY);
             }
             int w = image.getWidth();
             int h = image.getHeight();
             // 限制尺寸 200~2000
             if (w < 200 || h < 200 || w > 2000 || h > 2000) {
-                throw new RuntimeException("图片尺寸需在200×200 ~ 2000×2000");
+                return AvatarUploadVO.getErrVO(AvatarErrMsg.AVATAR_SIZE_ERR);
             }
         }
         catch(IOException e){
@@ -236,7 +236,7 @@ public class UserService {
         }
 
         String cacheKey = CacheUtil.getUserInfoCKey(userId);
-        String avatarName = avatar.getName();
+        String avatarName = null;
         if(redisService.hasKey(cacheKey)){
             User user = redisService.getCacheObject(cacheKey, User.class);
             avatarName = user.getAvatarName();

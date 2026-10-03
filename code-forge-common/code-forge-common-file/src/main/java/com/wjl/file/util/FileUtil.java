@@ -36,7 +36,6 @@ public class FileUtil {
      * @return 文件名称
      */
     public String uploadFile(MultipartFile file) {
-        ColorLog.info(bucketName);
         if(file == null) return null;
         String originalFilename = file.getOriginalFilename();
 
