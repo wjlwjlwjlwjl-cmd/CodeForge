@@ -3,11 +3,8 @@ package com.wjl.docker.util;
 import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.CreateContainerResponse;
-import com.github.dockerjava.api.command.InspectImageResponse;
-import com.github.dockerjava.api.command.PullImageResultCallback;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
-import com.wjl.constants.CommonConstants;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.docker.domain.CodeContainerDTO;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,8 +24,6 @@ public class ContainerUtil {
     @Autowired
     private DockerClient dockerClient;
 
-    public final Random random = new Random();
-
     public Boolean containerExists(String containerId){
         try{
             dockerClient.inspectContainerCmd(containerId).exec();
@@ -39,59 +34,48 @@ public class ContainerUtil {
         }
     }
 
-    public CodeContainerDTO createContainer(String hostDir, String containerDir, String image) {
-        CodeContainerDTO ret = new CodeContainerDTO();
-
-        for (int retry = 0; retry < CommonConstants.MAX_RETRY; retry++) {
-            //尝试寻找 MAX_RETRY 次
-            int hostLocalPort = getRandomAvailablePort();
-            String containerId = null;
-            try {
-                // 目录绑定，显式读写模式
-                Bind bindMount = new Bind(hostDir, new Volume(containerDir), AccessMode.rw);
-
-                Ports.Binding binding = new Ports.Binding("0.0.0.0", String.valueOf(hostLocalPort));
-                PortBinding portBinding = new PortBinding(
-                        binding,
-                        ExposedPort.tcp(8080)
+    /**
+     * 创建容器
+     *
+     * @param hostDir 宿主机目录
+     * @param image 使用的镜像（Java、C++）
+     * @return 容器 ContainerId
+     */
+    public String createContainer(String hostDir, String image, String containerName) {
+        Volume workspace = new Volume("/workspace");
+        HostConfig hostConfig = HostConfig.newHostConfig()
+                .withBinds(new Bind(hostDir, workspace))
+                .withNetworkMode("none") // 禁止容器访问外部网络
+                .withMemory(256L * 1024 * 1024) // 内存限制：256 MiB
+                .withNanoCPUs(1_000_000_000L) // CPU 限制：1 核
+                .withPidsLimit(64L) // 限制进程数量
+                .withCapDrop(Capability.ALL) // 移除 Linux capabilities
+                .withSecurityOpts(
+                        java.util.List.of("no-new-privileges:true")// 禁止提权
                 );
 
-                HostConfig hostConfig = new HostConfig()
-                        .withBinds(bindMount)
-                        .withPortBindings(portBinding)
-                        .withAutoRemove(true)
-                        .withRestartPolicy(RestartPolicy.noRestart());
+        CreateContainerResponse response = dockerClient
+                .createContainerCmd(image)
+                .withName(containerName)
+                .withHostConfig(hostConfig)
+                .withWorkingDir("/workspace")
+                // 启动后保持容器运行，等待后续 exec 编译和运行
+                .withCmd("sh", "-c", "while true; do sleep 3600; done")
+                .withTty(false)
+                .withStdinOpen(false)
+                .exec();
 
-                CreateContainerResponse resp = dockerClient.createContainerCmd(image)
-                        .withName("oj-" + image)
-                        .withUser("root")
-                        .withHostConfig(hostConfig)
-                        .withExposedPorts(ExposedPort.tcp(8080))
-                        .withWorkingDir(containerDir)
-                        .withEnv("PWD=" + containerDir)
-                        .withCmd(
-                        )
-                        .exec();
+        return response.getId();
+    }
 
-                containerId = resp.getId();
-                dockerClient.startContainerCmd(containerId).exec();
-
-                ret.setContainId(containerId);
-                ret.setHostLocalPort(hostLocalPort);
-                return ret;
-                // 服务没就绪，清理容器，进入下一次重试
-            } catch (Exception e) {
-                // 异常：清理残留容器
-                if (containerId != null) {
-                    try {
-                        dockerClient.removeContainerCmd(containerId).withForce(true).exec();
-                    } catch (Exception ignore) {
-                    }
-                }
-                continue;
-            }
+    public Boolean startContainer(String containerId){
+        try{
+            dockerClient.startContainerCmd(containerId).exec();
+            return true;
         }
-        return null;
+        catch(NotFoundException e){
+            return false;
+        }
     }
 
     public void stopAndRemoveContainer(String containerId) {
@@ -142,20 +126,6 @@ public class ContainerUtil {
                 .awaitCompletion(10, TimeUnit.MINUTES);   // 加超时，防止网络卡死
 
         ColorLog.info("成功拉取镜像：{}", imageName);
-    }
-
-
-    private int getRandomAvailablePort() {
-        //每次寻找，随机找100个端口
-        for (int i = 0; i < 100; i++) {
-            int port = random.nextInt(MAX_PORT - MIN_PORT + 1) + MIN_PORT;
-            try (ServerSocket serverSocket = new ServerSocket(port, 1, InetAddress.getByName("127.0.0.1"))) {
-                return port;
-            } catch (Exception ignored) {
-            }
-        }
-        ColorLog.error("无法获取可用端口，尝试100次均失败");
-        return -1;
     }
 
     private Boolean imageExists(String imageName) {

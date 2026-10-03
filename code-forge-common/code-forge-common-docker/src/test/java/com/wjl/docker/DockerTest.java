@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.util.UUID;
 
 @SpringBootTest
 public class DockerTest {
@@ -55,5 +57,16 @@ public class DockerTest {
     @Test
     public void testImagePull() throws InterruptedException {
         containerUtil.pullImage(CommonConstants.CPP_IMAGE);
+    }
+
+    @Test
+    public void testContainer(){
+        String suffix = UUID.randomUUID().toString().substring(0, 8);
+        String containerId = containerUtil.createContainer("/data/" + suffix, CommonConstants.CPP_IMAGE, "CPP" + suffix);
+        ColorLog.info(containerUtil.startContainer(containerId).toString());
+
+        suffix = UUID.randomUUID().toString().substring(0, 8);
+        containerId = containerUtil.createContainer("/data/" + suffix, CommonConstants.JAVA_IMAGE, "CPP" + suffix);
+        ColorLog.info(containerUtil.startContainer(containerId).toString());
     }
 }
