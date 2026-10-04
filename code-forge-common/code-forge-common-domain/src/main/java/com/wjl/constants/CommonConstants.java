@@ -51,7 +51,8 @@ public class CommonConstants {
     /**
      * 容器目录绑定
      */
-    public static final String HOST_DIR = "/data/oj/judge/java/%d";
+    //public static final String HOST_DIR = System.getProperty("user.dir") + "/user-code/java/" + "%d";
+    public static final String HOST_DIR = "/data/oj/java/%d";
     public static final String CONTAINER_DIR = "/workspace/java/%d";
     public static final String CONTAINER_NAME = "oj-java-%d";
 
@@ -59,7 +60,7 @@ public class CommonConstants {
      * Java 代码的编译模版与运行模版
      */
     public static final String JAVA_COMPILE_TEMPLATE =
-            "javac -encoding UTF-8 -d /workspace/java/%d /workspace/java/%d/Main.java";
+            "cd /workspace/java/%d && javac -encoding UTF-8 Main.java";
     public static final String JAVA_RUNTIME_TEMPLATE = """
         java \\
           -XX:+UseSerialGC \\

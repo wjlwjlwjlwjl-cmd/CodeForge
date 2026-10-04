@@ -37,6 +37,8 @@ public final class ColorLog {
     private static final String MAGENTA = "\033[35m";
     private static final String CYAN    = "\033[36m";
     private static final String GRAY    = "\033[90m";
+    /** 纯白色（亮白） */
+    private static final String WHITE   = "\033[97m";
 
     // ===================== 日志级别 =====================
     private static final String LEVEL_DEBUG = "DEBUG";
@@ -169,7 +171,7 @@ public final class ColorLog {
         String content = format(message, args);
 
         String prefix = String.format("[%s] [%s] [%s] ", timestamp, level, threadName);
-        String full = wrap(prefix, color) + wrap(content, GRAY);
+        String full = wrap(prefix, color) + wrap(content, WHITE);
 
         if (toError) {
             System.err.println(full);

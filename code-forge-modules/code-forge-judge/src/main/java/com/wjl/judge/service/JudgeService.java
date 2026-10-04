@@ -15,9 +15,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import static com.wjl.constants.CommonConstants.HOST_DIR;
 
 @Service
 public class JudgeService {
@@ -35,16 +40,22 @@ public class JudgeService {
         List<TestCaseDTO> testCases = dto.getTestCases();
         Long submitId = dto.getSubmitId();
 
-        String hostDir = String.format(CommonConstants.HOST_DIR, submitId);
+        String hostDir = String.format(HOST_DIR, submitId);
         String containerDir = String.format(CommonConstants.CONTAINER_DIR, submitId);
         String containerName = String.format(CommonConstants.CONTAINER_NAME, submitId);
-        String compileCmd = String.format(CommonConstants.JAVA_COMPILE_TEMPLATE, submitId, submitId);
+        String compileCmd = String.format(CommonConstants.JAVA_COMPILE_TEMPLATE, submitId);
         String execCmd = String.format(CommonConstants.JAVA_RUNTIME_TEMPLATE, submitId);
 
         //将源代码写入目录
         Path hostDirPath = Paths.get(hostDir);
         Path sourceFilePath = hostDirPath.resolve(CommonConstants.SOURCE_CODE);
-
+        try{
+            Files.createDirectories(sourceFilePath.getParent());
+            Files.writeString(sourceFilePath, sourceCode, StandardCharsets.UTF_8);
+        }
+        catch(IOException e){
+            throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
+        }
 
         String containerId = null;
         try{
@@ -56,18 +67,20 @@ public class JudgeService {
 
             ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, CommonConstants.COMPILE_TIMEOUT_MS);
 
+            //超时错误
             if(!containerExecResultDTO.getSuccess()){
                 judgeResponseDTO.setStatus(JudgeStatus.COMPILE_TIMEOUT);
                 judgeResponseDTO.setCompileResult(JudgeStatus.COMPILE_TIMEOUT.getMsg());
                 return judgeResponseDTO;
             }
-            //判断是否成功编译
+
+            //编译错误
             Long exitCode = containerExecResultDTO.getExitCode();
             if(exitCode == null || exitCode != 0){
-                //编译错误
                 String errMsg = containerExecResultDTO.getStderr();
                 judgeResponseDTO.setStatus(JudgeStatus.COMPILE_ERROR);
                 judgeResponseDTO.setCompileResult(errMsg);
+                return judgeResponseDTO;
             }
 
             //编译成功，开始执行运行逻辑
@@ -78,7 +91,7 @@ public class JudgeService {
         }
         finally {
             //无论结果如何，都在判题逻辑结束之后，删除容器
-            //dockerRunner.removeContainer(containerId);
+            dockerRunner.removeContainer(containerId);
         }
 
         judgeResponseDTO.setStatus(JudgeStatus.ACCEPTED);

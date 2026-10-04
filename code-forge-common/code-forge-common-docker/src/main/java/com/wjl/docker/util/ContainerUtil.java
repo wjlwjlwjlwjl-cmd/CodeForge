@@ -37,12 +37,12 @@ public class ContainerUtil {
     public String createContainer(String hostDir, String containerDir, String image, String containerName) {
         Volume workspace = new Volume(containerDir);
         HostConfig hostConfig = HostConfig.newHostConfig()
-                .withBinds(new Bind(hostDir, workspace))
+                .withBinds(new Bind(hostDir, workspace, AccessMode.rw))
                 .withNetworkMode("none") // 禁止容器访问外部网络
                 .withMemory(256L * 1024 * 1024) // 内存限制：256 MiB
                 .withNanoCPUs(1_000_000_000L) // CPU 限制：1 核
                 .withPidsLimit(64L) // 限制进程数量
-                .withCapDrop(Capability.ALL) // 移除 Linux capabilities
+                .withCapAdd(Capability.DAC_OVERRIDE) //保留最基本的写权限
                 .withSecurityOpts(
                         java.util.List.of("no-new-privileges:true")// 禁止提权
                 );
