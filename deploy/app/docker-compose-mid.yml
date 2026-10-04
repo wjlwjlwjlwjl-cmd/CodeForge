@@ -95,9 +95,9 @@ services:
       timeout: 5s
       retries: 10
 
-  elasticsearch:
+  code-forge-elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.5.3
-    container_name: elasticsearch
+    container_name: code-forge-elasticsearch
     restart: unless-stopped
     environment:
       - discovery.type=single-node
@@ -123,13 +123,13 @@ services:
     networks:
       - codeforge_network
 
-  kibana:
+  code-forge-kibana:
     image: docker.elastic.co/kibana/kibana:8.5.3
-    container_name: kibana
+    container_name: code-forge-kibana
     restart: unless-stopped
 
     depends_on:
-      elasticsearch:
+      code-forge-elasticsearch:
         condition: service_healthy
 
     environment:
@@ -139,7 +139,20 @@ services:
       - "5601:5601"
     networks:
       - codeforge_network
-      
+
+  code-forge-rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: code-forge-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: wjl
+      RABBITMQ_DEFAULT_PASS: wjl@123
+    restart: unless-stopped
+    networks:
+      - codeforge_network
+
 volumes:
   es_data:
 
