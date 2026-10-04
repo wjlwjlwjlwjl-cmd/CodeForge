@@ -9,7 +9,6 @@ import lombok.Getter;
 @Getter
 @Schema (description = "统一状态码")
 public enum ResultCode {
-
     /** 定义状态码 */
 
     //操作唱功

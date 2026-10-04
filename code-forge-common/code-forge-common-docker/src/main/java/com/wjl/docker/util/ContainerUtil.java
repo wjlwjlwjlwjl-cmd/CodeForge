@@ -34,8 +34,8 @@ public class ContainerUtil {
      * @param image 使用的镜像（Java、C++）
      * @return 容器 ContainerId
      */
-    public String createContainer(String hostDir, String image, String containerName) {
-        Volume workspace = new Volume("/workspace");
+    public String createContainer(String hostDir, String containerDir, String image, String containerName) {
+        Volume workspace = new Volume(containerDir);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(hostDir, workspace))
                 .withNetworkMode("none") // 禁止容器访问外部网络

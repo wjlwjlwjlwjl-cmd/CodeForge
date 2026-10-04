@@ -25,7 +25,7 @@ public class DockerRunnerTest {
         String randomSuffix = String.format("%8d", random.nextInt(1_0000_0000)).trim();
         String command = "cat /etc/*release*";
 
-        String containerId = containerUtil.createContainer("/data/" + randomSuffix, CommonConstants.JAVA_IMAGE, "java-" + randomSuffix);
+        String containerId = containerUtil.createContainer("/data/" + randomSuffix, "/workspace/" + randomSuffix, CommonConstants.JAVA_IMAGE, "java-" + randomSuffix);
         containerUtil.startContainer(containerId);
         ContainerExecResultDTO dto = dockerRunner.execute(containerId, command, 1000);
         ColorLog.info("success: {}", dto.getSuccess().toString());

@@ -21,14 +21,11 @@ public class DockerRunner {
     @Autowired
     private DockerClient dockerClient;
 
-    @Autowired
-    private ContainerUtil containerUtil;
-
     /**
      *
      * @param containerId 容器id
      * @param command 需要执行的命令
-     * @param timeoutMs 超时时间限制
+     * @param timeoutMs 超时时间限制（时间颗粒度为毫秒）
      * @return 容器命令执行结果（包括 stderr、stdout、退出码）
      * @throws InterruptedException docker-java异常
      */

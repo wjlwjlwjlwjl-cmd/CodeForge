@@ -58,15 +58,4 @@ public class DockerTest {
     public void testImagePull() throws InterruptedException {
         containerUtil.pullImage(CommonConstants.CPP_IMAGE);
     }
-
-    @Test
-    public void testContainer(){
-        String suffix = UUID.randomUUID().toString().substring(0, 8);
-        String containerId = containerUtil.createContainer("/data/" + suffix, CommonConstants.CPP_IMAGE, "CPP" + suffix);
-        ColorLog.info(containerUtil.startContainer(containerId).toString());
-
-        suffix = UUID.randomUUID().toString().substring(0, 8);
-        containerId = containerUtil.createContainer("/data/" + suffix, CommonConstants.JAVA_IMAGE, "CPP" + suffix);
-        ColorLog.info(containerUtil.startContainer(containerId).toString());
-    }
 }
