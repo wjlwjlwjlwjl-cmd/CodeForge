@@ -6,18 +6,11 @@ import com.github.dockerjava.api.command.CreateContainerResponse;
 import com.github.dockerjava.api.exception.NotFoundException;
 import com.github.dockerjava.api.model.*;
 import com.wjl.core.utils.ColorLog;
-import com.wjl.docker.domain.CodeContainerDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.net.InetAddress;
-import java.net.ServerSocket;
 import java.util.List;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
-
-import static com.wjl.constants.CommonConstants.MAX_PORT;
-import static com.wjl.constants.CommonConstants.MIN_PORT;
 
 @Component
 public class ContainerUtil {
@@ -69,12 +62,13 @@ public class ContainerUtil {
     }
 
     public Boolean startContainer(String containerId){
-        try{
+        try {
             dockerClient.startContainerCmd(containerId).exec();
             return true;
-        }
-        catch(NotFoundException e){
-            return false;
+        } catch (RuntimeException e) {
+            // 创建成功但启动失败时，避免遗留容器
+            stopAndRemoveContainer(containerId);
+            throw e;
         }
     }
 
