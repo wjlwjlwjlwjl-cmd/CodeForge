@@ -97,5 +97,18 @@ security:
     access-key-secret: {Access Key}
     bucket-name: code-forge',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
 
+    ('share-docker-test.yaml','DEFAULT_GROUP','oj:
+  docker:
+    host: tcp://127.0.0.1:2375
+    timeout: 30s',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
+
+    ('share-rabbitmq-test.yaml','DEFAULT_GROUP','spring:
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: wjl
+    password: wjl@123
+    virtual-host: /',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
+
 INSERT INTO tenant_info (kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES
     ('1','code-forge-test','code-forge-test','Test Environment','nacos',unix_timestamp()*1000,unix_timestamp()*1000);
