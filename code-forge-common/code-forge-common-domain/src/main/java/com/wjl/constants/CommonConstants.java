@@ -52,9 +52,9 @@ public class CommonConstants {
      * 容器目录绑定
      */
     //public static final String HOST_DIR = System.getProperty("user.dir") + "/user-code/java/" + "%d";
-    public static final String HOST_DIR = "/data/oj/java/%d";
-    public static final String CONTAINER_DIR = "/workspace/java/%d";
-    public static final String CONTAINER_NAME = "oj-java-%d";
+    public static final String JAVA_HOST_DIR = "/data/oj/java/%d";
+    public static final String JAVA_CONTAINER_DIR = "/workspace/java/%d";
+    public static final String JAVA_CONTAINER_NAME = "oj-java-%d";
 
     /**
      * Java 代码的编译模版与运行模版
@@ -62,21 +62,25 @@ public class CommonConstants {
     public static final String JAVA_COMPILE_TEMPLATE =
             "cd /workspace/java/%d && javac -encoding UTF-8 Main.java";
     public static final String JAVA_RUNTIME_TEMPLATE = """
-        java \\
+        cd /workspace/java/%d && java \\
           -XX:+UseSerialGC \\
           -XX:TieredStopAtLevel=1 \\
           -Xss64m \\
-          -cp /workspace/java/%d Main < /workspace/input/1.in > /workspace/output/1.out""";
+          Main < input.txt""";
 
     /**
      * 编译超时和运行超时
      */
-    public static final long COMPILE_TIMEOUT_MS = 10_000L;
-    public static final long RUN_TIMEOUT_MS = 3_000L;
+    public static final long JAVA_COMPILE_TIMEOUT_MS = 10_000L;
+    public static final long JAVA_RUN_TIMEOUT_MS = 3_000L;
 
     /**
-     * 源码名和可执行文件名
+     * 源码名
      */
-    public static final String SOURCE_CODE = "Main.java";
-    public static final String OUTPUT_CODE = "Main";
+    public static final String JAVA_SOURCE_CODE = "Main.java";
+
+    /**
+     * 运行环境启动时间
+     */
+    public static final long JAVA_RUN_OVERHEAD_MS = 8_000L;
 }

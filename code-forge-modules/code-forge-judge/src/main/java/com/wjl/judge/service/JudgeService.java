@@ -1,28 +1,23 @@
 package com.wjl.judge.service;
 
-import com.wjl.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.docker.util.ContainerUtil;
 import com.wjl.exception.ServiceException;
-import com.wjl.judge.domain.dto.ContainerExecResultDTO;
-import com.wjl.judge.domain.dto.JudgeRequestDTO;
-import com.wjl.judge.domain.dto.JudgeResponseDTO;
-import com.wjl.judge.domain.dto.TestCaseDTO;
+import com.wjl.judge.domain.dto.*;
+import com.wjl.judge.domain.language.LanguageProfile;
 import com.wjl.judge.enums.JudgeStatus;
 import com.wjl.judge.infrastructure.DockerRunner;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
-
-import static com.wjl.constants.CommonConstants.HOST_DIR;
 
 @Service
 public class JudgeService {
@@ -31,24 +26,38 @@ public class JudgeService {
     @Autowired
     private DockerRunner dockerRunner;
 
-    public JudgeResponseDTO judge(JudgeRequestDTO dto) {
+    public JudgeResponseDTO judge(JudgeRequestDTO dto, LanguageProfile languageProfile) {
         validate(dto);
 
+        String image = languageProfile.getImage();
+        String hostDirTemplate = languageProfile.getHostDir();
+        String containerDirTemplate = languageProfile.getContainerDir();
+        String containerNameTemplate = languageProfile.getContainerName();
+        String sourceFileName = languageProfile.getSourceFileName();
+        String compileTemplate = languageProfile.getCompileTemplate();
+        String runtimeTemplate = languageProfile.getRuntimeTemplate();
+        long compileTimeoutMs = languageProfile.getCompileTimeoutMs();
+        long runTimeoutMs = languageProfile.getRunTimeoutMs();
+        long runOverheadMs = languageProfile.getRunOverheadMs();
+
         JudgeResponseDTO judgeResponseDTO = new JudgeResponseDTO();
+        List<CaseResultDTO> cases = new ArrayList<>();
+        judgeResponseDTO.setCaseResults(cases);
 
         String sourceCode = dto.getSourceCode();
         List<TestCaseDTO> testCases = dto.getTestCases();
         Long submitId = dto.getSubmitId();
 
-        String hostDir = String.format(HOST_DIR, submitId);
-        String containerDir = String.format(CommonConstants.CONTAINER_DIR, submitId);
-        String containerName = String.format(CommonConstants.CONTAINER_NAME, submitId);
-        String compileCmd = String.format(CommonConstants.JAVA_COMPILE_TEMPLATE, submitId);
-        String execCmd = String.format(CommonConstants.JAVA_RUNTIME_TEMPLATE, submitId);
+        String hostDir = String.format(hostDirTemplate, submitId);
+        String containerDir = String.format(containerDirTemplate, submitId);
+        String containerName = String.format(containerNameTemplate, submitId);
+        String compileCmd = String.format(compileTemplate, submitId);
+        String execCmd = String.format(runtimeTemplate, submitId);
+        long totalTimeLimit = runTimeoutMs + runOverheadMs;
 
         //将源代码写入目录
         Path hostDirPath = Paths.get(hostDir);
-        Path sourceFilePath = hostDirPath.resolve(CommonConstants.SOURCE_CODE);
+        Path sourceFilePath = hostDirPath.resolve(sourceFileName);
         try{
             Files.createDirectories(sourceFilePath.getParent());
             Files.writeString(sourceFilePath, sourceCode, StandardCharsets.UTF_8);
@@ -60,12 +69,12 @@ public class JudgeService {
         String containerId = null;
         try{
             //创建容器，启动容器，运行命令，收集结果
-            containerId = containerUtil.createContainer(hostDir, containerDir, CommonConstants.JAVA_IMAGE, containerName);
+            containerId = containerUtil.createContainer(hostDir, containerDir, image, containerName);
             if(!containerUtil.startContainer(containerId)){
                 throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
             }
 
-            ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, CommonConstants.COMPILE_TIMEOUT_MS);
+            ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, compileTimeoutMs);
 
             //超时错误
             if(!containerExecResultDTO.getSuccess()){
@@ -84,6 +93,65 @@ public class JudgeService {
             }
 
             //编译成功，开始执行运行逻辑
+            for(int i = 0; i < testCases.size(); i++){
+                CaseResultDTO caseResult = new CaseResultDTO();
+                caseResult.setCaseIndex(i + 1);
+
+                TestCaseDTO testCaseDTO = testCases.get(i);
+                String input = testCaseDTO.getInput();
+                String expectedOutput = normalize(testCaseDTO.getExpectedOutput());
+                caseResult.setExpectedOutput(expectedOutput);
+
+                Path inputPath = hostDirPath.resolve("input.txt");
+                try{
+                    Files.writeString(inputPath, input, StandardCharsets.UTF_8);
+                }
+                catch(IOException e){
+                    ColorLog.error("容器{}，输入测试用例 {input} 到文件失败", containerId, e.getMessage());
+                    throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
+                }
+
+                containerExecResultDTO = dockerRunner.execute(containerId, execCmd, totalTimeLimit);
+
+                //运行超时
+                if(!containerExecResultDTO.getSuccess()){
+                    caseResult.setStderr(containerExecResultDTO.getStderr());
+                    cases.add(caseResult);
+
+                    judgeResponseDTO.setStatus(JudgeStatus.TIME_LIMIT_EXCEEDED);
+                    judgeResponseDTO.setCaseResults(cases);
+                    return judgeResponseDTO;
+                }
+
+                //运行时异常
+                if(!containerExecResultDTO.getExitCode().equals(exitCode)){
+                    caseResult.setStderr(containerExecResultDTO.getStderr());
+                    cases.add(caseResult);
+
+                    judgeResponseDTO.setStatus(JudgeStatus.RUNTIME_ERROR);
+                    judgeResponseDTO.setCaseResults(cases);
+                    return judgeResponseDTO;
+                }
+
+                String output = containerExecResultDTO.getStdout();
+                String outputHandled = normalize(output);
+                boolean ret = expectedOutput.equals(outputHandled);
+
+                //结果错误
+                if(!ret){
+                    caseResult.setStdout(outputHandled);
+                    cases.add(caseResult);
+
+                    judgeResponseDTO.setStatus(JudgeStatus.WRONG_ANSWER);
+                    judgeResponseDTO.setCaseResults(cases);
+                    return judgeResponseDTO;
+                }
+
+                //运行正常，用例通过，进行下一个测试
+                caseResult.setStdout(outputHandled);
+                cases.add(caseResult);
+            }
+            judgeResponseDTO.setCaseResults(cases);
         }
         catch(InterruptedException e){
             ColorLog.error("容器 {} 错误: {}", containerId, e.getMessage());
@@ -91,7 +159,9 @@ public class JudgeService {
         }
         finally {
             //无论结果如何，都在判题逻辑结束之后，删除容器
-            dockerRunner.removeContainer(containerId);
+            if(containerId != null){
+                dockerRunner.removeContainer(containerId);
+            }
         }
 
         judgeResponseDTO.setStatus(JudgeStatus.ACCEPTED);
