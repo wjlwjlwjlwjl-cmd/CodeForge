@@ -24,7 +24,6 @@
         <module>code-forge-common-file</module>
         <module>code-forge-common-docker</module>
         <module>code-forge-common-rabbitmq</module>
-        <module>code-forge-common-websocket</module>
     </modules>
 
     <properties>
