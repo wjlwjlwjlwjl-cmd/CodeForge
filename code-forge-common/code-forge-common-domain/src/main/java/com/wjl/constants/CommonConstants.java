@@ -83,4 +83,11 @@ public class CommonConstants {
      * 运行环境启动时间
      */
     public static final long JAVA_RUN_OVERHEAD_MS = 8_000L;
+
+    /**
+     * rabbitmq 交换机、队列、路由键配置
+     */
+    public static final String EXCHANGE_NAME = "judge.exchange";
+    public static final String JAVA_ROUTING_KEY = "java.routingkey";
+    public static final String JAVA_QUEUE_NAME = "java.queue";
 }

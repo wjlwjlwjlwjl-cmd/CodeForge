@@ -23,6 +23,7 @@
         <module>code-forge-common-es</module>
         <module>code-forge-common-file</module>
         <module>code-forge-common-docker</module>
+        <module>code-forge-common-rabbitmq</module>
     </modules>
 
     <properties>

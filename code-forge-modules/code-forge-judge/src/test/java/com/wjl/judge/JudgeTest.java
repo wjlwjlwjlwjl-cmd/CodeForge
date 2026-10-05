@@ -1,5 +1,6 @@
 package com.wjl.judge;
 
+import com.wjl.constants.CommonConstants;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.judge.domain.dto.CaseResultDTO;
 import com.wjl.judge.domain.dto.JudgeRequestDTO;
@@ -7,19 +8,32 @@ import com.wjl.judge.domain.dto.JudgeResponseDTO;
 import com.wjl.judge.domain.dto.TestCaseDTO;
 import com.wjl.judge.enums.LanguageConfigurations;
 import com.wjl.judge.service.JudgeService;
+import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.List;
 import java.util.Random;
-import java.util.UUID;
 
-@SpringBootTest
+@SpringBootTest(
+        properties = {
+                "nacos.username=nacos",
+                "nacos.password=nacos"
+        }
+)
 public class JudgeTest {
     @Autowired
     private JudgeService judgeService;
     private final Random random = new Random();
+    @Autowired
+    private RabbitmqUtil rabbitmqUtil;
+
+    @Test
+    public void testPublish(){
+        String msg = "Hello World";
+        rabbitmqUtil.sendToExchange(CommonConstants.EXCHANGE_NAME, CommonConstants.JAVA_ROUTING_KEY, msg);
+    }
 
     @Test
     public void testJudge() {
