@@ -1,5 +1,6 @@
 package com.wjl.judge.service;
 
+import com.wjl.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.docker.util.ContainerUtil;
@@ -8,6 +9,7 @@ import com.wjl.judge.domain.dto.*;
 import com.wjl.judge.domain.language.LanguageProfile;
 import com.wjl.judge.enums.JudgeStatus;
 import com.wjl.judge.infrastructure.DockerRunner;
+import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -25,6 +27,8 @@ public class JudgeService {
     private ContainerUtil containerUtil;
     @Autowired
     private DockerRunner dockerRunner;
+    @Autowired
+    private RabbitmqUtil rabbitmqUtil;
 
     public JudgeResponseDTO judge(JudgeRequestDTO dto, LanguageProfile languageProfile) {
         validate(dto);
@@ -43,6 +47,7 @@ public class JudgeService {
         JudgeResponseDTO judgeResponseDTO = new JudgeResponseDTO();
         List<CaseResultDTO> cases = new ArrayList<>();
         judgeResponseDTO.setCaseResults(cases);
+        judgeResponseDTO.setSubmitId(dto.getSubmitId());
 
         String sourceCode = dto.getSourceCode();
         List<TestCaseDTO> testCases = dto.getTestCases();
@@ -80,6 +85,7 @@ public class JudgeService {
             if(!containerExecResultDTO.getSuccess()){
                 judgeResponseDTO.setStatus(JudgeStatus.COMPILE_TIMEOUT);
                 judgeResponseDTO.setCompileResult(JudgeStatus.COMPILE_TIMEOUT.getMsg());
+                rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
                 return judgeResponseDTO;
             }
 
@@ -89,6 +95,7 @@ public class JudgeService {
                 String errMsg = containerExecResultDTO.getStderr();
                 judgeResponseDTO.setStatus(JudgeStatus.COMPILE_ERROR);
                 judgeResponseDTO.setCompileResult(errMsg);
+                rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
                 return judgeResponseDTO;
             }
 
@@ -113,6 +120,12 @@ public class JudgeService {
 
                 containerExecResultDTO = dockerRunner.execute(containerId, execCmd, totalTimeLimit);
 
+                String output = containerExecResultDTO.getStdout();
+                String outputHandled = normalize(output);
+                if(outputHandled.length() > 1000){
+                    outputHandled = outputHandled.substring(0, 1000) + "...";
+                }
+
                 //运行超时
                 if(!containerExecResultDTO.getSuccess()){
                     caseResult.setStderr(containerExecResultDTO.getStderr());
@@ -120,6 +133,7 @@ public class JudgeService {
 
                     judgeResponseDTO.setStatus(JudgeStatus.TIME_LIMIT_EXCEEDED);
                     judgeResponseDTO.setCaseResults(cases);
+                    rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
                     return judgeResponseDTO;
                 }
 
@@ -130,11 +144,10 @@ public class JudgeService {
 
                     judgeResponseDTO.setStatus(JudgeStatus.RUNTIME_ERROR);
                     judgeResponseDTO.setCaseResults(cases);
+                    rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
                     return judgeResponseDTO;
                 }
 
-                String output = containerExecResultDTO.getStdout();
-                String outputHandled = normalize(output);
                 boolean ret = expectedOutput.equals(outputHandled);
 
                 //结果错误
@@ -144,6 +157,7 @@ public class JudgeService {
 
                     judgeResponseDTO.setStatus(JudgeStatus.WRONG_ANSWER);
                     judgeResponseDTO.setCaseResults(cases);
+                    rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
                     return judgeResponseDTO;
                 }
 
@@ -165,6 +179,9 @@ public class JudgeService {
         }
 
         judgeResponseDTO.setStatus(JudgeStatus.ACCEPTED);
+
+        rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
+
         return judgeResponseDTO;
     }
 

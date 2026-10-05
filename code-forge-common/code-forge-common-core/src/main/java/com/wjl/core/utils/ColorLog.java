@@ -19,6 +19,13 @@ import java.time.format.DateTimeFormatter;
  * 默认开启彩色输出。若在不支持 ANSI 的终端（如老版本 Windows cmd）运行，
  * 可调用 {@link #setEnableColor(boolean)} 关闭彩色。
  * </p>
+ * <p>
+ * 所有打印接口均支持 {@code withNoPrefix} 参数：
+ * <ul>
+ *     <li>{@code true}  —— 不打印时间戳、级别、线程名等前缀，仅打印一个对应颜色的符号 + 用户内容</li>
+ *     <li>{@code false} —— 打印完整前缀信息（默认）</li>
+ * </ul>
+ * </p>
  *
  * @author wjl
  */
@@ -62,71 +69,149 @@ public final class ColorLog {
         enableColor = enable;
     }
 
+    // ===================== DEBUG =====================
+
     /**
-     * 打印 DEBUG 级别日志（蓝色）。
+     * 打印 DEBUG 级别日志（灰色），默认打印前缀。
      *
      * @param message 日志消息，支持 {@code {}} 占位符
      * @param args    占位符对应的参数
      */
     public static void debug(String message, Object... args) {
-        print(GRAY, LEVEL_DEBUG, message, args, false);
+        debug(false, message, args);
     }
 
     /**
-     * 打印 INFO 级别日志（青色）。
+     * 打印 DEBUG 级别日志（灰色）。
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个灰色符号 + 内容
+     * @param message      日志消息，支持 {@code {}} 占位符
+     * @param args         占位符对应的参数
+     */
+    public static void debug(boolean withNoPrefix, String message, Object... args) {
+        print(GRAY, LEVEL_DEBUG, message, args, false, withNoPrefix, "●");
+    }
+
+    // ===================== INFO =====================
+
+    /**
+     * 打印 INFO 级别日志（青色），默认打印前缀。
      *
      * @param message 日志消息，支持 {@code {}} 占位符
      * @param args    占位符对应的参数
      */
     public static void info(String message, Object... args) {
-        print(CYAN, LEVEL_INFO, message, args, false);
+        info(false, message, args);
     }
 
     /**
-     * 打印 WARN 级别日志（黄色）。
+     * 打印 INFO 级别日志（青色）。
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个青色符号 + 内容
+     * @param message      日志消息，支持 {@code {}} 占位符
+     * @param args         占位符对应的参数
+     */
+    public static void info(boolean withNoPrefix, String message, Object... args) {
+        print(CYAN, LEVEL_INFO, message, args, false, withNoPrefix, "●");
+    }
+
+    // ===================== WARN =====================
+
+    /**
+     * 打印 WARN 级别日志（黄色），默认打印前缀。
      *
      * @param message 日志消息，支持 {@code {}} 占位符
      * @param args    占位符对应的参数
      */
     public static void warn(String message, Object... args) {
-        print(YELLOW, LEVEL_WARN, message, args, true);
+        warn(false, message, args);
     }
 
     /**
-     * 打印 ERROR 级别日志（红色）。
+     * 打印 WARN 级别日志（黄色）。
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个黄色符号 + 内容
+     * @param message      日志消息，支持 {@code {}} 占位符
+     * @param args         占位符对应的参数
+     */
+    public static void warn(boolean withNoPrefix, String message, Object... args) {
+        print(YELLOW, LEVEL_WARN, message, args, true, withNoPrefix, "▲");
+    }
+
+    // ===================== ERROR =====================
+
+    /**
+     * 打印 ERROR 级别日志（红色），默认打印前缀。
      *
      * @param message 日志消息，支持 {@code {}} 占位符
      * @param args    占位符对应的参数
      */
     public static void error(String message, Object... args) {
-        print(RED, LEVEL_ERROR, message, args, true);
+        error(false, message, args);
     }
 
     /**
-     * 打印 ERROR 级别日志（红色），并附异常堆栈。
+     * 打印 ERROR 级别日志（红色）。
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个红色符号 + 内容
+     * @param message      日志消息，支持 {@code {}} 占位符
+     * @param args         占位符对应的参数
+     */
+    public static void error(boolean withNoPrefix, String message, Object... args) {
+        print(RED, LEVEL_ERROR, message, args, true, withNoPrefix, "✖");
+    }
+
+    /**
+     * 打印 ERROR 级别日志（红色），并附异常堆栈，默认打印前缀。
      *
      * @param message 日志消息
      * @param t       异常对象
      */
     public static void error(String message, Throwable t) {
-        print(RED, LEVEL_ERROR, message, null, true);
+        error(false, message, t);
+    }
+
+    /**
+     * 打印 ERROR 级别日志（红色），并附异常堆栈。
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个红色符号 + 内容
+     * @param message      日志消息
+     * @param t            异常对象
+     */
+    public static void error(boolean withNoPrefix, String message, Throwable t) {
+        print(RED, LEVEL_ERROR, message, null, true, withNoPrefix, "✖");
         if (t != null) {
             t.printStackTrace(System.err);
         }
     }
 
+    // ===================== OK =====================
+
     /**
-     * 打印成功日志（绿色加粗）。
+     * 打印成功日志（绿色加粗），默认打印前缀。
      *
      * @param message 日志消息，支持 {@code {}} 占位符
      * @param args    占位符对应的参数
      */
     public static void ok(String message, Object... args) {
-        print(GREEN + BOLD, LEVEL_OK, message, args, false);
+        ok(false, message, args);
     }
 
     /**
-     * 使用自定义颜色打印日志。
+     * 打印成功日志（绿色加粗）。
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个绿色符号 + 内容
+     * @param message      日志消息，支持 {@code {}} 占位符
+     * @param args         占位符对应的参数
+     */
+    public static void ok(boolean withNoPrefix, String message, Object... args) {
+        print(GREEN + BOLD, LEVEL_OK, message, args, false, withNoPrefix, "✔");
+    }
+
+    // ===================== CUSTOM =====================
+
+    /**
+     * 使用自定义颜色打印日志，默认打印前缀。
      * <p>颜色码可直接使用本类中的常量，如 {@link #GREEN}、{@link #RED}。</p>
      *
      * @param color   ANSI 颜色码
@@ -134,15 +219,40 @@ public final class ColorLog {
      * @param args    占位符对应的参数
      */
     public static void custom(String color, String message, Object... args) {
-        print(color, "CUSTOM", message, args, false);
+        custom(false, color, message, args);
+    }
+
+    /**
+     * 使用自定义颜色打印日志。
+     * <p>颜色码可直接使用本类中的常量，如 {@link #GREEN}、{@link #RED}。</p>
+     *
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个对应颜色的符号 + 内容
+     * @param color        ANSI 颜色码
+     * @param message      日志消息，支持 {@code {}} 占位符
+     * @param args         占位符对应的参数
+     */
+    public static void custom(boolean withNoPrefix, String color, String message, Object... args) {
+        print(color, "CUSTOM", message, args, false, withNoPrefix, "●");
+    }
+
+    // ===================== LINE =====================
+
+    /**
+     * 打印一行彩色分割线（青色），默认打印前缀。
+     *
+     * @param text 分割线文字，可为空
+     */
+    public static void line(String text) {
+        line(false, text);
     }
 
     /**
      * 打印一行彩色分割线（青色）。
      *
-     * @param text 分割线文字，可为空
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个青色符号 + 内容
+     * @param text         分割线文字，可为空
      */
-    public static void line(String text) {
+    public static void line(boolean withNoPrefix, String text) {
         String content = text == null ? "" : " " + text + " ";
         int fillLen = Math.max(0, 60 - content.length());
         StringBuilder sb = new StringBuilder();
@@ -151,7 +261,12 @@ public final class ColorLog {
         }
         String half = sb.toString();
         String line = half + content + half + (fillLen % 2 == 1 ? "=" : "");
-        System.out.println(wrap(line, CYAN));
+        String output = wrap(line, CYAN);
+        if (withNoPrefix) {
+            System.out.println(wrap("●", CYAN) + " " + output);
+        } else {
+            print(CYAN, "LINE ", line, null, false, false, "●");
+        }
     }
 
     // ===================== 内部方法 =====================
@@ -159,24 +274,32 @@ public final class ColorLog {
     /**
      * 核心打印方法。
      *
-     * @param color   ANSI 颜色码
-     * @param level   日志级别标识
-     * @param message 日志消息模板
-     * @param args    占位符参数
-     * @param toError 输出到 System.err
+     * @param color        ANSI 颜色码
+     * @param level        日志级别标识
+     * @param message      日志消息模板
+     * @param args         占位符参数
+     * @param toError      输出到 System.err
+     * @param withNoPrefix {@code true} 不打印前缀，仅打印一个对应颜色的符号 + 内容
+     * @param symbol       无前缀模式下显示的符号
      */
-    private static void print(String color, String level, String message, Object[] args, boolean toError) {
-        String timestamp = LocalDateTime.now().format(DTF);
-        String threadName = Thread.currentThread().getName();
+    private static void print(String color, String level, String message,
+                              Object[] args, boolean toError, boolean withNoPrefix,
+                              String symbol) {
         String content = format(message, args);
-
-        String prefix = String.format("[%s] [%s] [%s] ", timestamp, level, threadName);
-        String full = wrap(prefix, color) + wrap(content, WHITE);
+        String output;
+        if (withNoPrefix) {
+            output = wrap(symbol, color) + " " + wrap(content, WHITE);
+        } else {
+            String timestamp = LocalDateTime.now().format(DTF);
+            String threadName = Thread.currentThread().getName();
+            String prefix = String.format("[%s] [%s] [%s] ", timestamp, level, threadName);
+            output = wrap(prefix, color) + wrap(content, WHITE);
+        }
 
         if (toError) {
-            System.err.println(full);
+            System.err.println(output);
         } else {
-            System.out.println(full);
+            System.out.println(output);
         }
     }
 

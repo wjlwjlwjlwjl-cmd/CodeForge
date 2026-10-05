@@ -9,6 +9,7 @@ import com.wjl.core.utils.ColorLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -35,6 +36,14 @@ public class ContainerUtil {
      * @return 容器 ContainerId
      */
     public String createContainer(String hostDir, String containerDir, String image, String containerName) {
+        List<Container> existing = dockerClient.listContainersCmd()
+                .withShowAll(true)
+                .withNameFilter(Collections.singleton(containerName))
+                .exec();
+        for (Container c : existing) {
+            dockerClient.removeContainerCmd(c.getId()).withForce(true).exec();
+        }
+
         Volume workspace = new Volume(containerDir);
         HostConfig hostConfig = HostConfig.newHostConfig()
                 .withBinds(new Bind(hostDir, workspace, AccessMode.rw))

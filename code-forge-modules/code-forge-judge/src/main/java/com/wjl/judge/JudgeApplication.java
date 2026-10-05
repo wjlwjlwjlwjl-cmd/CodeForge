@@ -9,6 +9,6 @@ public class JudgeApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(JudgeApplication.class, args);
-        ColorLog.info("【判题服务启动成功】");
+        ColorLog.info("JudgeApplication starts successfully");
     }
 }

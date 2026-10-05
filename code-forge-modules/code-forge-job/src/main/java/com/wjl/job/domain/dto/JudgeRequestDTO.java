@@ -1,4 +1,4 @@
-package com.wjl.judge.domain.dto;
+package com.wjl.job.domain.dto;
 
 import lombok.Data;
 

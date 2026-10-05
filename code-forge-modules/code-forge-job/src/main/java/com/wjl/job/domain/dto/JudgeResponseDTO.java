@@ -1,6 +1,6 @@
-package com.wjl.judge.domain.dto;
+package com.wjl.job.domain.dto;
 
-import com.wjl.judge.enums.JudgeStatus;
+import com.wjl.job.enums.JudgeStatus;
 import lombok.Data;
 
 import java.util.List;

@@ -1,5 +1,26 @@
 server:
-    port: 18081
+    port: 18082
 spring:
     application:
         name: code-forge-job
+    profiles:
+        active: ${RUN_ENV}
+    cloud:
+        nacos:
+            discovery:
+                username: nacos
+                password: nacos
+                namespace: code-forge-${RUN_ENV}
+                server-addr: ${NACOS_ADDR}
+            config:
+                username: nacos
+                password: nacos
+                namespace: code-forge-${RUN_ENV}
+                server-addr: ${NACOS_ADDR}
+                file-extension: yaml
+                # 共享配置
+                shared-configs:
+                    - data-id: share-redis-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+                      refresh: true
+                    - data-id: share-rabbitmq-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+                      refresh: true

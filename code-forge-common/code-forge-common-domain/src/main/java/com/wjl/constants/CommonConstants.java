@@ -82,12 +82,20 @@ public class CommonConstants {
     /**
      * 运行环境启动时间
      */
-    public static final long JAVA_RUN_OVERHEAD_MS = 8_000L;
+    public static final long JAVA_RUN_OVERHEAD_MS = 800L;
 
     /**
      * rabbitmq 交换机、队列、路由键配置
      */
-    public static final String EXCHANGE_NAME = "judge.exchange";
-    public static final String JAVA_ROUTING_KEY = "java.routingkey";
-    public static final String JAVA_QUEUE_NAME = "java.queue";
+    // ========== 判题请求 ==========
+    public static final String JUDGE_EXCHANGE = "judge.exchange";
+
+    // Java 判题请求
+    public static final String JAVA_ROUTING_KEY = "judge.java";
+    public static final String JAVA_QUEUE = "judge.java.queue";
+
+    // ========== 判题结果 ==========
+    public static final String RESULT_EXCHANGE = "judge.result.exchange";
+    public static final String RESULT_ROUTING_KEY = "judge.result";
+    public static final String RESULT_QUEUE = "judge.result.queue";
 }
