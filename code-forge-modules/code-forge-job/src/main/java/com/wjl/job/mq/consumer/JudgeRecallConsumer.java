@@ -11,6 +11,7 @@ import com.wjl.job.domain.entity.UserExam;
 import com.wjl.job.domain.entity.UserSubmit;
 import com.wjl.job.mapper.UserExamMapper;
 import com.wjl.job.mapper.UserSubmitMapper;
+import com.wjl.job.ws.WebSocketSessionManager;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -26,16 +27,14 @@ public class JudgeRecallConsumer {
     private UserSubmitMapper userSubmitMapper;
     @Autowired
     private UserExamMapper userExamMapper;
+    @Autowired
+    private WebSocketSessionManager sessionManager;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @RabbitListener(queues = CommonConstants.RESULT_QUEUE)
     public void judgeRecallHandler(JudgeResponseDTO dto) {
         ColorLog.info(true, "获取判题结果：{}", dto.toString());
-
-        //从判题结果队列接收到消息之后，完成两件事：
-        //1. 落盘
-        //2. 获取 websocket 连接，推送消息
 
         //在前面接收到判题请求时，program_type、question_id、submitId、userId、user_code、create_by、create_time已插入数据库，
         Long submitId = dto.getSubmitId();
@@ -44,6 +43,7 @@ public class JudgeRecallConsumer {
         List<CaseResultDTO> caseResults = dto.getCaseResults();
         Integer runTime = dto.getRunTime();
         Long examId = dto.getExamId();
+        Long userId = dto.getUserId();
 
         //是否通过 0:compile error 1:未能正常运行 2:超时错误 3:答案错误 4:ac
         //0: stderr, 1: stderr, 2: null, 3: stdout 4: null
@@ -99,12 +99,30 @@ public class JudgeRecallConsumer {
                 .set(UserSubmit::getUpdateTime, LocalDateTime.now())
         );
 
-        if(examId != null && pass == 4){
+        if(examId != null){
             // 竞赛计分逻辑
             // 1. score，直接取决于解题数量，即：解题越多，排名越高
             // 2. 罚时，非ac的一律增加罚时，一次加5min，作为score相同时的排序
-            userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
-            );
+            if(pass == 4){
+                userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
+                        .eq(UserExam::getExamId, examId)
+                        .setSql("score=score+1")
+                );
+            }
+            else{
+                userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
+                        .eq(UserExam::getExamId, examId)
+                        .setSql("penalty=penalty+5")
+                );
+            }
+        }
+
+        try{
+            String msg = objectMapper.writeValueAsString(dto);
+            sessionManager.sendMessage(String.valueOf(userId), msg);
+        }
+        catch(IOException e){
+            ColorLog.error("{} JudgeResponseDTO 序列化失败: {}", submitId, e.getMessage());
         }
     }
 }
