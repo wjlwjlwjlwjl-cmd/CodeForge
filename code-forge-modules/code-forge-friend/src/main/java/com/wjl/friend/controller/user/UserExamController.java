@@ -1,6 +1,6 @@
 package com.wjl.friend.controller.user;
 
-import com.wjl.constants.SecurityConstants;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.domain.R;
 import com.wjl.friend.domain.exam.dto.ExamListSortByTimeDTO;
 import com.wjl.friend.domain.exam.vo.ExamListVO;

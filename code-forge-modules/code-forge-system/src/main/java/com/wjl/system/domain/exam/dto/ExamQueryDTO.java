@@ -1,6 +1,6 @@
 package com.wjl.system.domain.exam.dto;
 
-import com.wjl.domain.dto.BasePageDTO;
+import com.wjl.domain.domain.dto.BasePageDTO;
 import lombok.Data;
 
 import java.time.LocalDateTime;

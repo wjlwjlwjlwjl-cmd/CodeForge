@@ -13,7 +13,7 @@ public class JudgeWebSocketHandler extends TextWebSocketHandler {
     @Autowired
     private WebSocketSessionManager sessionManager;
 
-    //在完成前面AuthHandshakeInterceptor过滤后，会调用这个方法，这时将连接交给ConCurrentHashMap 保管
+    //在完成前面AuthHandshakeInterceptor过滤后，会调用这个方法，这时将连接交给ConcurrentHashMap 保管
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         String userId = getUserId(session);       // ← 取出来

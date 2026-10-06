@@ -1,6 +1,6 @@
 package com.wjl.judge.task;
 
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.docker.util.ContainerUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;

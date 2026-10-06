@@ -1,7 +1,6 @@
 package com.wjl.system.domain.exam.dto;
 
-import com.wjl.domain.dto.BasePageDTO;
-import lombok.Data;
+import com.wjl.domain.domain.dto.BasePageDTO;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -1,6 +1,6 @@
 package com.wjl.system.domain.exam.vo;
 
-import com.wjl.domain.vo.BasePageVO;
+import com.wjl.domain.domain.vo.BasePageVO;
 import lombok.Data;
 
 @Data

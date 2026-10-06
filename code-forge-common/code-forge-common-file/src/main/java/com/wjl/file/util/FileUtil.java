@@ -1,8 +1,7 @@
 package com.wjl.file.util;
 
 import com.aliyun.oss.OSS;
-import com.wjl.constants.CacheConstants;
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.utils.ColorLog;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;

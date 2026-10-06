@@ -1,6 +1,6 @@
 package com.wjl.system.controller;
 
-import com.wjl.constants.SecurityConstants;
+import com.wjl.domain.constants.SecurityConstants;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;

@@ -3,18 +3,15 @@ package com.wjl.security.handler;
 import com.wjl.core.domain.R;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ColorLog;
-import com.wjl.exception.ServiceException;
+import com.wjl.domain.exception.ServiceException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
-import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.BindException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-
-import java.beans.BeanProperty;
 
 @RestControllerAdvice
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)

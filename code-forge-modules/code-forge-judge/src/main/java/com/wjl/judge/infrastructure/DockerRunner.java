@@ -5,7 +5,6 @@ import com.github.dockerjava.api.async.ResultCallback;
 import com.github.dockerjava.api.command.InspectExecResponse;
 import com.github.dockerjava.api.model.Frame;
 import com.github.dockerjava.api.model.StreamType;
-import com.wjl.docker.util.ContainerUtil;
 import com.wjl.judge.domain.dto.ContainerExecResultDTO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

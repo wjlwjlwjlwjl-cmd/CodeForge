@@ -1,16 +1,14 @@
 package com.wjl.friend.service.user;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.extension.conditions.query.LambdaQueryChainWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.wjl.constants.CacheConstants;
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CacheConstants;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
-import com.wjl.core.utils.ColorLog;
-import com.wjl.domain.dto.LoginUserDTO;
-import com.wjl.exception.ServiceException;
+import com.wjl.domain.domain.dto.LoginUserDTO;
+import com.wjl.domain.exception.ServiceException;
 import com.wjl.friend.domain.exam.dto.ExamListSortByTimeDTO;
 import com.wjl.friend.domain.exam.vo.ExamListVO;
 import com.wjl.friend.domain.exam.vo.ExamVO;

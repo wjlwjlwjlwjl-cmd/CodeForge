@@ -1,6 +1,6 @@
 package com.wjl.friend.task;
 
-import com.wjl.constants.CacheConstants;
+import com.wjl.domain.constants.CacheConstants;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.friend.domain.exam.vo.ExamVO;

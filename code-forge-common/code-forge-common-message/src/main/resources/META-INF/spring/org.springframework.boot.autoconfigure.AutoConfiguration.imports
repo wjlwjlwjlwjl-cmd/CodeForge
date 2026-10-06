@@ -1,2 +1,2 @@
-com.wjl.config.EmailConfig
-com.wjl.service.EmailService
+com.wjl.message.config.EmailConfig
+com.wjl.message.service.EmailService

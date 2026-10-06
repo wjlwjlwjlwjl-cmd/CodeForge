@@ -1,6 +1,6 @@
 package com.wjl.friend.domain.user.dto;
 
-import com.wjl.domain.dto.BasePageDTO;
+import com.wjl.domain.domain.dto.BasePageDTO;
 import lombok.Getter;
 import lombok.Setter;
 

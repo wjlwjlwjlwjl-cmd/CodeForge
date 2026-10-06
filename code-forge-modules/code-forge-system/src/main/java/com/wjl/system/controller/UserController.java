@@ -1,6 +1,6 @@
 package com.wjl.system.controller;
 
-import com.wjl.constants.SecurityConstants;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.domain.R;
 import com.wjl.system.domain.user.dto.b.UserDTO;
 import com.wjl.system.domain.user.dto.b.UserQueryDTO;

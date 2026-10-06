@@ -1,15 +1,15 @@
 package com.wjl.security.utils;
 
 import com.wjl.core.enums.ResultCode;
-import com.wjl.exception.ServiceException;
+import com.wjl.domain.exception.ServiceException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import java.util.Map;
 
-import com.wjl.constants.SecurityConstants;
-import com.wjl.constants.TokenConstants;
+import com.wjl.domain.constants.SecurityConstants;
+import com.wjl.domain.constants.TokenConstants;
 
 /**
  * Jwt工具类

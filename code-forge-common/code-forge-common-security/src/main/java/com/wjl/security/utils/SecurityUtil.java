@@ -3,8 +3,8 @@ package com.wjl.security.utils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.StringUtils;
 
-import com.wjl.constants.SecurityConstants;
-import com.wjl.constants.TokenConstants;
+import com.wjl.domain.constants.SecurityConstants;
+import com.wjl.domain.constants.TokenConstants;
 import com.wjl.core.utils.ServletUtil;
 
 /**

@@ -1,10 +1,6 @@
 package com.wjl.job.service;
 
-import com.wjl.constants.CommonConstants;
-import com.wjl.core.utils.ColorLog;
-import com.wjl.job.domain.dto.JudgeRequestDTO;
-import com.wjl.job.domain.dto.JudgeResponseDTO;
-import com.wjl.job.domain.dto.TestCaseDTO;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import com.wjl.security.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;

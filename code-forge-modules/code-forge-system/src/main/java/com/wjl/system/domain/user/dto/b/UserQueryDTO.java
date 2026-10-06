@@ -1,6 +1,6 @@
 package com.wjl.system.domain.user.dto.b;
 
-import com.wjl.domain.dto.BasePageDTO;
+import com.wjl.domain.domain.dto.BasePageDTO;
 import lombok.Data;
 
 @Data

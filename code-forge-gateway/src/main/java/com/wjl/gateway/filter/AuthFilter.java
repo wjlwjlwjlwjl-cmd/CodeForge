@@ -1,10 +1,9 @@
 package com.wjl.gateway.filter;
 
-import com.wjl.constants.SecurityConstants;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.enums.ResultCode;
-import com.wjl.core.utils.ColorLog;
 import com.wjl.core.utils.ServletUtil;
-import com.wjl.domain.dto.LoginUserDTO;
+import com.wjl.domain.domain.dto.LoginUserDTO;
 import com.wjl.gateway.config.WhiteListConfig;
 import com.wjl.security.service.TokenService;
 import com.wjl.security.utils.JwtUtil;

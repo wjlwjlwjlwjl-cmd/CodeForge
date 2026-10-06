@@ -1,6 +1,6 @@
 package com.wjl.redis.util;
 
-import com.wjl.constants.CacheConstants;
+import com.wjl.domain.constants.CacheConstants;
 
 public class CacheUtil {
     //key 处理

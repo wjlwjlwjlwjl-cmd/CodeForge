@@ -1,8 +1,6 @@
 package com.wjl.job.controller;
 
-import com.wjl.constants.SecurityConstants;
-import com.wjl.job.domain.dto.JudgeRequestDTO;
-import com.wjl.job.domain.dto.JudgeResponseDTO;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.job.service.JobService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestHeader;

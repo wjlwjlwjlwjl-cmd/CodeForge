@@ -1,6 +1,5 @@
 package com.wjl.security.service;
 
-import java.security.Security;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -9,15 +8,13 @@ import com.wjl.core.utils.ColorLog;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import com.wjl.constants.CacheConstants;
-import com.wjl.constants.SecurityConstants;
-import com.wjl.constants.TokenConstants;
-import com.wjl.domain.dto.LoginUserDTO;
-import com.wjl.domain.dto.TokenDTO;
+import com.wjl.domain.constants.CacheConstants;
+import com.wjl.domain.constants.SecurityConstants;
+import com.wjl.domain.constants.TokenConstants;
+import com.wjl.domain.domain.dto.LoginUserDTO;
+import com.wjl.domain.domain.dto.TokenDTO;
 import com.wjl.redis.service.RedisService;
 import com.wjl.security.utils.JwtUtil;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 public class TokenService {
     /**

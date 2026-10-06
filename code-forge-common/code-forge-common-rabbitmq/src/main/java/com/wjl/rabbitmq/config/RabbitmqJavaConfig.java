@@ -1,6 +1,6 @@
 package com.wjl.rabbitmq.config;
 
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CommonConstants;
 import org.springframework.amqp.core.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

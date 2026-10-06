@@ -2,13 +2,13 @@ package com.wjl.system.service.question;
 
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
-import com.wjl.constants.CacheConstants;
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CacheConstants;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
-import com.wjl.domain.dto.LoginUserDTO;
-import com.wjl.exception.ServiceException;
+import com.wjl.domain.domain.dto.LoginUserDTO;
+import com.wjl.domain.exception.ServiceException;
 import com.wjl.redis.service.RedisService;
 import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;

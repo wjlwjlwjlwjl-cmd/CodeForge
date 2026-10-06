@@ -1,11 +1,10 @@
 package com.wjl.job.ws;
 
-import com.wjl.constants.SecurityConstants;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.utils.ColorLog;
-import com.wjl.domain.dto.LoginUserDTO;
+import com.wjl.domain.domain.dto.LoginUserDTO;
 import com.wjl.security.service.TokenService;
 import com.wjl.security.utils.JwtUtil;
-import jakarta.servlet.ServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.ServerHttpRequest;
@@ -40,7 +39,7 @@ public class AuthHandshakeInterceptor implements HandshakeInterceptor {
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
         if(loginUserDTO == null){
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
-            ColorLog.info("WebSocket 握手失败");
+            ColorLog.info("WebSocket 握手失败 LoginUserDTO is null");
             return false;
         }
 

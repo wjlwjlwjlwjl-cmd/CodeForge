@@ -1,6 +1,6 @@
 package com.wjl.judge.enums;
 
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.judge.domain.language.LanguageProfile;
 import lombok.Getter;
 

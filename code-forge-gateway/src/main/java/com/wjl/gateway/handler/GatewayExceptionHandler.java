@@ -3,17 +3,14 @@ package com.wjl.gateway.handler;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.core.utils.ServletUtil;
-import com.wjl.exception.ServiceException;
+import com.wjl.domain.exception.ServiceException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
-import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-
-import java.awt.*;
 
 @Slf4j
 @Component

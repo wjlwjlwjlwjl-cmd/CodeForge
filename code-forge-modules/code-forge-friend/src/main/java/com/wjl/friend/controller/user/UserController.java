@@ -1,9 +1,8 @@
 package com.wjl.friend.controller.user;
 
-import com.wjl.constants.SecurityConstants;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.domain.R;
-import com.wjl.core.utils.ColorLog;
-import com.wjl.domain.vo.AvatarUploadVO;
+import com.wjl.domain.domain.vo.AvatarUploadVO;
 import com.wjl.friend.domain.user.dto.UserAddInfoDTO;
 import com.wjl.friend.domain.user.dto.UserLoginDTO;
 import com.wjl.friend.domain.user.dto.UserRegisterDTO;

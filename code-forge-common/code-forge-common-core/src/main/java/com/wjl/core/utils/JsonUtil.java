@@ -11,7 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CommonConstants;
 
 import lombok.extern.slf4j.Slf4j;
 

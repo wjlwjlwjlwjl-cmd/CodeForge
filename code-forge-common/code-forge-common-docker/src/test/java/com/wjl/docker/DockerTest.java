@@ -4,7 +4,7 @@ import com.github.dockerjava.api.DockerClient;
 import com.github.dockerjava.core.DefaultDockerClientConfig;
 import com.github.dockerjava.core.DockerClientImpl;
 import com.github.dockerjava.httpclient5.ApacheDockerHttpClient;
-import com.wjl.constants.CommonConstants;
+import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.docker.util.ContainerUtil;
 import org.junit.jupiter.api.Test;
@@ -12,8 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.util.UUID;
 
 @SpringBootTest
 public class DockerTest {
