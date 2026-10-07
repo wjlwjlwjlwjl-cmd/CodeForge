@@ -95,12 +95,12 @@ security:
     endpoint: https://oss-cn-shanghai.aliyuncs.com
     access-key-id: {Access Id}
     access-key-secret: {Access Key}
-    bucket-name: code-forge',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
+    bucket-name: code-forge', '25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 
     ('share-docker-test.yaml','DEFAULT_GROUP','oj:
   docker:
     host: tcp://127.0.0.1:2375
-    timeout: 30s',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
+    timeout: 30s', '25bacd0a5d601870d3abdf0318ea0f05',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,''),
 
     ('share-rabbitmq-test.yaml','DEFAULT_GROUP','spring:
   rabbitmq:
@@ -108,7 +108,7 @@ security:
     port: 5672
     username: wjl
     password: wjl@123
-    virtual-host: /',NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
+    virtual-host: /', '25bacd0a5d601870d3abdf0318ea0f05', NOW(),NOW(),'nacos','127.0.0.1','','code-forge-test',NULL,NULL,NULL,'yaml',NULL,'');
 
 INSERT INTO tenant_info (kp,tenant_id,tenant_name,tenant_desc,create_source,gmt_create,gmt_modified) VALUES
     ('1','code-forge-test','code-forge-test','Test Environment','nacos',unix_timestamp()*1000,unix_timestamp()*1000);
