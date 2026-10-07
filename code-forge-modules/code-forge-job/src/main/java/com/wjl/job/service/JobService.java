@@ -1,6 +1,9 @@
 package com.wjl.job.service;
 
 import com.wjl.domain.constants.CommonConstants;
+import com.wjl.domain.domain.dto.JudgeRequestDTO;
+import com.wjl.domain.domain.dto.JudgeResponseDTO;
+import com.wjl.domain.domain.dto.TestCaseDTO;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import com.wjl.security.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;

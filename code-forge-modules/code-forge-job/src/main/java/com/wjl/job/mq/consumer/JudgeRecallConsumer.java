@@ -35,6 +35,9 @@ public class JudgeRecallConsumer {
     @RabbitListener(queues = CommonConstants.RESULT_QUEUE)
     public void judgeRecallHandler(JudgeResponseDTO dto) {
         ColorLog.info(true, "获取判题结果：{}", dto.toString());
+        if(1 == 1){
+            return;
+        }
 
         //在前面接收到判题请求时，program_type、question_id、submitId、userId、user_code、create_by、create_time已插入数据库，
         Long submitId = dto.getSubmitId();

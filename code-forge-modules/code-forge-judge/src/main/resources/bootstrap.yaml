@@ -24,3 +24,5 @@ spring:
               refresh: true
             - data-id: share-rabbitmq-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
               refresh: true
+            - data-id: share-docker-${spring.profiles.active}.${spring.cloud.nacos.config.file-extension}
+              refresh: true

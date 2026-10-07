@@ -51,8 +51,8 @@ public class CommonConstants {
     /**
      * 容器目录绑定
      */
-    //public static final String HOST_DIR = System.getProperty("user.dir") + "/user-code/java/" + "%d";
-    public static final String JAVA_HOST_DIR = "/data/oj/java/%d";
+    public static final String JAVA_HOST_DIR = System.getProperty("user.dir") + "/user-code/java/" + "%d";
+    //public static final String JAVA_HOST_DIR = "/data/oj/java/%d";
     public static final String JAVA_CONTAINER_DIR = "/workspace/java/%d";
     public static final String JAVA_CONTAINER_NAME = "oj-java-%d";
 

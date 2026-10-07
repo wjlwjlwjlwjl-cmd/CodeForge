@@ -74,6 +74,7 @@ public class JudgeService {
             Files.writeString(sourceFilePath, sourceCode, StandardCharsets.UTF_8);
         }
         catch(IOException e){
+            ColorLog.error("源代码写入目录失败{}",  e.getMessage());
             throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
         }
 
