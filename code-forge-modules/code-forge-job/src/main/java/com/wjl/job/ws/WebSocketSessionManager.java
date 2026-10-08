@@ -13,7 +13,7 @@ public class WebSocketSessionManager {
     private final ConcurrentHashMap<String, WebSocketSession> sessions = new ConcurrentHashMap<>();
 
     public void add(String userId, WebSocketSession session){
-        WebSocketSession old = sessions.put(session.getId(), session);
+        WebSocketSession old = sessions.put(userId, session);
         if(old != null && old.isOpen()){
             try {
                 old.close();
@@ -35,11 +35,12 @@ public class WebSocketSessionManager {
         return session != null && session.isOpen();
     }
 
-    public Boolean sendMessage(String userId, String msg){
+    public void sendMessage(String userId, String msg){
+        ColorLog.info("给{}发送ws消息推送", userId);
         WebSocketSession session = sessions.get(userId);
         if(session == null || !session.isOpen()){
             ColorLog.info(true, "用户{}不在线", userId);
-            return false;
+            return;
         }
         try{
             synchronized (session){
@@ -48,12 +49,8 @@ public class WebSocketSessionManager {
         }
         catch (IOException e){
             ColorLog.error(true, "推送ws消息to {}失败{}", userId, e.getMessage());
-            return false;
+            return;
         }
-
-        //发送消息成功，那么服务器主动请求断开ws连接
-        remove(userId, session);
-
-        return true;
+        //这里不采用发送成功一次消息后立刻断开连接
     }
 }

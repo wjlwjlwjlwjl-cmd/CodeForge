@@ -15,7 +15,6 @@ import com.wjl.domain.exception.ServiceException;
 import com.wjl.redis.service.RedisService;
 import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
-import com.wjl.domain.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.vo.ExamListVO;
 import com.wjl.system.domain.exam.vo.ExamQuestionListVO;

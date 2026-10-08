@@ -8,13 +8,13 @@ import com.wjl.domain.domain.dto.CaseResultDTO;
 import com.wjl.domain.domain.dto.JudgeRequestDTO;
 import com.wjl.domain.domain.dto.JudgeResponseDTO;
 import com.wjl.domain.domain.dto.TestCaseDTO;
-import com.wjl.domain.exception.ServiceException;
 import com.wjl.judge.domain.dto.ContainerExecResultDTO;
 import com.wjl.judge.domain.language.LanguageProfile;
 import com.wjl.domain.enums.JudgeStatus;
 import com.wjl.judge.infrastructure.DockerRunner;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -25,7 +25,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-@Service
+@Component
 public class JudgeService {
     @Autowired
     private ContainerUtil containerUtil;
@@ -35,7 +35,12 @@ public class JudgeService {
     private RabbitmqUtil rabbitmqUtil;
 
     public JudgeResponseDTO judge(JudgeRequestDTO dto, LanguageProfile languageProfile) {
-        validate(dto);
+        JudgeResponseDTO judgeResponseDTO = new JudgeResponseDTO();
+        String checkRet = validate(dto);
+        if(checkRet != null){
+            judgeResponseDTO.setErrMsg(checkRet);
+            return judgeResponseDTO;
+        }
 
         String image = languageProfile.getImage();
         String hostDirTemplate = languageProfile.getHostDir();
@@ -48,7 +53,6 @@ public class JudgeService {
         long runTimeoutMs = languageProfile.getRunTimeoutMs();
         long runOverheadMs = languageProfile.getRunOverheadMs();
 
-        JudgeResponseDTO judgeResponseDTO = new JudgeResponseDTO();
         List<CaseResultDTO> cases = new ArrayList<>();
         judgeResponseDTO.setCaseResults(cases);
         judgeResponseDTO.setSubmitId(dto.getSubmitId());
@@ -75,16 +79,18 @@ public class JudgeService {
         }
         catch(IOException e){
             ColorLog.error("源代码写入目录失败{}",  e.getMessage());
-            throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
+            judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
+            return judgeResponseDTO;
         }
 
         String containerId = null;
-        Long startTime = 0L;
+        long startTime = 0L;
         try{
             //创建容器，启动容器，运行命令，收集结果
             containerId = containerUtil.createContainer(hostDir, containerDir, image, containerName);
             if(!containerUtil.startContainer(containerId)){
-                throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
+                judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
+                return judgeResponseDTO;
             }
 
             ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, compileTimeoutMs);
@@ -124,7 +130,8 @@ public class JudgeService {
                 }
                 catch(IOException e){
                     ColorLog.error("容器{}，输入测试用例 {input} 到文件失败", containerId, e.getMessage());
-                    throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
+                    judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
+                    return judgeResponseDTO;
                 }
 
                 containerExecResultDTO = dockerRunner.execute(containerId, execCmd, totalTimeLimit);
@@ -178,7 +185,8 @@ public class JudgeService {
         }
         catch(InterruptedException e){
             ColorLog.error("容器 {} 错误: {}", containerId, e.getMessage());
-            throw new ServiceException(ResultCode.ERROR.getCode(), ResultCode.ERROR.getMsg());
+            judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
+            return judgeResponseDTO;
         }
         finally {
             //无论结果如何，都在判题逻辑结束之后，删除容器
@@ -205,23 +213,24 @@ public class JudgeService {
     }
 
     // 对判题请求进行检查
-    private void validate(JudgeRequestDTO request) {
+    private String validate(JudgeRequestDTO request) {
         if (request == null
                 || request.getSourceCode() == null
                 || request.getTestCases() == null
                 || request.getTestCases().isEmpty()) {
-            throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+            return ResultCode.FAILED_PARAMS_VALIDATE.getMsg();
         }
 
         if (request.getTestCases().size() > 100) {
-            throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+            return ResultCode.FAILED_PARAMS_VALIDATE.getMsg();
         }
 
         if (request.getTestCases().stream().anyMatch(
                 testCase -> testCase == null
                         || testCase.getInput() == null
                         || testCase.getExpectedOutput() == null)) {
-            throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+            return ResultCode.FAILED_PARAMS_VALIDATE.getMsg();
         }
+        return null;
     }
 }

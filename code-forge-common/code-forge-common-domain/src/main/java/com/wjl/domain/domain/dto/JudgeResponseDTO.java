@@ -16,4 +16,5 @@ public class JudgeResponseDTO {
     private List<CaseResultDTO> caseResults;
     private Integer runTime;
     private String userCode;
+    private String errMsg; //http 的全局异常处理不适用于 rabbitmq 线程中抛出的异常，需要单独处理
 }

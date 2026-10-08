@@ -18,6 +18,10 @@ public class JudgeTaskConsumer {
     @RabbitListener(queues = CommonConstants.JAVA_QUEUE)
     public void judgeTaskHandler(JudgeRequestDTO judgeRequestDTO) {
         JudgeResponseDTO judgeResponseDTO = judgeService.judge(judgeRequestDTO, LanguageConfigurations.JAVA_PROFILE.getLanguageProfile());
+        if(judgeResponseDTO.getErrMsg() != null){
+            ColorLog.info(true, "{} 判题异常，原因：{}", judgeResponseDTO.getSubmitId(), judgeResponseDTO.getErrMsg(), judgeResponseDTO.getErrMsg());
+            return;
+        }
         ColorLog.info(true, "{} 判题完成，结果{}", judgeResponseDTO.getSubmitId(), judgeResponseDTO.getStatus().getMsg());
     }
 }

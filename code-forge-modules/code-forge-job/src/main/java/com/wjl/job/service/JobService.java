@@ -1,14 +1,25 @@
 package com.wjl.job.service;
 
+import com.wjl.core.enums.ResultCode;
 import com.wjl.domain.constants.CommonConstants;
 import com.wjl.domain.domain.dto.JudgeRequestDTO;
 import com.wjl.domain.domain.dto.JudgeResponseDTO;
+import com.wjl.domain.domain.dto.LoginUserDTO;
 import com.wjl.domain.domain.dto.TestCaseDTO;
+import com.wjl.domain.exception.ServiceException;
+import com.wjl.job.domain.dto.SubmitInfoDTO;
+import com.wjl.job.domain.entity.UserSubmit;
+import com.wjl.job.mapper.UserSubmitMapper;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import com.wjl.security.service.TokenService;
+import jakarta.annotation.Nonnull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -17,290 +28,263 @@ public class JobService {
     private TokenService tokenService;
     @Autowired
     private RabbitmqUtil rabbitmqUtil;
+    @Autowired
+    private UserSubmitMapper userSubmitMapper;
 
-    public JudgeResponseDTO handleSubmit(String token, JudgeRequestDTO judgeRequestDTO) {
-        //LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
-        //String userId = loginUserDTO.getUserId();
-        String userId = "1"; //这里测试中先固定下来
+    public JudgeResponseDTO handleSubmit(String token, SubmitInfoDTO submitInfoDTO) {
+        LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
+        if(loginUserDTO == null) throw new ServiceException(ResultCode.FAILED_UNAUTHORIZED.getCode(), ResultCode.FAILED_UNAUTHORIZED.getMsg());
+
+        String userId =  loginUserDTO.getUserId();
+        Long questionId = submitInfoDTO.getQuestionId();
+        Long examId = submitInfoDTO.getExamId();
+        String sourceCode = submitInfoDTO.getUserCode();
+
+        submitInfoDTO.setUserId(Long.valueOf(userId));
+
+        //在这里对判题请求信息进行填写
+        //在前面接收到判题请求时，user_code、create_by、create_time已插入数据库，
+        UserSubmit userSubmit = new UserSubmit();
+        userSubmit.setUserId(Long.valueOf(userId));
+        userSubmit.setProgramType(0); //已经通过LanguageProfile抽象出了语言配置，但是目前只支持Java
+        userSubmit.setQuestionId(questionId);
+        userSubmit.setUserCode(sourceCode);
+        userSubmit.setCreateBy(Long.valueOf(userId));
+        userSubmit.setCreateTime(LocalDateTime.now());
+        userSubmitMapper.insert(userSubmit);
+
+        Long submitId = userSubmit.getSubmitId();
+        //完成前置信息入库，接下验证 qid 和 eid，从数据库获取，构建判题请求
+        JudgeRequestDTO judgeRequestDTO = new JudgeRequestDTO();
+        judgeRequestDTO.setSubmitId(submitId);
         judgeRequestDTO.setUserId(Long.valueOf(userId));
+        judgeRequestDTO.setExamId(examId);
+        judgeRequestDTO.setQuestionId(questionId);
+        judgeRequestDTO.setSourceCode(sourceCode);
+
+        //从数据库中获取TestCaseDTO
+        List<TestCaseDTO> testCaseDTOS = new ArrayList<>();
+        judgeRequestDTO.setTestCases(testCaseDTOS);
 
         //发送判题消息到判题请求队列
         rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, judgeRequestDTO);
         return null;
     }
 
-    public void testJudge() {
-        JudgeResponseDTO judgeResponseDTO = null;
-        JudgeRequestDTO judgeRequestDTO = null;
+    public void buildTest() {
+        // ========== 场景 1：两数之和，正常通过 ==========
+        SubmitInfoDTO submitInfo1 = createSubmitInfo1();
+        List<TestCaseDTO> cases1 = Arrays.asList(
+                TestCaseDTO.builder().input("1 2").expectedOutput("3").build(),
+                TestCaseDTO.builder().input("-5 7").expectedOutput("2").build(),
+                TestCaseDTO.builder().input("0 0").expectedOutput("0").build()
+        );
+        JudgeRequestDTO request1 = buildJudgeRequest(submitInfo1, cases1);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request1);
 
-        judgeRequestDTO = buildCompileErrorRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 2：答案错误（输出与预期不符） ==========
+        SubmitInfoDTO submitInfo2 = new SubmitInfoDTO();
+        submitInfo2.setUserId(1L);
+        submitInfo2.setQuestionId(2002L);
+        submitInfo2.setUserCode(
+                "import java.util.*;\n" +
+                        "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        Scanner sc = new Scanner(System.in);\n" +
+                        "        int a = sc.nextInt(), b = sc.nextInt();\n" +
+                        "        System.out.println(a - b);\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases2 = Collections.singletonList(
+                TestCaseDTO.builder().input("5 3").expectedOutput("8").build()
+        );
+        JudgeRequestDTO request2 = buildJudgeRequest(submitInfo2, cases2);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request2);
 
-        judgeRequestDTO = buildCompileTimeoutRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 3：编译错误 ==========
+        SubmitInfoDTO submitInfo3 = new SubmitInfoDTO();
+        submitInfo3.setUserId(1L);
+        submitInfo3.setQuestionId(2003L);
+        submitInfo3.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        System.out.println(undefinedVariable);\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases3 = Collections.singletonList(
+                TestCaseDTO.builder().input("1").expectedOutput("1").build()
+        );
+        JudgeRequestDTO request3 = buildJudgeRequest(submitInfo3, cases3);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request3);
 
-        judgeRequestDTO = buildBasicRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 4：超时（死循环） ==========
+        SubmitInfoDTO submitInfo4 = new SubmitInfoDTO();
+        submitInfo4.setUserId(1L);
+        submitInfo4.setQuestionId(2004L);
+        submitInfo4.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        while (true) {}\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases4 = Collections.singletonList(
+                TestCaseDTO.builder().input("1").expectedOutput("1").build()
+        );
+        JudgeRequestDTO request4 = buildJudgeRequest(submitInfo4, cases4);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request4);
 
-        judgeRequestDTO = buildWrongAnswerRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 5：运行时报错（数组越界） ==========
+        SubmitInfoDTO submitInfo5 = new SubmitInfoDTO();
+        submitInfo5.setUserId(1L);
+        submitInfo5.setQuestionId(2005L);
+        submitInfo5.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        int[] arr = new int[1];\n" +
+                        "        System.out.println(arr[10]);\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases5 = Collections.singletonList(
+                TestCaseDTO.builder().input("1").expectedOutput("1").build()
+        );
+        JudgeRequestDTO request5 = buildJudgeRequest(submitInfo5, cases5);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request5);
 
-        judgeRequestDTO = buildRuntimeErrorRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 6：内存超限（申请超大数组） ==========
+        SubmitInfoDTO submitInfo6 = new SubmitInfoDTO();
+        submitInfo6.setUserId(1L);
+        submitInfo6.setQuestionId(2006L);
+        submitInfo6.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        int[] arr = new int[Integer.MAX_VALUE / 2];\n" +
+                        "        System.out.println(arr.length);\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases6 = Collections.singletonList(
+                TestCaseDTO.builder().input("1").expectedOutput("0").build()
+        );
+        JudgeRequestDTO request6 = buildJudgeRequest(submitInfo6, cases6);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request6);
 
-        judgeRequestDTO = buildTimeLimitRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 7：多测试用例部分通过 ==========
+        SubmitInfoDTO submitInfo7 = new SubmitInfoDTO();
+        submitInfo7.setUserId(1L);
+        submitInfo7.setQuestionId(2007L);
+        submitInfo7.setUserCode(
+                "import java.util.*;\n" +
+                        "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        Scanner sc = new Scanner(System.in);\n" +
+                        "        int n = sc.nextInt();\n" +
+                        "        if (n == 3) System.out.println(\"yes\");\n" +
+                        "        else System.out.println(\"no\");\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases7 = Arrays.asList(
+                TestCaseDTO.builder().input("3").expectedOutput("yes").build(),
+                TestCaseDTO.builder().input("5").expectedOutput("yes").build()
+        );
+        JudgeRequestDTO request7 = buildJudgeRequest(submitInfo7, cases7);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request7);
 
-        judgeRequestDTO = buildPartialFailRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 8：无实际输入但输出正确 ==========
+        SubmitInfoDTO submitInfo8 = new SubmitInfoDTO();
+        submitInfo8.setUserId(1L);
+        submitInfo8.setQuestionId(2008L);
+        submitInfo8.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        System.out.println(\"hello\");\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases8 = Collections.singletonList(
+                TestCaseDTO.builder().input("").expectedOutput("hello").build()
+        );
+        JudgeRequestDTO request8 = buildJudgeRequest(submitInfo8, cases8);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request8);
 
-        judgeRequestDTO = buildWhitespaceRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 9：输出格式错误（多空格） ==========
+        SubmitInfoDTO submitInfo9 = new SubmitInfoDTO();
+        submitInfo9.setUserId(1L);
+        submitInfo9.setQuestionId(2009L);
+        submitInfo9.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        System.out.println(\"1  2\");\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases9 = Collections.singletonList(
+                TestCaseDTO.builder().input("").expectedOutput("1 2").build()
+        );
+        JudgeRequestDTO request9 = buildJudgeRequest(submitInfo9, cases9);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request9);
 
-        judgeRequestDTO = buildEmptyInputRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
-
-        judgeRequestDTO = buildLargeOutputRequest();
-        judgeResponseDTO = handleSubmit(null, judgeRequestDTO);
-        //printInfo(judgeResponseDTO);
+        // ========== 场景 10：同一题目重复提交（对比结果） ==========
+        SubmitInfoDTO submitInfo10a = new SubmitInfoDTO();
+        submitInfo10a.setUserId(1L);
+        submitInfo10a.setQuestionId(2010L);
+        submitInfo10a.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        System.out.println(\"correct\");\n" +
+                        "    }\n" +
+                        "}"
+        );
+        SubmitInfoDTO submitInfo10b = new SubmitInfoDTO();
+        submitInfo10b.setUserId(1L);
+        submitInfo10b.setQuestionId(2010L);
+        submitInfo10b.setUserCode(
+                "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        System.out.println(\"wrong\");\n" +
+                        "    }\n" +
+                        "}"
+        );
+        List<TestCaseDTO> cases10 = Collections.singletonList(
+                TestCaseDTO.builder().input("").expectedOutput("correct").build()
+        );
+        JudgeRequestDTO request10a = buildJudgeRequest(submitInfo10a, cases10);
+        JudgeRequestDTO request10b = buildJudgeRequest(submitInfo10b, cases10);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request10a);
+        rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, request10b);
     }
 
-    /////// 运行部分用例 ////////
-    // 正确运行
-    private JudgeRequestDTO buildBasicRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300001L);
-        req.setSourceCode("""
-            import java.util.Scanner;
-
-            public class Main {
-                public static void main(String[] args) {
-                    Scanner sc = new Scanner(System.in);
-                    int a = sc.nextInt();
-                    int b = sc.nextInt();
-                    System.out.println(a + b);
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("1 2", "3"),
-                buildCase("10 20", "30"),
-                buildCase("-5 5", "0")
-        ));
-        return req;
+    @Nonnull
+    private static SubmitInfoDTO createSubmitInfo1() {
+        SubmitInfoDTO submitInfo1 = new SubmitInfoDTO();
+        submitInfo1.setUserId(1L);
+        submitInfo1.setQuestionId(2001L);
+        submitInfo1.setExamId(3001L);
+        submitInfo1.setUserCode(
+                "import java.util.*;\n" +
+                        "public class Main {\n" +
+                        "    public static void main(String[] args) {\n" +
+                        "        Scanner sc = new Scanner(System.in);\n" +
+                        "        int a = sc.nextInt(), b = sc.nextInt();\n" +
+                        "        System.out.println(a + b);\n" +
+                        "    }\n" +
+                        "}"
+        );
+        return submitInfo1;
     }
 
-    //运行错误
-    private JudgeRequestDTO buildWrongAnswerRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300002L);
-        req.setSourceCode("""
-            import java.util.Scanner;
-
-            public class Main {
-                public static void main(String[] args) {
-                    Scanner sc = new Scanner(System.in);
-                    int a = sc.nextInt();
-                    int b = sc.nextInt();
-                    System.out.println(a - b);   // 故意写成减法
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("1 2", "3")   // 期望 3，实际 -1
-        ));
-        return req;
-    }
-
-    //运行时异常
-    private JudgeRequestDTO buildRuntimeErrorRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300003L);
-        req.setSourceCode("""
-            import java.util.Scanner;
-
-            public class Main {
-                public static void main(String[] args) {
-                    Scanner sc = new Scanner(System.in);
-                    int a = sc.nextInt();
-                    int b = sc.nextInt();
-                    System.out.println(a / b);   // b=0 时抛 ArithmeticException
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("1 0", "0")   // 除零，抛异常，退出码非 0
-        ));
-        return req;
-    }
-
-    //运行超时
-    private JudgeRequestDTO buildTimeLimitRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300004L);
-        req.setSourceCode("""
-            public class Main {
-                public static void main(String[] args) {
-                    while (true) {
-                        // 死循环，永远不会结束
-                    }
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("", "anything")
-        ));
-        return req;
-    }
-
-    //部分用例不通过
-    private JudgeRequestDTO buildPartialFailRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300005L);
-        req.setSourceCode("""
-            import java.util.Scanner;
-
-            public class Main {
-                public static void main(String[] args) {
-                    Scanner sc = new Scanner(System.in);
-                    int a = sc.nextInt();
-                    int b = sc.nextInt();
-                    System.out.println(a + b);
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("1 2", "3"),      // 过
-                buildCase("10 20", "30"),   // 过
-                buildCase("3 4", "8")       // 错，期望 7 写成 8
-        ));
-        return req;
-    }
-
-    //空白字符
-    private JudgeRequestDTO buildWhitespaceRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300006L);
-        req.setSourceCode("""
-            public class Main {
-                public static void main(String[] args) {
-                    System.out.println("hello   ");   // 尾部多余空格
-                    System.out.println();             // 多余空行
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("", "hello")
-        ));
-        return req;
-    }
-
-    //输入用例为空
-    private JudgeRequestDTO buildEmptyInputRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300007L);
-        req.setSourceCode("""
-            public class Main {
-                public static void main(String[] args) {
-                    System.out.println("no input");
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("", "no input")
-        ));
-        return req;
-    }
-
-    //大量输出
-    private JudgeRequestDTO buildLargeOutputRequest() {
-        JudgeRequestDTO req = new JudgeRequestDTO();
-        req.setSubmitId(300008L);
-        req.setSourceCode("""
-            public class Main {
-                public static void main(String[] args) {
-                    for (int i = 0; i < 100000; i++) {
-                        System.out.println(i);
-                    }
-                }
-            }
-            """);
-        req.setTestCases(List.of(
-                buildCase("", "0")   // 期望输出对不上，但重点是别 OOM
-        ));
-        return req;
-    }
-
-    //编译错误用例
-    private JudgeRequestDTO buildCompileErrorRequest() {
-        String submitId = "438924";
-
+    private static JudgeRequestDTO buildJudgeRequest(SubmitInfoDTO submitInfo, List<TestCaseDTO> dbTestCases) {
         JudgeRequestDTO request = new JudgeRequestDTO();
-        request.setSubmitId(Long.valueOf(submitId));
-        request.setSourceCode("""
-            public class Main {
-                public static void main(String[] args) {
-                    int x = 1
-                    System.out.println(x);
-                }
-            }
-            """);
-        request.setTestCases(List.of(buildTestCase("", "1")));
+        request.setSubmitId(System.currentTimeMillis());
+        request.setUserId(submitInfo.getUserId());
+        request.setExamId(submitInfo.getExamId());
+        request.setQuestionId(submitInfo.getQuestionId());
+        request.setSourceCode(submitInfo.getUserCode());
+        request.setTestCases(dbTestCases);
         return request;
-    }
-
-    //编译超时用例
-    private JudgeRequestDTO buildCompileTimeoutRequest() {
-        String submitId = "839129";
-
-        JudgeRequestDTO request = new JudgeRequestDTO();
-        request.setSubmitId(Long.valueOf(submitId));
-        request.setSourceCode("""
-            public class Main {
-                public static void main(String[] args) {
-                    System.out.println("hi");
-                }
-            }
-            """);
-        request.setTestCases(List.of(buildTestCase("", "hi")));
-        return request;
-    }
-
-    private static TestCaseDTO buildTestCase(String input, String expectedOutput) {
-        TestCaseDTO tc = new TestCaseDTO();
-        tc.setInput(input);
-        tc.setExpectedOutput(expectedOutput);
-        return tc;
-    }
-
-    /*private void printInfo(JudgeResponseDTO dto){
-        if(dto == null){
-            return;
-        }
-        ColorLog.info("submitId: {}", dto.getSubmitId());
-        ColorLog.info("status: {}", dto.getStatus());
-        ColorLog.info("compileResult: {}", dto.getCompileResult());
-        List<CaseResultDTO> cases = dto.getCaseResults();
-        for (CaseResultDTO caseResult : cases) {
-            ColorLog.info("caseResult: {}", caseResult);
-        }
-        System.out.println();
-        System.out.println();
-    }*/
-
-    private TestCaseDTO buildCase(String input, String expected) {
-        TestCaseDTO tc = new TestCaseDTO();
-        tc.setInput(input);
-        tc.setExpectedOutput(expected);
-        return tc;
     }
 }
