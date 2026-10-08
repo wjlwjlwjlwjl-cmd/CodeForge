@@ -1,4 +1,4 @@
-package com.wjl.job.domain.entity;
+package com.wjl.job.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;

@@ -95,7 +95,7 @@ public class JudgeService {
 
             ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, compileTimeoutMs);
 
-            //超时错误
+            //编译超时错误
             if(!containerExecResultDTO.getSuccess()){
                 judgeResponseDTO.setStatus(JudgeStatus.COMPILE_TIMEOUT);
                 judgeResponseDTO.setCompileResult(JudgeStatus.COMPILE_TIMEOUT.getMsg());
@@ -129,7 +129,7 @@ public class JudgeService {
                     Files.writeString(inputPath, input, StandardCharsets.UTF_8);
                 }
                 catch(IOException e){
-                    ColorLog.error("容器{}，输入测试用例 {input} 到文件失败", containerId, e.getMessage());
+                    ColorLog.error("容器{}，输入测试用例 {} 到文件失败：{}", containerId, input, e.getMessage());
                     judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
                     return judgeResponseDTO;
                 }

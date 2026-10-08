@@ -1,5 +1,6 @@
 package com.wjl.job.controller;
 
+import com.wjl.core.domain.R;
 import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.domain.domain.dto.JudgeRequestDTO;
 import com.wjl.domain.domain.dto.JudgeResponseDTO;
@@ -17,8 +18,9 @@ public class JobController {
     private JobService jobService;
 
     @RequestMapping("/java/submit")
-    public JudgeResponseDTO javaSubmit(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, SubmitInfoDTO submitInfoDTO) {
-        return jobService.handleSubmit(token, submitInfoDTO);
+    public R<Void> javaSubmit(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, SubmitInfoDTO submitInfoDTO) {
+        jobService.handleSubmit(token, submitInfoDTO);
+        return R.success();
     }
 
     //测试，由 test 模拟前端进行判题请求 -> 服务后端发送判题消息到 mq（含带 userId） -> JudgeWorker 订阅消费消息 -> 判题结束发送消息到判题结果队列（含有 userId）
@@ -28,3 +30,18 @@ public class JobController {
         jobService.buildTest();
     }
 }
+
+/*
+* 1. 两数之和（784）
+Scanner sc = new Scanner(System.in);
+int a = sc.nextInt();
+int b = sc.nextInt();
+System.out.println(a + b);
+
+* 2. 两数之差（785）
+Scanner sc = new Scanner(System.in);
+int a = sc.nextInt();
+int b = sc.nextInt();
+System.out.println(a - b);
+*
+* */

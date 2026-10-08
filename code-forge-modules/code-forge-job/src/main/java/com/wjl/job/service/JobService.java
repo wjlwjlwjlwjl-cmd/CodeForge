@@ -1,6 +1,9 @@
 package com.wjl.job.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wjl.core.domain.R;
 import com.wjl.core.enums.ResultCode;
+import com.wjl.core.utils.ColorLog;
 import com.wjl.domain.constants.CommonConstants;
 import com.wjl.domain.domain.dto.JudgeRequestDTO;
 import com.wjl.domain.domain.dto.JudgeResponseDTO;
@@ -8,14 +11,18 @@ import com.wjl.domain.domain.dto.LoginUserDTO;
 import com.wjl.domain.domain.dto.TestCaseDTO;
 import com.wjl.domain.exception.ServiceException;
 import com.wjl.job.domain.dto.SubmitInfoDTO;
-import com.wjl.job.domain.entity.UserSubmit;
+import com.wjl.job.entity.Question;
+import com.wjl.job.entity.UserSubmit;
+import com.wjl.job.mapper.QuestionMapper;
 import com.wjl.job.mapper.UserSubmitMapper;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import com.wjl.security.service.TokenService;
 import jakarta.annotation.Nonnull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,17 +37,72 @@ public class JobService {
     private RabbitmqUtil rabbitmqUtil;
     @Autowired
     private UserSubmitMapper userSubmitMapper;
+    @Autowired
+    private QuestionMapper questionMapper;
 
-    public JudgeResponseDTO handleSubmit(String token, SubmitInfoDTO submitInfoDTO) {
+    public void handleSubmit(String token, SubmitInfoDTO submitInfoDTO) {
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
         if(loginUserDTO == null) throw new ServiceException(ResultCode.FAILED_UNAUTHORIZED.getCode(), ResultCode.FAILED_UNAUTHORIZED.getMsg());
 
         String userId =  loginUserDTO.getUserId();
         Long questionId = submitInfoDTO.getQuestionId();
         Long examId = submitInfoDTO.getExamId();
-        String sourceCode = submitInfoDTO.getUserCode();
+        String userCode = submitInfoDTO.getUserCode();
 
-        submitInfoDTO.setUserId(Long.valueOf(userId));
+        //获取完整代码和用例
+        if(questionId == null){
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        Question question = questionMapper.selectById(questionId);
+        if(question == null){
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        String mainFunc = question.getMainFuc();
+        if (mainFunc == null || userCode == null) {
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        String sourceCode = mainFunc.replace("{{USER_CODE}}", userCode);
+        ColorLog.info("用户拼接后代码:\n{}", sourceCode);
+
+        String questionCase = question.getQuestionCase();
+        // 1. 空值保护
+        if (!StringUtils.hasText(questionCase)) {
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        List<TestCaseDTO> testCases = new ArrayList<>();
+
+        // 2. 按行拆分，每行一条用例
+        String[] lines = questionCase.split("\n");
+        for (String line : lines) {
+
+            // 3. 跳过空行
+            if (!StringUtils.hasText(line)) {
+                continue;
+            }
+
+            // 4. 按 ||| 拆分，限制为 2 段
+            //    用 \\|\\|\\| 是因为 | 在正则中是特殊字符
+            //    限制 2 段是为了防止 expectedOutput 本身含 ||| 时被误拆
+            String[] parts = line.split("\\|\\|\\|", 2);
+
+            if (parts.length != 2) {
+                ColorLog.error(
+                        "用例格式错误，应为 input|||expectedOutput，实际为: {}", line);
+                throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+            }
+
+            // 5. 把字面量 \n 还原成真正的换行
+            //    Java 字符串里 "\\n" 表示两个字符 \ 和 n
+            //    "\n" 表示一个换行符
+            String input = parts[0].replace("\\n", "\n");
+            String expectedOutput = parts[1].replace("\\n", "\n");
+
+            // 6. 构造 TestCaseDTO
+            testCases.add(TestCaseDTO.builder()
+                    .input(input)
+                    .expectedOutput(expectedOutput)
+                    .build());
+        }
 
         //在这里对判题请求信息进行填写
         //在前面接收到判题请求时，user_code、create_by、create_time已插入数据库，
@@ -63,12 +125,18 @@ public class JobService {
         judgeRequestDTO.setSourceCode(sourceCode);
 
         //从数据库中获取TestCaseDTO
-        List<TestCaseDTO> testCaseDTOS = new ArrayList<>();
-        judgeRequestDTO.setTestCases(testCaseDTOS);
+        judgeRequestDTO.setTestCases(testCases);
+
+        try{
+            String cases = new ObjectMapper().writeValueAsString(judgeRequestDTO);
+            ColorLog.info(cases);
+        }
+        catch(IOException e){
+            ColorLog.error(e.getMessage());
+        }
 
         //发送判题消息到判题请求队列
         rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, judgeRequestDTO);
-        return null;
     }
 
     public void buildTest() {

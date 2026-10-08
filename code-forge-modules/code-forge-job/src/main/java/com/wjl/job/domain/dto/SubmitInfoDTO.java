@@ -5,14 +5,13 @@ import lombok.Data;
 
 @Data
 public class SubmitInfoDTO {
-    @NotNull
-    private Long userId;
+    private Long userId; //这个字段后续删除，目前保留是测试需要
 
-    @NotNull
+    @NotNull(message = "questionId 不能为空")
     private Long questionId;
 
     private Long examId;
 
-    @NotNull
+    @NotNull(message = "用户代码不能为空")
     private String userCode;
 }
