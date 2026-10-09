@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MarkdownRenderer from './MarkdownRenderer.jsx';
 import SubmitHistory from './SubmitHistory.jsx';
+import SubmitDetail from './SubmitDetail.jsx';
 
 // 「题目描述」标签页内容：标题 + 限制 + markdown 题面
 function QuestionDetailView({ question, loading, error, onRetry }) {
@@ -45,16 +46,32 @@ function QuestionDetailView({ question, loading, error, onRetry }) {
 }
 
 // 左侧面板：顶部标签栏（题目描述 / 提交记录）+ 内容区
-//   标签栏底色 = 左侧面板底色（--panel-bg）
+//   标签栏底色 = 区域空隙底色（--bg）
 //   内容区底色 = 编辑器底色（--editor-surface）
+// 查看提交详情时，标签栏下方多出一行「← 全部提交记录」返回按钮（用一道细线隔开）
 export default function ProblemDescription({
   question,
   loading,
   error,
   onRetry,
   questionId,
+  monacoTheme,
+  editorFontSize,
 }) {
   const [tab, setTab] = useState('description');
+  // 当前查看的提交详情 { submitId }
+  const [detail, setDetail] = useState(null);
+
+  // 切换题目时，提交详情属于上一题，退回题目描述
+  useEffect(() => {
+    setTab((t) => (t === 'detail' ? 'description' : t));
+    setDetail(null);
+  }, [questionId]);
+
+  const handleSelectSubmit = (item) => {
+    setDetail({ submitId: item.submitId });
+    setTab('detail');
+  };
 
   return (
     <div className="question-panel">
@@ -75,16 +92,43 @@ export default function ProblemDescription({
         </button>
       </div>
 
+      {/* 提交详情：返回提交记录的一行（顶栏下方，细线隔开） */}
+      {tab === 'detail' && (
+        <div className="detail-back-row">
+          <button
+            type="button"
+            className="detail-back"
+            onClick={() => setTab('history')}
+          >
+            ← 全部提交记录
+          </button>
+        </div>
+      )}
+
       <div className="question-tab-content">
-        {tab === 'description' ? (
+        {tab === 'description' && (
           <QuestionDetailView
             question={question}
             loading={loading}
             error={error}
             onRetry={onRetry}
           />
-        ) : (
-          <SubmitHistory questionId={questionId} active={tab === 'history'} />
+        )}
+
+        {tab === 'history' && (
+          <SubmitHistory
+            questionId={questionId}
+            active
+            onSelect={handleSelectSubmit}
+          />
+        )}
+
+        {tab === 'detail' && detail && (
+          <SubmitDetail
+            submitId={detail.submitId}
+            monacoTheme={monacoTheme}
+            editorFontSize={editorFontSize}
+          />
         )}
       </div>
     </div>

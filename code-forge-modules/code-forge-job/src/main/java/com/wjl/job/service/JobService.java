@@ -7,10 +7,12 @@ import com.github.pagehelper.PageInfo;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
+import com.wjl.domain.constants.CacheConstants;
 import com.wjl.domain.constants.CommonConstants;
 import com.wjl.domain.domain.dto.*;
 import com.wjl.domain.exception.ServiceException;
 import com.wjl.job.domain.dto.SubmitInfoDTO;
+import com.wjl.job.domain.vo.SubmitDetailVO;
 import com.wjl.job.domain.vo.SubmitHistoryVO;
 import com.wjl.job.domain.vo.SubmitVO;
 import com.wjl.job.entity.Question;
@@ -18,6 +20,8 @@ import com.wjl.job.entity.UserSubmit;
 import com.wjl.job.mapper.QuestionMapper;
 import com.wjl.job.mapper.UserSubmitMapper;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
+import com.wjl.redis.service.RedisService;
+import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -28,6 +32,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class JobService {
@@ -39,6 +44,8 @@ public class JobService {
     private UserSubmitMapper userSubmitMapper;
     @Autowired
     private QuestionMapper questionMapper;
+    @Autowired
+    private RedisService redisService;
 
     public void handleSubmit(String token, SubmitInfoDTO submitInfoDTO) {
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
@@ -48,6 +55,13 @@ public class JobService {
         Long questionId = submitInfoDTO.getQuestionId();
         Long examId = submitInfoDTO.getExamId();
         String userCode = submitInfoDTO.getUserCode();
+
+        String checkFrequency = CacheUtil.getSubmitIntervalKey(Long.valueOf(userId));
+        if(redisService.hasKey(checkFrequency)){
+            return;
+        }
+        redisService.setCacheObject(checkFrequency, checkFrequency, CacheConstants.SUBMIT_INTERVAL_SEC, TimeUnit.SECONDS);
+
 
         //获取完整代码和用例
         if(questionId == null){
@@ -155,6 +169,11 @@ public class JobService {
         }
         String userId = loginUserDTO.getUserId();
 
+        String cacheKey = CacheUtil.getQuesSubmitKey(questionId, Long.valueOf(userId), pageNum);
+        if(redisService.hasKey(cacheKey)){
+            return redisService.getCacheObject(cacheKey, SubmitHistoryVO.class);
+        }
+
         if(pageNum <= 0){
             pageNum = 1;
         }
@@ -181,6 +200,7 @@ public class JobService {
         submitHistoryVO.setHas(true);
         submitHistoryVO.setList(retList);
 
+        redisService.setCacheObject(cacheKey, submitHistoryVO);
         return submitHistoryVO;
     }
 
@@ -194,6 +214,13 @@ public class JobService {
         }
         String userId = loginUserDTO.getUserId();
 
+        String cacheKey = CacheUtil.getUserSubmitKey(Long.valueOf(userId), pageNum);
+        if(redisService.hasKey(cacheKey)){
+            ColorLog.info("user submit " + cacheKey + " exists");
+            return redisService.getCacheObject(cacheKey, SubmitHistoryVO.class);
+        }
+
+        ColorLog.info("user submit " + cacheKey + " not exists");
         if(pageNum <= 0){
             pageNum = 1;
         }
@@ -219,6 +246,25 @@ public class JobService {
         submitHistoryVO.setHas(true);
         submitHistoryVO.setList(retList);
 
+        redisService.setCacheObject(cacheKey, submitHistoryVO);
         return submitHistoryVO;
+    }
+
+    public SubmitDetailVO getSubmitDetail(Long submitId) {
+        String cacheKey = CacheUtil.getSubmitDetail(submitId);
+        if(redisService.hasKey(cacheKey)){
+            ColorLog.info("submit detail" + cacheKey + " exists");
+            return redisService.getCacheObject(cacheKey, SubmitDetailVO.class);
+        }
+
+        ColorLog.info("submit detail" + cacheKey + " not exists");
+        SubmitDetailVO submitDetailVO = new SubmitDetailVO();
+        UserSubmit userSubmit = userSubmitMapper.selectById(submitId);
+        if(userSubmit == null){
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        BeanCopyUtil.copyProperties(userSubmit, submitDetailVO);
+        redisService.setCacheObject(cacheKey, submitDetailVO);
+        return submitDetailVO;
     }
 }

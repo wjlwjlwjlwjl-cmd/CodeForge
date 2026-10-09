@@ -2,10 +2,8 @@ package com.wjl.job.controller;
 
 import com.wjl.core.domain.R;
 import com.wjl.domain.constants.SecurityConstants;
-import com.wjl.domain.domain.dto.JudgeRequestDTO;
-import com.wjl.domain.domain.dto.JudgeResponseDTO;
-import com.wjl.job.domain.dto.SubmitHistoryDTO;
 import com.wjl.job.domain.dto.SubmitInfoDTO;
+import com.wjl.job.domain.vo.SubmitDetailVO;
 import com.wjl.job.domain.vo.SubmitHistoryVO;
 import com.wjl.job.service.JobService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -14,6 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+//缓存
 @RestController
 @RequestMapping("/job")
 public class JobController {
@@ -37,5 +36,8 @@ public class JobController {
         return R.success(jobService.userSubmitHistory(token, pageNum));
     }
 
-
+    @GetMapping("/submit/detail")
+    public R<SubmitDetailVO> submitDetail(@NotNull Long submitId) {
+        return R.success(jobService.getSubmitDetail(submitId));
+    }
 }

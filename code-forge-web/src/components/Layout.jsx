@@ -60,6 +60,8 @@ export default function Layout({
           loading={questionLoading}
           error={questionError}
           onRetry={onRetry}
+          monacoTheme={monacoTheme}
+          editorFontSize={editorFontSize}
         />
       </div>
 

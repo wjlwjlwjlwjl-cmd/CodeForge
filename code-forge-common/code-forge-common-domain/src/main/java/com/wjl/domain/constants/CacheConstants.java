@@ -74,4 +74,17 @@ public class CacheConstants {
     public final static String EXAM_UNSTART = "exam:unstart"; //还未开始的竞赛
     public final static String EXAM_UNFINISH = "exam:unfinish"; //还未结束的竞赛
     public final static String EXAM_FINISHED = "exam:finished"; //已经结束的竞赛
+
+    /**
+     * 提交信息缓存
+     */
+    public final static String QUES_SUBMIT = "ques:%d:user:%d:submit:page:%d"; //一个用户一道题目所有的提交（分页）
+    public final static String USER_SUBMIT = "user:%d:page:%d"; //一个用户所有的提交（分页）
+    public final static String SUBMIT_DETAIL = "submit:detail:%d"; //一次提交的详细信息
+
+    /**
+     * 判题请求间隔
+     */
+    public final static String SUBMIT_INTERVAL_KEY = "interval:user:%d";
+    public final static Long SUBMIT_INTERVAL_SEC = 4L; //s
 }

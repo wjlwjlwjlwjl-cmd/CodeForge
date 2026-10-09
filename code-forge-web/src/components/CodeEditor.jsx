@@ -8,6 +8,9 @@ const FONT_SIZE_MIN = 10;
 const FONT_SIZE_MAX = 32;
 const FONT_SIZE_STEP = 1;
 
+// 提交冷却：两次提交至少间隔（秒）
+const SUBMIT_COOLDOWN_SEC = 4;
+
 // 右侧：语言下拉 + Monaco 编辑器 + 提交按钮 + 判题结果
 export default function CodeEditor({
   defaultCode,
@@ -26,6 +29,20 @@ export default function CodeEditor({
   const editorRef = useRef(null);
   const vimStatusRef = useRef(null);
   const [editorReady, setEditorReady] = useState(false);
+  // 提交冷却剩余秒数
+  const [cooldown, setCooldown] = useState(0);
+
+  // 冷却倒计时（每秒减一）
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearTimeout(t);
+  }, [cooldown]);
+
+  // 题目切换时重置冷却
+  useEffect(() => {
+    setCooldown(0);
+  }, [defaultCode]);
 
   // 当题目切换（defaultCode 变化）时回填编辑器
   useEffect(() => {
@@ -63,7 +80,10 @@ export default function CodeEditor({
   const fontSize = editorFontSize;
 
   const handleSubmit = () => {
+    // 判题中或冷却中不允许提交
+    if (judging || cooldown > 0) return;
     onSubmit(code);
+    setCooldown(SUBMIT_COOLDOWN_SEC);
   };
 
   const handleResetCode = () => {
@@ -141,9 +161,13 @@ export default function CodeEditor({
           type="button"
           className="submit-btn"
           onClick={handleSubmit}
-          disabled={judging}
+          disabled={judging || cooldown > 0}
         >
-          {judging ? '判题中…' : '提交'}
+          {judging
+            ? '判题中…'
+            : cooldown > 0
+              ? `提交 (${cooldown}s)`
+              : '提交'}
         </button>
       </div>
 

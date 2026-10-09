@@ -35,7 +35,7 @@ function EmptyIcon() {
 }
 
 // 左侧「提交记录」标签页内容
-export default function SubmitHistory({ questionId, active }) {
+export default function SubmitHistory({ questionId, active, onSelect }) {
   const { list, total, loading, error, reload } = useSubmitHistory(questionId, active);
 
   if (loading) {
@@ -75,7 +75,20 @@ export default function SubmitHistory({ questionId, active }) {
         // 序号：列表按时间倒序（最新在最上），因此顶部序号最大 → total - i
         const seq = total - i;
         return (
-          <div className="history-row" key={item.submitId ?? `${i}`}>
+          <div
+            className="history-row"
+            key={item.submitId ?? `${i}`}
+            role="button"
+            tabIndex={0}
+            title="查看提交详情"
+            onClick={() => onSelect?.(item)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onSelect?.(item);
+              }
+            }}
+          >
             <span className="history-index">{seq}</span>
             <span className={`history-status status-${status.kind}`}>
               {status.text}

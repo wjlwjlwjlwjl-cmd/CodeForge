@@ -45,6 +45,12 @@ export const getSubmitUrl = () =>
 export const getSubmitHistoryUrl = (questionId, pageNum = 1) =>
   `http://${HOST}:${API_GATEWAY_PORT}/job/ques/history?questionId=${questionId}&pageNum=${pageNum}`;
 
+// 获取单条提交详情
+// GET {host}:18080/job/submit/detail?submitId={id}
+// 返回 { pass, createTime, programType, runTime, title, userCode }
+export const getSubmitDetailUrl = (submitId) =>
+  `http://${HOST}:${API_GATEWAY_PORT}/job/submit/detail?submitId=${submitId}`;
+
 export const getJudgeWsUrl = () =>
   `ws://${HOST}:${WS_PORT}/ws/judge?token=${TOKEN}`;
 
@@ -78,3 +84,6 @@ export const PASS_STATUS = {
 
 // 提交记录的 programType → 语言名（0-Java，1-C++）
 export const PROGRAM_TYPES = { 0: 'Java', 1: 'C++' };
+
+// 提交记录的 programType → Monaco 语言 id（用于代码高亮）
+export const PROGRAM_LANG = { 0: 'java', 1: 'cpp' };
