@@ -7,9 +7,7 @@ import com.wjl.domain.domain.dto.JudgeResponseDTO;
 import com.wjl.job.domain.dto.SubmitInfoDTO;
 import com.wjl.job.service.JobService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/job")
@@ -17,8 +15,8 @@ public class JobController {
     @Autowired
     private JobService jobService;
 
-    @RequestMapping("/java/submit")
-    public R<Void> javaSubmit(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, SubmitInfoDTO submitInfoDTO) {
+    @PostMapping("/java/submit")
+    public R<Void> javaSubmit(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @RequestBody SubmitInfoDTO submitInfoDTO) {
         jobService.handleSubmit(token, submitInfoDTO);
         return R.success();
     }

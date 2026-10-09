@@ -36,7 +36,6 @@ public class WebSocketSessionManager {
     }
 
     public void sendMessage(String userId, String msg){
-        ColorLog.info("给{}发送ws消息推送", userId);
         WebSocketSession session = sessions.get(userId);
         if(session == null || !session.isOpen()){
             ColorLog.info(true, "用户{}不在线", userId);

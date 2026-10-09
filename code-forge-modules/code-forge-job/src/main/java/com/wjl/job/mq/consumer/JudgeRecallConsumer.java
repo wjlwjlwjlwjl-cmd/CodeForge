@@ -55,7 +55,6 @@ public class JudgeRecallConsumer {
         }
         else{
             //未通过
-            CaseResultDTO caseResultDTO = caseResults.get(caseResults.size() - 1);
             if(Objects.equals(status.getStatus(), JudgeStatus.COMPILE_ERROR.getStatus())){
                 //编译错误
                 pass = 0;
@@ -63,6 +62,7 @@ public class JudgeRecallConsumer {
             }
             else if(Objects.equals(status.getStatus(), JudgeStatus.RUNTIME_ERROR.getStatus())){
                 //运行时错误，将最后一个用例的信息序列化为执行结果
+                CaseResultDTO caseResultDTO = caseResults.get(caseResults.size() - 1);
                 pass = 1;
                 try{
                     exeMessage = objectMapper.writeValueAsString(caseResultDTO);
@@ -78,6 +78,7 @@ public class JudgeRecallConsumer {
             }
             else if(Objects.equals(status.getStatus(), JudgeStatus.WRONG_ANSWER.getStatus())){
                 //答案错误
+                CaseResultDTO caseResultDTO = caseResults.get(caseResults.size() - 1);
                 pass = 3;
                 try{
                     exeMessage = objectMapper.writeValueAsString(caseResultDTO);

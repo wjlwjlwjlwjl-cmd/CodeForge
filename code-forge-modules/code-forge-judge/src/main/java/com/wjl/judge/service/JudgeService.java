@@ -15,7 +15,6 @@ import com.wjl.judge.infrastructure.DockerRunner;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -58,6 +57,7 @@ public class JudgeService {
         judgeResponseDTO.setSubmitId(dto.getSubmitId());
         judgeResponseDTO.setUserCode(dto.getSourceCode());
         judgeResponseDTO.setUserId(dto.getUserId());
+        judgeResponseDTO.setQuestionId(dto.getQuestionId());
 
         String sourceCode = dto.getSourceCode();
         List<TestCaseDTO> testCases = dto.getTestCases();
@@ -123,6 +123,7 @@ public class JudgeService {
                 String input = testCaseDTO.getInput();
                 String expectedOutput = normalize(testCaseDTO.getExpectedOutput());
                 caseResult.setExpectedOutput(expectedOutput);
+                caseResult.setInput(input);
 
                 Path inputPath = hostDirPath.resolve("input.txt");
                 try{
@@ -195,7 +196,7 @@ public class JudgeService {
             }
         }
 
-        Long endTime = System.currentTimeMillis();
+        long endTime = System.currentTimeMillis();
 
         judgeResponseDTO.setStatus(JudgeStatus.ACCEPTED);
         judgeResponseDTO.setRunTime((int)(endTime - startTime));

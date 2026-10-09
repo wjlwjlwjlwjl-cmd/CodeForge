@@ -5,6 +5,7 @@ import lombok.Data;
 @Data
 public class CaseResultDTO {
     private int caseIndex; //测试用例序号
+    private String input;
     private String stdout;
     private String stderr;
     private String expectedOutput;
