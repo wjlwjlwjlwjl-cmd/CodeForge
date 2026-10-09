@@ -12,6 +12,8 @@ export default function Layout({
   monacoTheme,
   editorFontSize,
   onEditorFontSizeChange,
+  vimMode,
+  onVimModeChange,
   judging,
   result,
   submitError,
@@ -69,6 +71,8 @@ export default function Layout({
           monacoTheme={monacoTheme}
           editorFontSize={editorFontSize}
           onEditorFontSizeChange={onEditorFontSizeChange}
+          vimMode={vimMode}
+          onVimModeChange={onVimModeChange}
           judging={judging}
           result={result}
           submitError={submitError}

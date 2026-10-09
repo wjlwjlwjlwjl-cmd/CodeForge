@@ -570,6 +570,76 @@ body {
   box-shadow: 0 0 0 3px var(--accent-soft);
 }
 
+/* Vim 模式开关 */
+.vim-toggle {
+  border: 1px solid #3b3b3b;
+  background: #1e1e1e;
+  color: #9b9b9b;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.vim-toggle:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.vim-toggle.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.vim-toggle:active {
+  transform: scale(0.96);
+}
+
+/* Vim 状态栏（由 monaco-vim 注入内容） */
+.vim-status-bar {
+  flex-shrink: 0;
+  padding: 2px 12px;
+  min-height: 22px;
+  background: #1e1e1e;
+  border-top: 1px solid #3b3b3b;
+  color: #9b9b9b;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.vim-status-bar input {
+  background: #1e1e1e;
+  border: 1px solid #3b3b3b;
+  color: #eff2f6;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 0 4px;
+  outline: none;
+}
+
+/* monaco-vim 内部元素颜色适配（编辑器为暗色，状态栏也保持暗色） */
+.vim-status-bar span,
+.vim-status-bar div {
+  color: #9b9b9b !important;
+  font-family: var(--font-mono);
+}
+
+.vim-status-bar .vim-mode,
+.vim-status-bar .cm-vim-message {
+  color: #eff2f6 !important;
+}
+
+.vim-status-bar input {
+  color: #eff2f6 !important;
+}
+
 /* 恢复默认代码按钮 */
 .reset-btn {
   margin-left: auto;

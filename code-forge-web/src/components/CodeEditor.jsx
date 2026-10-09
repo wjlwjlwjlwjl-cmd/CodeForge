@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
+import { initVimMode } from 'monaco-vim';
 import { LANGUAGES } from '../config.js';
 import JudgeResultPanel from './JudgeResultPanel.jsx';
 
@@ -13,6 +14,8 @@ export default function CodeEditor({
   monacoTheme,
   editorFontSize,
   onEditorFontSizeChange,
+  vimMode,
+  onVimModeChange,
   judging,
   result,
   submitError,
@@ -20,11 +23,42 @@ export default function CodeEditor({
 }) {
   const [language, setLanguage] = useState('java');
   const [code, setCode] = useState(defaultCode || '');
+  const editorRef = useRef(null);
+  const vimStatusRef = useRef(null);
+  const [editorReady, setEditorReady] = useState(false);
 
   // 当题目切换（defaultCode 变化）时回填编辑器
   useEffect(() => {
     setCode(defaultCode || '');
   }, [defaultCode]);
+
+  // 启用/禁用 Vim 模式（编辑器挂载完成后，根据开关初始化或销毁）
+  useEffect(() => {
+    if (!vimMode || !editorReady) return;
+    const editor = editorRef.current;
+    const statusNode = vimStatusRef.current;
+    if (!editor || !statusNode) {
+      console.warn('[vim] 编辑器或状态栏节点未就绪，跳过初始化');
+      return;
+    }
+    let vim;
+    try {
+      vim = initVimMode(editor, statusNode);
+      console.info('[vim] Vim 模式已启用');
+    } catch (err) {
+      console.error('[vim] 初始化失败:', err);
+      return;
+    }
+    // 让编辑器获得焦点，确保 Vim 能立即接管键盘输入
+    editor.focus();
+    return () => {
+      try {
+        vim.dispose();
+      } catch (err) {
+        console.error('[vim] 销毁失败:', err);
+      }
+    };
+  }, [vimMode, editorReady]);
 
   const fontSize = editorFontSize;
 
@@ -34,6 +68,11 @@ export default function CodeEditor({
 
   const handleResetCode = () => {
     setCode(defaultCode || '');
+  };
+
+  const handleEditorMount = (editor) => {
+    editorRef.current = editor;
+    setEditorReady(true);
   };
 
   const changeFontSize = useCallback((delta) => {
@@ -91,6 +130,15 @@ export default function CodeEditor({
 
         <button
           type="button"
+          className={`vim-toggle${vimMode ? ' active' : ''}`}
+          onClick={() => onVimModeChange(!vimMode)}
+          title={vimMode ? '关闭 Vim 模式' : '开启 Vim 模式'}
+        >
+          Vim
+        </button>
+
+        <button
+          type="button"
           className="submit-btn"
           onClick={handleSubmit}
           disabled={judging}
@@ -106,6 +154,7 @@ export default function CodeEditor({
           theme={monacoTheme}
           value={code}
           onChange={(value) => setCode(value || '')}
+          onMount={handleEditorMount}
           options={{
             minimap: { enabled: false },
             fontSize,
@@ -116,6 +165,8 @@ export default function CodeEditor({
           }}
         />
       </div>
+
+      {vimMode && <div ref={vimStatusRef} className="vim-status-bar" />}
 
       <JudgeResultPanel result={result} judging={judging} error={submitError} />
     </div>

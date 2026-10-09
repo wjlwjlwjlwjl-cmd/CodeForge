@@ -1,7 +1,6 @@
 import { useEffect, useMemo } from 'react';
 import Layout from './components/Layout.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
-import ZoomControl from './components/ZoomControl.jsx';
 import { useQuestion } from './hooks/useQuestion.js';
 import { useJudge } from './hooks/useJudge.js';
 import { usePreferences } from './hooks/usePreferences.js';
@@ -23,9 +22,10 @@ export default function App() {
     editorFontSize,
     setEditorFontSize,
     zoom,
-    changeZoom,
     splitRatio,
     setSplitRatio,
+    vimMode,
+    setVimMode,
   } = usePreferences();
 
   const { data: question, loading: questionLoading, error: questionError, retry } = useQuestion(id);
@@ -42,7 +42,6 @@ export default function App() {
       <header className="app-header">
         <div className="app-brand">Code Forge</div>
         <div className="app-header-actions">
-          <ZoomControl zoom={zoom} onChange={changeZoom} />
           <ThemeToggle theme={theme} onToggle={toggleTheme} />
         </div>
       </header>
@@ -60,6 +59,8 @@ export default function App() {
           monacoTheme={monacoTheme}
           editorFontSize={editorFontSize}
           onEditorFontSizeChange={setEditorFontSize}
+          vimMode={vimMode}
+          onVimModeChange={setVimMode}
           judging={judging}
           result={result}
           submitError={submitError}

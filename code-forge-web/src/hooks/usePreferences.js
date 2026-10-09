@@ -11,6 +11,7 @@ const KEYS = {
   editorFontSize: 'cf:editorFontSize',
   zoom: 'cf:zoom',
   splitRatio: 'cf:splitRatio',
+  vimMode: 'cf:vimMode',
 };
 
 const DEFAULTS = {
@@ -18,6 +19,7 @@ const DEFAULTS = {
   editorFontSize: 14,
   zoom: 1,
   splitRatio: 0.4,
+  vimMode: false,
 };
 
 export const ZOOM_MIN = 0.8;
@@ -34,6 +36,10 @@ export function usePreferences() {
   const [splitRatio, setSplitRatio] = useLocalStorage(
     KEYS.splitRatio,
     DEFAULTS.splitRatio
+  );
+  const [vimMode, setVimMode] = useLocalStorage(
+    KEYS.vimMode,
+    DEFAULTS.vimMode
   );
 
   const toggleTheme = useCallback(() => {
@@ -60,5 +66,7 @@ export function usePreferences() {
     changeZoom,
     splitRatio,
     setSplitRatio,
+    vimMode,
+    setVimMode,
   };
 }
