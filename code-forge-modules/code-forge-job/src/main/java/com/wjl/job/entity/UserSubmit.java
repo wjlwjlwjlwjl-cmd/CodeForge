@@ -14,6 +14,7 @@ public class UserSubmit {
     private Long submitId;
     private Long userId; //唯一键
     private Long questionId;
+    private String title;
     private Long examId; //所属竞赛的id
     private Integer programType; //0-java，1-cpp
     private String userCode; //用户代码

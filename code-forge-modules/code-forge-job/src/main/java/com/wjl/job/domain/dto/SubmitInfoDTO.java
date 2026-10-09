@@ -1,5 +1,7 @@
 package com.wjl.job.domain.dto;
 
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -11,6 +13,10 @@ public class SubmitInfoDTO {
     private Long questionId;
 
     private Long examId;
+
+    @Min(value = 0)
+    @Max(value = 0)
+    private Integer lang = 0;
 
     @NotNull(message = "用户代码不能为空")
     private String userCode;

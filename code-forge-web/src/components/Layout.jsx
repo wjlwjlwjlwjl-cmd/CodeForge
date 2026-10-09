@@ -6,6 +6,7 @@ import CodeEditor from './CodeEditor.jsx';
 // 中间通过可拖拽分割条调整左右宽度比例，比例持久化到 localStorage。
 export default function Layout({
   question,
+  questionId,
   questionLoading,
   questionError,
   onRetry,
@@ -55,6 +56,7 @@ export default function Layout({
       <div className="island island-left" style={{ flexBasis: `${splitRatio * 100}%` }}>
         <ProblemDescription
           question={question}
+          questionId={questionId}
           loading={questionLoading}
           error={questionError}
           onRetry={onRetry}

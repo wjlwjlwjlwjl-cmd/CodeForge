@@ -11,6 +11,7 @@ public class JudgeResponseDTO {
     private Long userId;
     private Long examId;
     private Long questionId;
+    private Integer lang;
     private JudgeStatus status;
     private String compileResult;
     private List<CaseResultDTO> caseResults;

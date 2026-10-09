@@ -109,6 +109,50 @@ public class QuestionService {
         return questionVO;
     }
 
+    public QuestionDetailVO next(Long id){
+        QuestionDetailVO questionVO = new QuestionDetailVO();
+        id += 1;
+        String cacheKey = CacheConstants.QUESTION_PREFIX + id;
+        if(redisService.hasKey(cacheKey)){
+            Question question = redisService.getCacheObject(cacheKey, Question.class);
+            BeanCopyUtil.copyProperties(question, questionVO);
+            return questionVO;
+        }
+
+        Question question = questionMapper.selectById(id);
+        if(question == null){
+            //当前已是最后一道
+            throw new ServiceException(ResultCode.FAILED_LAST_QUESTION.getCode(), ResultCode.FAILED_LAST_QUESTION.getMsg());
+        }
+        redisService.setCacheObject(cacheKey, question, CacheConstants.QUESTION_EXPIRATION, TimeUnit.MINUTES);
+        BeanCopyUtil.copyProperties(question, questionVO);
+        return questionVO;
+    }
+
+    public QuestionDetailVO prev(Long id){
+        QuestionDetailVO questionVO = new QuestionDetailVO();
+        if(id == 1){
+            //当前已是第一道
+            throw new ServiceException(ResultCode.FAILED_FIRST_QUESTION.getCode(), ResultCode.FAILED_FIRST_QUESTION.getMsg());
+        }
+        id -= 1;
+        String cacheKey = CacheConstants.QUESTION_PREFIX + id;
+        if(redisService.hasKey(cacheKey)){
+            Question question = redisService.getCacheObject(cacheKey, Question.class);
+            BeanCopyUtil.copyProperties(question, questionVO);
+            return questionVO;
+        }
+
+        Question question = questionMapper.selectById(id);
+        if(question == null){
+            //当前已是第一道
+            throw new ServiceException(ResultCode.FAILED_FIRST_QUESTION.getCode(), ResultCode.FAILED_FIRST_QUESTION.getMsg());
+        }
+        redisService.setCacheObject(cacheKey, question, CacheConstants.QUESTION_EXPIRATION, TimeUnit.MINUTES);
+        BeanCopyUtil.copyProperties(question, questionVO);
+        return questionVO;
+    }
+
     public String edit(QuestionEditDTO dto, String token){
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());

@@ -200,6 +200,7 @@ public class JudgeService {
 
         judgeResponseDTO.setStatus(JudgeStatus.ACCEPTED);
         judgeResponseDTO.setRunTime((int)(endTime - startTime));
+        judgeResponseDTO.setLang(dto.getLang());
 
         rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);
 

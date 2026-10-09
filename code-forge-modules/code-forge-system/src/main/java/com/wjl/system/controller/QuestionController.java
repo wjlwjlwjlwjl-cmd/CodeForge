@@ -50,4 +50,16 @@ public class QuestionController {
     public R<String> delete(@PathVariable Long id) {
         return R.success(questionService.delete(id));
     }
+
+    @GetMapping("/next")
+    @Operation(description = "获取当前题目的下一道题目")
+    public R<QuestionDetailVO> next(@RequestParam Long id) {
+        return R.success(questionService.next(id));
+    }
+
+    @GetMapping("/prev")
+    @Operation(description = "获取当前题目的上一道题目")
+    public R<QuestionDetailVO> prev(@RequestParam Long id) {
+        return R.success(questionService.prev(id));
+    }
 }

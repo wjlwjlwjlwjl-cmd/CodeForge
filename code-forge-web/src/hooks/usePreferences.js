@@ -57,8 +57,8 @@ export function usePreferences() {
 
   return {
     theme,
-    // LeetCode 编辑器始终为暗色，固定使用 vs-dark
-    monacoTheme: 'vs-dark',
+    // 编辑器主题跟随页面主题：浅色用 light，深色用 vs-dark
+    monacoTheme: theme === 'dark' ? 'vs-dark' : 'light',
     toggleTheme,
     editorFontSize,
     setEditorFontSize,

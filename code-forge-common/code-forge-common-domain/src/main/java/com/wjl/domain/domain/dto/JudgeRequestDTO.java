@@ -11,5 +11,6 @@ public class JudgeRequestDTO {
     private Long examId;
     private Long questionId;
     private String sourceCode;
+    private Integer lang;
     private List<TestCaseDTO> testCases;
 }

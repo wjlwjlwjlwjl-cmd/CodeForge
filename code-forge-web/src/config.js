@@ -12,6 +12,10 @@ export const WS_PORT = 18082;
 // 统一响应包裹：code === SUCCESS_CODE 视为成功
 export const SUCCESS_CODE = 1000;
 
+// 上一题/下一题到达边界时的业务码（对应后端 ResultCode 枚举）
+export const FIRST_QUESTION_CODE = 3501; // 已经是第一题
+export const LAST_QUESTION_CODE = 3502; // 已经是最后一题
+
 // 鉴权 JWT（测试用，前端写死）
 // 同时用于：
 //   1. GET /question/detail 的 Authorization 请求头（经网关 AuthFilter 鉴权）
@@ -25,8 +29,21 @@ export const TOKEN =
 export const getQuestionDetailUrl = (id) =>
   `http://${HOST}:${API_GATEWAY_PORT}/question/detail?id=${id}`;
 
+export const getQuestionNextUrl = (id) =>
+  `http://${HOST}:${API_GATEWAY_PORT}/question/next?id=${id}`;
+
+export const getQuestionPrevUrl = (id) =>
+  `http://${HOST}:${API_GATEWAY_PORT}/question/prev?id=${id}`;
+
 export const getSubmitUrl = () =>
   `http://${HOST}:${API_GATEWAY_PORT}/job/java/submit`;
+
+// 获取某道题的提交记录（分页）
+// GET {host}:18080/job/ques/history?questionId={id}&pageNum={n}
+// 返回 { has, total, pages, pageNum, pageSize, list: SubmitVO[] }
+//   SubmitVO = { submitId, pass, programType, runTime, title, createTime }
+export const getSubmitHistoryUrl = (questionId, pageNum = 1) =>
+  `http://${HOST}:${API_GATEWAY_PORT}/job/ques/history?questionId=${questionId}&pageNum=${pageNum}`;
 
 export const getJudgeWsUrl = () =>
   `ws://${HOST}:${WS_PORT}/ws/judge?token=${TOKEN}`;
@@ -48,3 +65,16 @@ export const STATUS_TEXT = {
   RUNTIME_ERROR: '运行时错误',
   SYSTEM_ERROR: '系统错误',
 };
+
+// 提交记录的 pass 字段 → 展示文案与颜色类型
+// 对应后端 UserSubmit.pass：0 编译错误 / 1 运行时错误 / 2 超时 / 3 答案错误 / 4 ac
+export const PASS_STATUS = {
+  0: { text: '编译错误', kind: 'error' },
+  1: { text: '运行时错误', kind: 'error' },
+  2: { text: '运行超时', kind: 'warning' },
+  3: { text: '解答错误', kind: 'error' },
+  4: { text: '通过', kind: 'success' },
+};
+
+// 提交记录的 programType → 语言名（0-Java，1-C++）
+export const PROGRAM_TYPES = { 0: 'Java', 1: 'C++' };

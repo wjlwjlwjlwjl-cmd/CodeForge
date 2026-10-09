@@ -20,8 +20,23 @@
   --warning-soft: rgba(255, 161, 22, 0.1);
   --code-bg: #f6f6f6;
   --inline-code-bg: rgba(0, 0, 0, 0.06);
-  --header-bg: #282828;
-  --header-text: #ffffff;
+  --header-bg: #ffffff;
+  --header-text: #262626;
+  --header-border: #e5e5e5;
+  --header-control-border: #d9d9d9;
+  --header-control-hover: rgba(0, 0, 0, 0.05);
+  --editor-bar-bg: #f3f3f3;
+  --editor-bar-border: #e0e0e0;
+  --editor-bar-text: #333333;
+  --editor-bar-muted: #6b6b6b;
+  --editor-bar-input-bg: #ffffff;
+  --editor-bar-hover: rgba(0, 0, 0, 0.06);
+  --judge-bg: #ffffff;
+  --judge-text: #262626;
+  --judge-muted: #7f7f7f;
+  --judge-pre-bg: #f6f6f6;
+  --judge-pre-border: #e5e5e5;
+  --editor-surface: #ffffff;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -64,6 +79,21 @@ html[data-theme='dark'] {
   --inline-code-bg: rgba(255, 255, 255, 0.08);
   --header-bg: #282828;
   --header-text: #ffffff;
+  --header-border: #3b3b3b;
+  --header-control-border: rgba(255, 255, 255, 0.2);
+  --header-control-hover: rgba(255, 255, 255, 0.08);
+  --editor-bar-bg: #282828;
+  --editor-bar-border: #3b3b3b;
+  --editor-bar-text: #eff2f6;
+  --editor-bar-muted: #9b9b9b;
+  --editor-bar-input-bg: #1e1e1e;
+  --editor-bar-hover: rgba(255, 255, 255, 0.08);
+  --judge-bg: #282828;
+  --judge-text: #eff2f6;
+  --judge-muted: #9b9b9b;
+  --judge-pre-bg: #1e1e1e;
+  --judge-pre-border: #3b3b3b;
+  --editor-surface: #1e1e1e;
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.5);
@@ -142,11 +172,18 @@ body {
   justify-content: space-between;
   padding: 10px var(--space-5);
   background: var(--header-bg);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--header-border);
   box-shadow: var(--shadow-sm);
   flex-shrink: 0;
   position: relative;
   z-index: 10;
+}
+
+.app-header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
 }
 
 .app-brand {
@@ -159,19 +196,64 @@ body {
   color: var(--header-text);
 }
 
+.app-logo {
+  display: block;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.app-brand-name {
+  white-space: nowrap;
+}
+
+/* 顶栏内的上一题 / 下一题图标按钮 */
+.question-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.nav-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--header-control-border);
+  background: transparent;
+  color: var(--header-text);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  padding: 0;
+  transition: border-color var(--transition), background var(--transition),
+    color var(--transition), transform var(--transition);
+}
+
+.nav-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--header-control-hover);
+}
+
+.nav-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.nav-btn svg {
+  display: block;
+}
+
 .app-header-actions {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-}
-
-.app-brand::before {
-  content: '';
-  width: 6px;
-  height: 6px;
-  border-radius: 2px;
-  background: var(--accent);
-  display: inline-block;
 }
 
 .theme-toggle {
@@ -180,7 +262,7 @@ body {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--header-control-border);
   background: transparent;
   color: var(--header-text);
   border-radius: var(--radius-md);
@@ -193,7 +275,7 @@ body {
 
 .theme-toggle:hover {
   border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--header-control-hover);
 }
 
 .theme-toggle:active {
@@ -207,7 +289,7 @@ body {
   gap: 2px;
   padding: 2px;
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--header-control-border);
   border-radius: var(--radius-md);
 }
 
@@ -228,7 +310,7 @@ body {
 }
 
 .zoom-control button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--header-control-hover);
   color: var(--accent);
 }
 
@@ -284,12 +366,12 @@ body {
 .island-left {
   flex-grow: 0;
   flex-shrink: 0;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 .island-right {
   flex: 1;
-  background: #282828;
+  background: var(--editor-bar-bg);
 }
 
 /* 可拖拽分割条：不占额外宽度，仅在左右 gap 中央悬浮一条细线 */
@@ -362,6 +444,134 @@ body {
   background: var(--accent-soft);
 }
 
+/* ============ 左侧标签页（题目描述 / 提交记录） ============ */
+.question-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+/* 标签栏：底色与左侧面板一致（--panel-bg） */
+.question-tabs {
+  display: flex;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+  background: var(--panel-bg);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.question-tab {
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  padding: 12px 12px 10px;
+  font-size: 14px;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  transition: color var(--transition), border-color var(--transition);
+}
+
+.question-tab:hover {
+  color: var(--text);
+}
+
+.question-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* 内容区：底色与编辑器一致（--editor-surface） */
+.question-tab-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--editor-surface);
+}
+
+/* ============ 提交记录 ============ */
+.submit-history {
+  padding: var(--space-3) var(--space-4) var(--space-5);
+}
+
+.history-head,
+.history-row {
+  display: grid;
+  grid-template-columns: 40px minmax(84px, 1fr) 140px 50px 72px;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.history-head {
+  padding: 4px var(--space-2) 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+}
+
+.history-row {
+  padding: 10px var(--space-2);
+  font-size: 13px;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-index {
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.history-status {
+  font-weight: 600;
+}
+
+.history-status.status-success {
+  color: var(--success);
+}
+
+.history-status.status-warning {
+  color: var(--warning);
+}
+
+.history-status.status-error {
+  color: var(--error);
+}
+
+.history-status.status-muted {
+  color: var(--text-muted);
+}
+
+.history-time,
+.history-lang,
+.history-runtime {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 无提交记录时的空状态占位 */
+.history-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  min-height: 100%;
+  padding: 48px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.history-empty-icon {
+  color: var(--border-strong);
+}
+
+.history-empty-text {
+  margin: 0;
+  font-size: 14px;
+}
+
 /* ============ 题面 ============ */
 .problem-description {
   padding: var(--space-6) var(--space-6);
@@ -375,6 +585,47 @@ body {
   margin: 0 0 var(--space-3);
   color: var(--text);
   line-height: 1.3;
+}
+
+/* 切换/加载失败时的行内提示（保留题面） */
+.question-inline-error {
+  margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  background: var(--error-soft);
+  color: var(--error);
+  font-size: 13px;
+}
+
+/* 屏幕中央的灰底提示 toast（如：已经是最后一题了） */
+.toast {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  max-width: 80vw;
+  padding: 12px 24px;
+  border-radius: var(--radius-md);
+  background: rgba(60, 60, 60, 0.92);
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  pointer-events: none;
+  animation: toast-in 0.18s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .question-meta {
@@ -543,15 +794,15 @@ body {
   align-items: center;
   gap: var(--space-3);
   padding: var(--space-2) var(--space-4);
-  border-bottom: 1px solid var(--border);
-  background: #282828;
+  border-bottom: 1px solid var(--editor-bar-border);
+  background: var(--editor-bar-bg);
   flex-shrink: 0;
 }
 
 .language-select {
-  border: 1px solid #3b3b3b;
-  background: #1e1e1e;
-  color: #eff2f6;
+  border: 1px solid var(--editor-bar-border);
+  background: var(--editor-bar-input-bg);
+  color: var(--editor-bar-text);
   border-radius: var(--radius-sm);
   padding: 6px 10px;
   font-size: 13px;
@@ -561,7 +812,7 @@ body {
 }
 
 .language-select:hover {
-  border-color: #4a4a4a;
+  border-color: var(--border-strong);
 }
 
 .language-select:focus-visible {
@@ -572,9 +823,9 @@ body {
 
 /* Vim 模式开关 */
 .vim-toggle {
-  border: 1px solid #3b3b3b;
-  background: #1e1e1e;
-  color: #9b9b9b;
+  border: 1px solid var(--editor-bar-border);
+  background: var(--editor-bar-input-bg);
+  color: var(--editor-bar-muted);
   border-radius: var(--radius-sm);
   padding: 6px 12px;
   font-size: 13px;
@@ -604,9 +855,9 @@ body {
   flex-shrink: 0;
   padding: 2px 12px;
   min-height: 22px;
-  background: #1e1e1e;
-  border-top: 1px solid #3b3b3b;
-  color: #9b9b9b;
+  background: var(--judge-pre-bg);
+  border-top: 1px solid var(--editor-bar-border);
+  color: var(--editor-bar-muted);
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.5;
@@ -615,37 +866,37 @@ body {
 }
 
 .vim-status-bar input {
-  background: #1e1e1e;
-  border: 1px solid #3b3b3b;
-  color: #eff2f6;
+  background: var(--judge-pre-bg);
+  border: 1px solid var(--editor-bar-border);
+  color: var(--editor-bar-text);
   font-family: var(--font-mono);
   font-size: 12px;
   padding: 0 4px;
   outline: none;
 }
 
-/* monaco-vim 内部元素颜色适配（编辑器为暗色，状态栏也保持暗色） */
+/* monaco-vim 内部元素颜色适配 */
 .vim-status-bar span,
 .vim-status-bar div {
-  color: #9b9b9b !important;
+  color: var(--editor-bar-muted) !important;
   font-family: var(--font-mono);
 }
 
 .vim-status-bar .vim-mode,
 .vim-status-bar .cm-vim-message {
-  color: #eff2f6 !important;
+  color: var(--editor-bar-text) !important;
 }
 
 .vim-status-bar input {
-  color: #eff2f6 !important;
+  color: var(--editor-bar-text) !important;
 }
 
 /* 恢复默认代码按钮 */
 .reset-btn {
   margin-left: auto;
-  border: 1px solid #3b3b3b;
-  background: #1e1e1e;
-  color: #9b9b9b;
+  border: 1px solid var(--editor-bar-border);
+  background: var(--editor-bar-input-bg);
+  color: var(--editor-bar-muted);
   border-radius: var(--radius-sm);
   padding: 6px 12px;
   font-size: 13px;
@@ -669,15 +920,15 @@ body {
   align-items: center;
   gap: var(--space-1);
   padding: 2px;
-  background: #1e1e1e;
-  border: 1px solid #3b3b3b;
+  background: var(--editor-bar-input-bg);
+  border: 1px solid var(--editor-bar-border);
   border-radius: var(--radius-md);
 }
 
 .font-size-control button {
   border: none;
   background: transparent;
-  color: #9b9b9b;
+  color: var(--editor-bar-muted);
   border-radius: var(--radius-sm);
   padding: 3px 9px;
   cursor: pointer;
@@ -689,7 +940,7 @@ body {
 }
 
 .font-size-control button:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--editor-bar-hover);
   color: var(--accent);
 }
 
@@ -707,7 +958,7 @@ body {
   text-align: center;
   font-size: 12px;
   font-weight: 600;
-  color: #eff2f6;
+  color: var(--editor-bar-text);
   font-variant-numeric: tabular-nums;
   user-select: none;
 }
@@ -748,13 +999,13 @@ body {
 
 /* ============ 判题结果面板 ============ */
 .judge-panel {
-  border-top: 1px solid #3b3b3b;
+  border-top: 1px solid var(--editor-bar-border);
   padding: var(--space-4);
   max-height: 40%;
   overflow-y: auto;
   flex-shrink: 0;
-  background: #282828;
-  color: #eff2f6;
+  background: var(--judge-bg);
+  color: var(--judge-text);
 }
 
 .judge-status {
@@ -813,7 +1064,7 @@ body {
 
 /* 通过时的运行时间卡片 */
 .judge-detail {
-  color: #eff2f6;
+  color: var(--judge-text);
   font-size: 13px;
 }
 
@@ -827,8 +1078,8 @@ body {
 .judge-pre {
   margin: var(--space-1) 0;
   padding: var(--space-3);
-  background: #1e1e1e;
-  border: 1px solid #3b3b3b;
+  background: var(--judge-pre-bg);
+  border: 1px solid var(--judge-pre-border);
   border-radius: var(--radius-sm);
   overflow-x: auto;
   white-space: pre-wrap;
@@ -836,7 +1087,7 @@ body {
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 1.55;
-  color: #eff2f6;
+  color: var(--judge-text);
 }
 
 .case-line {
@@ -847,7 +1098,7 @@ body {
   display: inline-block;
   font-size: 13px;
   font-weight: 600;
-  color: #eff2f6;
+  color: var(--judge-text);
   margin-bottom: var(--space-2);
 }
 
@@ -855,7 +1106,7 @@ body {
   display: block;
   font-weight: 600;
   margin-bottom: var(--space-1);
-  color: #9b9b9b;
+  color: var(--judge-muted);
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.03em;
@@ -866,5 +1117,5 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  color: #9b9b9b;
+  color: var(--judge-muted);
 }

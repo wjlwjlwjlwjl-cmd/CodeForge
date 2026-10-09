@@ -19,6 +19,13 @@ export function useJudge(questionId) {
     questionIdRef.current = questionId;
   }, [questionId]);
 
+  // 切换题目时，清空上一题的判题结果
+  useEffect(() => {
+    setResult(null);
+    setJudging(false);
+    setSubmitError(null);
+  }, [questionId]);
+
   // 订阅 WS，按 questionId 路由结果
   useEffect(() => {
     const onMessage = (msg) => {
