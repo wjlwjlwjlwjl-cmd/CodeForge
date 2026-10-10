@@ -122,12 +122,21 @@ public class JudgeRecallConsumer {
             }
         }
 
-        //对 redis 中的队列更新缓存
+        // 更新提交记录缓存：
+        //   只有缓存已存在（说明里面是全量列表）才做增量插入；
+        //   否则会往 Redis 里造出一个「只有一条」的列表，破坏分页与总数。
         UserSubmit userSubmit = userSubmitMapper.selectById(submitId);
         String cacheKey1 = CacheUtil.getQuesSubmitKey(dto.getQuestionId(), dto.getUserId()); //问题提交记录
-        redisService.rightPushForList(cacheKey1, userSubmit);
+        if (redisService.hasKey(cacheKey1)) {
+            redisService.leftPushForList(cacheKey1, userSubmit); // 最新记录插到最前，保持时间倒序
+        }
         String cacheKey2 = CacheUtil.getUserSubmitKey(dto.getUserId());//用户提交记录
-        redisService.rightPushForList(cacheKey2, userSubmit);
+        if (redisService.hasKey(cacheKey2)) {
+            redisService.leftPushForList(cacheKey2, userSubmit);
+        }
+
+        // 判题结果已落库，提交详情缓存失效（pass/runTime 已变化）
+        redisService.deleteObject(CacheUtil.getSubmitDetail(submitId));
 
         //完成结果落库后，进行websocket结果推送
         try{

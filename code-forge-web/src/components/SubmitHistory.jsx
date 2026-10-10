@@ -1,17 +1,6 @@
 import { useSubmitHistory } from '../hooks/useSubmitHistory.js';
 import { PASS_STATUS, PROGRAM_TYPES } from '../config.js';
-
-// 提交时间：后端返回 ISO 字符串（如 2026-10-09T18:18:03）→ 2026-10-09 18:18:03
-function formatTime(t) {
-  if (!t) return '—';
-  return String(t).replace('T', ' ').slice(0, 19);
-}
-
-// 执行用时：仅「通过」展示，其余为 N/A
-function formatRunTime(pass, runTime) {
-  if (pass === 4 && runTime != null) return `${runTime} ms`;
-  return 'N/A';
-}
+import { formatDateTime, formatRunTime } from '../utils/format.js';
 
 // 空提交记录占位图标（收件箱 / 空盒子）
 function EmptyIcon() {
@@ -93,7 +82,7 @@ export default function SubmitHistory({ questionId, active, onSelect }) {
             <span className={`history-status status-${status.kind}`}>
               {status.text}
             </span>
-            <span className="history-time">{formatTime(item.createTime)}</span>
+            <span className="history-time">{formatDateTime(item.createTime)}</span>
             <span className="history-lang">
               {PROGRAM_TYPES[item.programType] ?? '—'}
             </span>

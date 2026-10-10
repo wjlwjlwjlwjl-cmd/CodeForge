@@ -3,7 +3,6 @@ package com.wjl.judge.service;
 import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ColorLog;
-import com.wjl.docker.util.ContainerUtil;
 import com.wjl.domain.domain.dto.CaseResultDTO;
 import com.wjl.domain.domain.dto.JudgeRequestDTO;
 import com.wjl.domain.domain.dto.JudgeResponseDTO;
@@ -12,6 +11,8 @@ import com.wjl.judge.domain.dto.ContainerExecResultDTO;
 import com.wjl.judge.domain.language.LanguageProfile;
 import com.wjl.domain.enums.JudgeStatus;
 import com.wjl.judge.infrastructure.DockerRunner;
+import com.wjl.judge.pool.ContainerInfo;
+import com.wjl.judge.pool.ContainerPool;
 import com.wjl.rabbitmq.utils.RabbitmqUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -27,11 +28,11 @@ import java.util.List;
 @Component
 public class JudgeService {
     @Autowired
-    private ContainerUtil containerUtil;
-    @Autowired
     private DockerRunner dockerRunner;
     @Autowired
     private RabbitmqUtil rabbitmqUtil;
+    @Autowired
+    private ContainerPool containerPool;
 
     public JudgeResponseDTO judge(JudgeRequestDTO dto, LanguageProfile languageProfile) {
         JudgeResponseDTO judgeResponseDTO = new JudgeResponseDTO();
@@ -41,10 +42,6 @@ public class JudgeService {
             return judgeResponseDTO;
         }
 
-        String image = languageProfile.getImage();
-        String hostDirTemplate = languageProfile.getHostDir();
-        String containerDirTemplate = languageProfile.getContainerDir();
-        String containerNameTemplate = languageProfile.getContainerName();
         String sourceFileName = languageProfile.getSourceFileName();
         String compileTemplate = languageProfile.getCompileTemplate();
         String runtimeTemplate = languageProfile.getRuntimeTemplate();
@@ -61,16 +58,25 @@ public class JudgeService {
 
         String sourceCode = dto.getSourceCode();
         List<TestCaseDTO> testCases = dto.getTestCases();
-        Long submitId = dto.getSubmitId();
 
-        String hostDir = String.format(hostDirTemplate, submitId);
-        String containerDir = String.format(containerDirTemplate, submitId);
-        String containerName = String.format(containerNameTemplate, submitId);
-        String compileCmd = String.format(compileTemplate, submitId);
-        String execCmd = String.format(runtimeTemplate, submitId);
+        // 从容器池取一个容器（池内容器，或池满时新建的临时容器）；
+        // 目录随容器走：宿主机 hostDir 与容器内 containerDir 已 bind，
+        // 把代码写到 hostDir 容器内就能直接看到，不再需要 docker cp。
+        ContainerInfo container = containerPool.getContainer();
+        if (container == null) {
+            ColorLog.error("容器池无法提供容器，判题中止");
+            judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
+            return judgeResponseDTO;
+        }
+        String containerId = container.getContainerId();
+        String hostDir = container.getHostDir();
+        String containerDir = container.getContainerDir();
+
+        String compileCmd = String.format(compileTemplate, containerDir);
+        String execCmd = String.format(runtimeTemplate, containerDir);
         long totalTimeLimit = runTimeoutMs + runOverheadMs;
 
-        //将源代码写入目录
+        // 将源代码写入该容器的宿主机目录（容器内通过 bind 立即可见）
         Path hostDirPath = Paths.get(hostDir);
         Path sourceFilePath = hostDirPath.resolve(sourceFileName);
         try{
@@ -80,19 +86,12 @@ public class JudgeService {
         catch(IOException e){
             ColorLog.error("源代码写入目录失败{}",  e.getMessage());
             judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
+            containerPool.release(containerId);
             return judgeResponseDTO;
         }
 
-        String containerId = null;
         long startTime = 0L;
         try{
-            //创建容器，启动容器，运行命令，收集结果
-            containerId = containerUtil.createContainer(hostDir, containerDir, image, containerName);
-            if(!containerUtil.startContainer(containerId)){
-                judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
-                return judgeResponseDTO;
-            }
-
             ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, compileTimeoutMs);
 
             //编译超时错误
@@ -190,10 +189,8 @@ public class JudgeService {
             return judgeResponseDTO;
         }
         finally {
-            //无论结果如何，都在判题逻辑结束之后，删除容器
-            if(containerId != null){
-                dockerRunner.removeContainer(containerId);
-            }
+            //无论结果如何，都在判题逻辑结束之后，释放容器池容器
+            containerPool.release(containerId);
         }
 
         long endTime = System.currentTimeMillis();

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Editor from '@monaco-editor/react';
 import { initVimMode } from 'monaco-vim';
 import { LANGUAGES } from '../config.js';
-import JudgeResultPanel from './JudgeResultPanel.jsx';
 
 const FONT_SIZE_MIN = 10;
 const FONT_SIZE_MAX = 32;
@@ -20,8 +19,6 @@ export default function CodeEditor({
   vimMode,
   onVimModeChange,
   judging,
-  result,
-  submitError,
   onSubmit,
 }) {
   const [language, setLanguage] = useState('java');
@@ -191,8 +188,6 @@ export default function CodeEditor({
       </div>
 
       {vimMode && <div ref={vimStatusRef} className="vim-status-bar" />}
-
-      <JudgeResultPanel result={result} judging={judging} error={submitError} />
     </div>
   );
 }

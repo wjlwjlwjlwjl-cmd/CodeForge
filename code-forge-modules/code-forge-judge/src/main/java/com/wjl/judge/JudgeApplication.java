@@ -3,7 +3,9 @@ package com.wjl.judge;
 import com.wjl.core.utils.ColorLog;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
+@EnableScheduling
 @SpringBootApplication(scanBasePackages = "com.wjl")
 public class JudgeApplication {
 

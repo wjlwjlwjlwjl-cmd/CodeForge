@@ -62,6 +62,8 @@ export default function Layout({
           onRetry={onRetry}
           monacoTheme={monacoTheme}
           editorFontSize={editorFontSize}
+          result={result}
+          submitError={submitError}
         />
       </div>
 
@@ -78,8 +80,6 @@ export default function Layout({
           vimMode={vimMode}
           onVimModeChange={onVimModeChange}
           judging={judging}
-          result={result}
-          submitError={submitError}
           onSubmit={onSubmit}
         />
       </div>

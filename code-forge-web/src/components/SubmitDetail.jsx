@@ -1,65 +1,7 @@
-import { useState } from 'react';
-import Editor from '@monaco-editor/react';
 import { useSubmitDetail } from '../hooks/useSubmitDetail.js';
 import { PASS_STATUS, PROGRAM_TYPES, PROGRAM_LANG } from '../config.js';
-
-// 提交时间：ISO 字符串 → 2026-10-09 18:18:03
-function formatTime(t) {
-  if (!t) return '—';
-  return String(t).replace('T', ' ').slice(0, 19);
-}
-
-// 执行用时：仅「通过」展示，其余为 N/A
-function formatRunTime(pass, runTime) {
-  if (pass === 4 && runTime != null) return `${runTime} ms`;
-  return 'N/A';
-}
-
-// 只读 + 高亮代码块：高度随代码内容自动撑开
-function CodeBlock({ code, language, theme, fontSize }) {
-  const [height, setHeight] = useState(120);
-
-  const handleMount = (editor) => {
-    const update = () => setHeight(editor.getContentHeight());
-    update();
-    // 内容尺寸变化（如字体切换）时同步高度
-    const sub = editor.onDidContentSizeChange(update);
-    editor.__heightSub = sub;
-  };
-
-  return (
-    <Editor
-      height={height}
-      language={language}
-      theme={theme}
-      value={code}
-      onMount={handleMount}
-      options={{
-        readOnly: true,
-        domReadOnly: true,
-        minimap: { enabled: false },
-        fontSize,
-        scrollBeyondLastLine: false,
-        automaticLayout: true,
-        lineNumbers: 'on',
-        lineNumbersMinChars: 3,
-        wordWrap: 'off',
-        overviewRulerLanes: 0,
-        renderLineHighlight: 'none',
-        contextmenu: false,
-        folding: false,
-        glyphMargin: false,
-        scrollbar: {
-          vertical: 'hidden',
-          horizontal: 'auto',
-          handleMouseWheel: false,
-          alwaysConsumeMouseWheel: false,
-        },
-        padding: { top: 12, bottom: 12 },
-      }}
-    />
-  );
-}
+import CodeBlock from './CodeBlock.jsx';
+import { formatDateTime, formatRunTime } from '../utils/format.js';
 
 // 提交详情：状态作标题 + 提交时间 + 语言/执行用时，最下方为只读高亮代码块
 export default function SubmitDetail({ submitId, monacoTheme, editorFontSize }) {
@@ -91,7 +33,7 @@ export default function SubmitDetail({ submitId, monacoTheme, editorFontSize }) 
       {/* 结果状态作标题，下方提交时间，再下方语言与执行用时 */}
       <div className="detail-header">
         <h2 className={`detail-status status-${status.kind}`}>{status.text}</h2>
-        <div className="detail-time">{formatTime(data.createTime)}</div>
+        <div className="detail-time">{formatDateTime(data.createTime)}</div>
         <div className="detail-meta">
           <span className="detail-meta-item">
             <span className="detail-label">语言</span>

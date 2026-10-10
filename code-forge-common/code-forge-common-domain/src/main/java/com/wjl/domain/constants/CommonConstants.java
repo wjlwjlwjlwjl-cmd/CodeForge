@@ -32,15 +32,12 @@ public class CommonConstants {
     public static final long MAX_SIZE = 2 * 1024 * 1024;
 
     /**
-     * docker-java 容器端口选择最大重试次数
+     * 容器缓存池大小
      */
-    public static final Integer MAX_RETRY = 10;
-
-    /**
-     * docker-java 容器端口随机尝试范围
-     */
-    public static final Integer MAX_PORT = 20000;
-    public static final Integer MIN_PORT = 40000;
+    public static final Integer CONTAINER_POOL_SIZE = 3;
+    public static final String POOL_CONTAINER_NAME = "pool-java-%d";
+    public static final Integer MAX_CONTAINER_POOL_SIZE = 4;
+    public static final Integer MIN_CONTAINER_POOL_SIZE = 2;
 
     /**
      * 判题容器使用镜像
@@ -51,18 +48,18 @@ public class CommonConstants {
     /**
      * 容器目录绑定
      */
-    public static final String JAVA_HOST_DIR = System.getProperty("user.dir") + "/user-code/java/" + "%d";
-    //public static final String JAVA_HOST_DIR = "/data/oj/java/%d";
-    public static final String JAVA_CONTAINER_DIR = "/workspace/java/%d";
+    public static final String JAVA_HOST_DIR = System.getProperty("user.dir") + "/user-code/java/%s";
+    //public static final String JAVA_HOST_DIR = "/data/oj/java/%s";
+    public static final String JAVA_CONTAINER_DIR = "/workspace/java/%s";
     public static final String JAVA_CONTAINER_NAME = "oj-java-%d";
 
     /**
      * Java 代码的编译模版与运行模版
      */
     public static final String JAVA_COMPILE_TEMPLATE =
-            "cd /workspace/java/%d && javac -encoding UTF-8 Main.java";
+            "cd %s && javac -encoding UTF-8 Main.java";
     public static final String JAVA_RUNTIME_TEMPLATE = """
-        cd /workspace/java/%d && java \\
+        cd %s && java \\
           -XX:+UseSerialGC \\
           -XX:TieredStopAtLevel=1 \\
           -Xss64m \\

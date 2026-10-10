@@ -2,8 +2,6 @@ package com.wjl.job.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
@@ -31,6 +29,7 @@ import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.concurrent.TimeUnit;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -174,26 +173,38 @@ public class JobService {
         }
         String userId = loginUserDTO.getUserId();
 
+        // 缓存约定：key 里存的是「该用户该题的全部提交记录」，
+        // 按时间倒序（下标 0 最新）。分页时只从缓存取区间，
+        // 绝不能把「某一页」写进缓存，否则顺序和总数都会错。
         String cacheKey = CacheUtil.getQuesSubmitKey(questionId, Long.valueOf(userId));
-        Long total = 0L;
+        long from = (long) pageSize * (pageNum - 1);
+        long to = from + pageSize - 1;
+        Long total;
         if(redisService.hasKey(cacheKey)){
             //直接从redis中获取题目提交记录
-            list = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * (pageNum - 1) + pageSize - 1, UserSubmit.class);
+            list = redisService.getCacheListByRange(cacheKey, from, to, UserSubmit.class);
             total = redisService.getCacheListSize(cacheKey);
         }
         else{
-            PageHelper.startPage(pageNum, pageSize);
-            list = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
+            // 未命中：一次性取全部（不分页）按时间倒序，整体入缓存，再按页切片
+            List<UserSubmit> all = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
                     .eq(UserSubmit::getQuestionId, questionId)
                     .eq(UserSubmit::getUserId, userId)
                     .orderByDesc(UserSubmit::getCreateTime)
+                    .orderByDesc(UserSubmit::getSubmitId)
             );
-            //redis中没有，设置进缓存
-            redisService.setCacheList(cacheKey, list);
-            total = userSubmitMapper.selectCount(new LambdaQueryWrapper<UserSubmit>()
-                    .eq(UserSubmit::getQuestionId, questionId)
-                    .eq(UserSubmit::getUserId, userId)
-            );
+            if (all == null) {
+                all = Collections.emptyList();
+            }
+            // setCacheList 内部是 rightPushAll（追加），先删 key 才能保证是覆盖语义
+            redisService.deleteObject(cacheKey);
+            redisService.setCacheList(cacheKey, all);
+            redisService.expire(cacheKey, CacheConstants.EXPIRATION, TimeUnit.MINUTES);
+
+            total = (long) all.size();
+            int fromIdx = (int) Math.min(from, all.size());
+            int toIdx = (int) Math.min(to + 1, all.size());
+            list = new ArrayList<>(all.subList(fromIdx, toIdx));
         }
         int pages = (int) ((total + pageSize - 1) / pageSize);
 
@@ -230,25 +241,34 @@ public class JobService {
         }
         String userId = loginUserDTO.getUserId();
 
+        // 与题目提交记录同理：缓存存全量（时间倒序），分页只取区间
         String cacheKey = CacheUtil.getUserSubmitKey(Long.valueOf(userId));
+        long from = (long) pageSize * (pageNum - 1);
+        long to = from + pageSize - 1;
         Long total;
         if(redisService.hasKey(cacheKey)){
-            //直接从redis中获取题目提交记录
-            ColorLog.info("从redis获取{}", cacheKey);
-            list = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * (pageNum - 1) + pageSize - 1, UserSubmit.class);
+            //直接从redis中获取用户提交记录
+            list = redisService.getCacheListByRange(cacheKey, from, to, UserSubmit.class);
             total = redisService.getCacheListSize(cacheKey);
         }
         else{
-            PageHelper.startPage(pageNum, pageSize);
-            list = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
+            List<UserSubmit> all = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
                     .eq(UserSubmit::getUserId, userId)
                     .orderByDesc(UserSubmit::getCreateTime)
+                    .orderByDesc(UserSubmit::getSubmitId)
             );
-            //redis中没有，设置进缓存
-            redisService.setCacheList(cacheKey, list);
-            total = userSubmitMapper.selectCount(new LambdaQueryWrapper<UserSubmit>()
-                    .eq(UserSubmit::getUserId, userId)
-            );
+            if (all == null) {
+                all = Collections.emptyList();
+            }
+            // setCacheList 内部是 rightPushAll（追加），先删 key 才能保证是覆盖语义
+            redisService.deleteObject(cacheKey);
+            redisService.setCacheList(cacheKey, all);
+            redisService.expire(cacheKey, CacheConstants.EXPIRATION, TimeUnit.MINUTES);
+
+            total = (long) all.size();
+            int fromIdx = (int) Math.min(from, all.size());
+            int toIdx = (int) Math.min(to + 1, all.size());
+            list = new ArrayList<>(all.subList(fromIdx, toIdx));
         }
         int pages = (int) ((total + pageSize - 1) / pageSize);
 

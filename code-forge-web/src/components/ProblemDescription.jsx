@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MarkdownRenderer from './MarkdownRenderer.jsx';
 import SubmitHistory from './SubmitHistory.jsx';
 import SubmitDetail from './SubmitDetail.jsx';
+import JudgeResultView from './JudgeResultView.jsx';
 
 // 「题目描述」标签页内容：标题 + 限制 + markdown 题面
 function QuestionDetailView({ question, loading, error, onRetry }) {
@@ -26,10 +27,8 @@ function QuestionDetailView({ question, loading, error, onRetry }) {
     <div className="problem-description">
       <h1 className="question-title">{question.title}</h1>
 
-      {/* 切换/加载失败时的错误提示（保留已展示的题面） */}
       {error && <div className="question-inline-error">{error}</div>}
 
-      {/* 可选：展示难度/时间/空间限制。后端字段：difficulty / timeLimit / spaceLimit */}
       {(question.timeLimit != null || question.spaceLimit != null) && (
         <div className="question-meta">
           {question.timeLimit != null && (
@@ -45,10 +44,10 @@ function QuestionDetailView({ question, loading, error, onRetry }) {
   );
 }
 
-// 左侧面板：顶部标签栏（题目描述 / 提交记录）+ 内容区
-//   标签栏底色 = 区域空隙底色（--bg）
-//   内容区底色 = 编辑器底色（--editor-surface）
-// 查看提交详情时，标签栏下方多出一行「← 全部提交记录」返回按钮（用一道细线隔开）
+// 左侧面板标签栏：
+//   固定：题目描述、提交记录
+//   动态：提交详情 / 判题结果（各带关闭按钮）
+// 顶栏底色 = 左侧面板底色（--panel-bg）；内容区 = 编辑器底色（--editor-surface）
 export default function ProblemDescription({
   question,
   loading,
@@ -57,21 +56,43 @@ export default function ProblemDescription({
   questionId,
   monacoTheme,
   editorFontSize,
+  result,
+  submitError,
 }) {
   const [tab, setTab] = useState('description');
   // 当前查看的提交详情 { submitId }
   const [detail, setDetail] = useState(null);
 
-  // 切换题目时，提交详情属于上一题，退回题目描述
+  // 记住打开动态标签前的标签，关闭后回到那里
+  const prevTabRef = useRef('description');
+  const tabRef = useRef(tab);
+  tabRef.current = tab;
+
+  // 服务端推送判题结果（或提交失败）时，自动切到「判题结果」标签
   useEffect(() => {
-    setTab((t) => (t === 'detail' ? 'description' : t));
+    if (!result && !submitError) return;
+    const cur = tabRef.current;
+    if (cur !== 'detail' && cur !== 'result') prevTabRef.current = cur;
+    setTab('result');
+  }, [result, submitError]);
+
+  // 切换题目时，动态标签属于上一题，退回题目描述
+  useEffect(() => {
+    setTab((t) => (t === 'detail' || t === 'result' ? 'description' : t));
     setDetail(null);
   }, [questionId]);
 
-  const handleSelectSubmit = (item) => {
+  const openDetail = (item) => {
+    prevTabRef.current = 'history';
     setDetail({ submitId: item.submitId });
     setTab('detail');
   };
+
+  const closeTab = () => {
+    setTab(prevTabRef.current || 'description');
+  };
+
+  const showBackRow = tab === 'detail' || tab === 'result';
 
   return (
     <div className="question-panel">
@@ -90,10 +111,50 @@ export default function ProblemDescription({
         >
           提交记录
         </button>
+
+        {tab === 'detail' && (
+          <div className="question-tab active question-tab-closable">
+            <span>提交详情</span>
+            <button
+              type="button"
+              className="tab-close"
+              onClick={closeTab}
+              title="关闭"
+              aria-label="关闭"
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
+                stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"
+                strokeLinejoin="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
+          </div>
+        )}
+
+        {tab === 'result' && (
+          <div className="question-tab active question-tab-closable">
+            <span>判题结果</span>
+            <button
+              type="button"
+              className="tab-close"
+              onClick={closeTab}
+              title="关闭"
+              aria-label="关闭"
+            >
+              <svg viewBox="0 0 24 24" width="12" height="12" fill="none"
+                stroke="currentColor" strokeWidth="2.6" strokeLinecap="round"
+                strokeLinejoin="round">
+                <line x1="6" y1="6" x2="18" y2="18" />
+                <line x1="18" y1="6" x2="6" y2="18" />
+              </svg>
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 提交详情：返回提交记录的一行（顶栏下方，细线隔开） */}
-      {tab === 'detail' && (
+      {/* 提交详情 / 判题结果页的「全部提交记录」返回行 */}
+      {showBackRow && (
         <div className="detail-back-row">
           <button
             type="button"
@@ -119,13 +180,22 @@ export default function ProblemDescription({
           <SubmitHistory
             questionId={questionId}
             active
-            onSelect={handleSelectSubmit}
+            onSelect={openDetail}
           />
         )}
 
         {tab === 'detail' && detail && (
           <SubmitDetail
             submitId={detail.submitId}
+            monacoTheme={monacoTheme}
+            editorFontSize={editorFontSize}
+          />
+        )}
+
+        {tab === 'result' && (
+          <JudgeResultView
+            result={result}
+            submitError={submitError}
             monacoTheme={monacoTheme}
             editorFontSize={editorFontSize}
           />
