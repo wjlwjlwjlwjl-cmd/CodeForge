@@ -1,7 +1,6 @@
 package com.wjl.system.service.question;
 
 import com.github.pagehelper.PageHelper;
-import com.github.pagehelper.PageInfo;
 import com.wjl.domain.constants.CacheConstants;
 import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
@@ -55,14 +54,17 @@ public class QuestionService {
             redisService.expire(cacheKey, CacheConstants.QUESTION_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }
 
-        PageInfo<Question> pageInfo = new PageInfo<>(questions);
-        List<QuestionVO> questionVOs = BeanCopyUtil.copyListProperties(pageInfo.getList(), QuestionVO::new);
+        List<QuestionVO> questionVOs = BeanCopyUtil.copyListProperties(questions, QuestionVO::new);
+
+        // total/pages 必须按数据库真实总数计算：
+        long total = questionMapper.selectCount(null);
+        int pages = (int) ((total + pageSize - 1) / pageSize);
 
         listQuestionVO.setList(questionVOs);
-        listQuestionVO.setTotal(pageInfo.getTotal()); //total
+        listQuestionVO.setTotal(total);
         listQuestionVO.setPageNum(pageNum);
         listQuestionVO.setPageSize(pageSize);
-        listQuestionVO.setPages(pageInfo.getPages()); //pages
+        listQuestionVO.setPages(pages);
 
         return listQuestionVO;
     }

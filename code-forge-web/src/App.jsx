@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import Layout from './components/Layout.jsx';
 import ThemeToggle from './components/ThemeToggle.jsx';
+import QuestionLibrary from './components/QuestionLibrary.jsx';
 import { useQuestion } from './hooks/useQuestion.js';
 import { useJudge } from './hooks/useJudge.js';
 import { usePreferences } from './hooks/usePreferences.js';
@@ -15,6 +16,8 @@ function parseIdFromQuery() {
 
 export default function App() {
   const [currentId, setCurrentId] = useState(parseIdFromQuery);
+  // 题库抽屉是否打开
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const {
     theme,
     monacoTheme,
@@ -50,6 +53,15 @@ export default function App() {
 
   const { result, judging, submitError, submit } = useJudge(currentId);
 
+  // 从题库选择题目：切题 + 关闭抽屉
+  const handleSelectQuestion = useCallback(
+    (q) => {
+      if (q?.id != null) handleSwitchQuestion(q.id);
+      setLibraryOpen(false);
+    },
+    [handleSwitchQuestion]
+  );
+
   // 将主题同步到 <html> 元素，确保 body、overscroll 区域、浏览器原生滚动条
   // 都能取到正确的暗/亮色 CSS 变量（:root 变量在 html 层面切换）
   useEffect(() => {
@@ -71,6 +83,25 @@ export default function App() {
             <img className="app-logo" src="/code.png" alt="" aria-hidden="true" />
             <span className="app-brand-name">Code Forge</span>
           </div>
+
+          <button
+            type="button"
+            className="library-btn"
+            onClick={() => setLibraryOpen(true)}
+            title="题库"
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none"
+              stroke="currentColor" strokeWidth="2" strokeLinecap="round"
+              strokeLinejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6" />
+              <line x1="8" y1="12" x2="21" y2="12" />
+              <line x1="8" y1="18" x2="21" y2="18" />
+              <circle cx="3.5" cy="6" r="1" />
+              <circle cx="3.5" cy="12" r="1" />
+              <circle cx="3.5" cy="18" r="1" />
+            </svg>
+            题库
+          </button>
 
           {currentId != null && (
             <div className="question-nav">
@@ -117,6 +148,14 @@ export default function App() {
           {questionNotice}
         </div>
       )}
+
+      {/* 题库抽屉 */}
+      <QuestionLibrary
+        open={libraryOpen}
+        currentId={currentId}
+        onClose={() => setLibraryOpen(false)}
+        onSelect={handleSelectQuestion}
+      />
 
       {currentId == null ? (
         <div className="panel-center">

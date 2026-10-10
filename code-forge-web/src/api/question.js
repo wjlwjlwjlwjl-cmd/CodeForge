@@ -6,6 +6,7 @@ import {
   getQuestionDetailUrl,
   getQuestionNextUrl,
   getQuestionPrevUrl,
+  getQuestionListUrl,
 } from '../config.js';
 
 // 通用请求：题目详情类接口（detail / next / prev）
@@ -64,4 +65,13 @@ export async function fetchPrevQuestion(id) {
   if (code !== SUCCESS_CODE) throw new Error(msg || `业务错误（code=${code}）`);
   if (!data || data.id == null) return { boundary: 'first' };
   return { data };
+}
+
+// 获取题目列表（分页）
+// GET {host}:18080/question/list?pageNum={n}
+// 返回 { total, pages, pageNum, pageSize, list }
+export async function fetchQuestionList(pageNum = 1) {
+  const { code, data, msg } = await requestQuestion(getQuestionListUrl(pageNum));
+  if (code !== SUCCESS_CODE) throw new Error(msg || `业务错误（code=${code}）`);
+  return data;
 }

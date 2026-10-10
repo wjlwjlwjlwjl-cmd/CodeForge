@@ -110,7 +110,6 @@ public class TokenService {
             if (StringUtils.isNotEmpty(token)) {
                 String userId = JwtUtil.getUserId(token);
                 user = redisService.getCacheObject(getBTokenKey(userId), LoginUserDTO.class);
-                ColorLog.info("使用 {} 进行B端鉴权", getBTokenKey(userId));
                 return user;
             }
         } catch (Exception e) {
@@ -128,7 +127,6 @@ public class TokenService {
             if (StringUtils.isNotEmpty(token)) {
                 String userId = JwtUtil.getUserId(token);
                 user = redisService.getCacheObject(getCTokenKey(userId), LoginUserDTO.class);
-                ColorLog.info("使用 {} 进行C端鉴权", getCTokenKey(userId));
                 return user;
             }
         } catch (Exception e) {

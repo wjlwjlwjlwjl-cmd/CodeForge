@@ -62,7 +62,6 @@ public class JobService {
         }
         redisService.setCacheObject(checkFrequency, checkFrequency, CacheConstants.SUBMIT_INTERVAL_SEC, TimeUnit.SECONDS);
 
-
         //获取完整代码和用例
         if(questionId == null){
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
@@ -125,7 +124,7 @@ public class JobService {
         userSubmit.setUserId(Long.valueOf(userId));
         userSubmit.setProgramType(0); //已经通过LanguageProfile抽象出了语言配置，但是目前只支持Java
         userSubmit.setQuestionId(questionId);
-        userSubmit.setUserCode(sourceCode);
+        userSubmit.setUserCode(userCode);
         userSubmit.setCreateBy(Long.valueOf(userId));
         userSubmit.setCreateTime(LocalDateTime.now());
         userSubmit.setTitle(title);
@@ -159,8 +158,14 @@ public class JobService {
         rabbitmqUtil.sendToExchange(CommonConstants.JUDGE_EXCHANGE, CommonConstants.JAVA_ROUTING_KEY, judgeRequestDTO);
     }
 
+    //缓存存在缺陷
     public SubmitHistoryVO quesSubmitHistory(String token, Long questionId, int pageNum) {
         SubmitHistoryVO submitHistoryVO = new SubmitHistoryVO();
+        int pageSize = CommonConstants.PAGE_SIZE;
+        List<UserSubmit> list = null;
+        if(pageNum <= 0){
+            pageNum = 1;
+        }
 
         //获取用户某道题的全部提交记录
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
@@ -169,25 +174,32 @@ public class JobService {
         }
         String userId = loginUserDTO.getUserId();
 
-        String cacheKey = CacheUtil.getQuesSubmitKey(questionId, Long.valueOf(userId), pageNum);
+        String cacheKey = CacheUtil.getQuesSubmitKey(questionId, Long.valueOf(userId));
+        Long total = 0L;
         if(redisService.hasKey(cacheKey)){
-            return redisService.getCacheObject(cacheKey, SubmitHistoryVO.class);
+            //直接从redis中获取题目提交记录
+            list = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * (pageNum - 1) + pageSize - 1, UserSubmit.class);
+            total = redisService.getCacheListSize(cacheKey);
         }
+        else{
+            PageHelper.startPage(pageNum, pageSize);
+            list = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getQuestionId, questionId)
+                    .eq(UserSubmit::getUserId, userId)
+                    .orderByDesc(UserSubmit::getCreateTime)
+            );
+            //redis中没有，设置进缓存
+            redisService.setCacheList(cacheKey, list);
+            total = userSubmitMapper.selectCount(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getQuestionId, questionId)
+                    .eq(UserSubmit::getUserId, userId)
+            );
+        }
+        int pages = (int) ((total + pageSize - 1) / pageSize);
 
-        if(pageNum <= 0){
-            pageNum = 1;
-        }
-        int pageSize = CommonConstants.PAGE_SIZE;
-        PageHelper.startPage(pageNum, pageSize);
-        List<UserSubmit> list = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
-                .eq(UserSubmit::getQuestionId, questionId)
-                .eq(UserSubmit::getUserId, userId)
-                .orderByDesc(UserSubmit::getCreateTime)
-        );
         if (list == null) list = Collections.emptyList();
-        PageInfo<UserSubmit> pageInfo = new PageInfo<>(list);
-        submitHistoryVO.setTotal(pageInfo.getTotal());
-        submitHistoryVO.setPages(pageInfo.getPages());
+        submitHistoryVO.setTotal(total);
+        submitHistoryVO.setPages(pages);
         submitHistoryVO.setPageNum(pageNum);
         submitHistoryVO.setPageSize(pageSize);
 
@@ -195,17 +207,21 @@ public class JobService {
             submitHistoryVO.setHas(false);
             return submitHistoryVO;
         }
-
         List<SubmitVO> retList = BeanCopyUtil.copyListProperties(list, SubmitVO::new);
+
         submitHistoryVO.setHas(true);
         submitHistoryVO.setList(retList);
 
-        redisService.setCacheObject(cacheKey, submitHistoryVO);
         return submitHistoryVO;
     }
 
     public SubmitHistoryVO userSubmitHistory(String token, int pageNum) {
         SubmitHistoryVO submitHistoryVO = new SubmitHistoryVO();
+        int pageSize = CommonConstants.PAGE_SIZE;
+        List<UserSubmit> list = null;
+        if(pageNum <= 0){
+            pageNum = 1;
+        }
 
         //获取用户某道题的全部提交记录
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
@@ -214,26 +230,31 @@ public class JobService {
         }
         String userId = loginUserDTO.getUserId();
 
-        String cacheKey = CacheUtil.getUserSubmitKey(Long.valueOf(userId), pageNum);
+        String cacheKey = CacheUtil.getUserSubmitKey(Long.valueOf(userId));
+        Long total;
         if(redisService.hasKey(cacheKey)){
-            ColorLog.info("user submit " + cacheKey + " exists");
-            return redisService.getCacheObject(cacheKey, SubmitHistoryVO.class);
+            //直接从redis中获取题目提交记录
+            ColorLog.info("从redis获取{}", cacheKey);
+            list = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * (pageNum - 1) + pageSize - 1, UserSubmit.class);
+            total = redisService.getCacheListSize(cacheKey);
         }
+        else{
+            PageHelper.startPage(pageNum, pageSize);
+            list = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getUserId, userId)
+                    .orderByDesc(UserSubmit::getCreateTime)
+            );
+            //redis中没有，设置进缓存
+            redisService.setCacheList(cacheKey, list);
+            total = userSubmitMapper.selectCount(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getUserId, userId)
+            );
+        }
+        int pages = (int) ((total + pageSize - 1) / pageSize);
 
-        ColorLog.info("user submit " + cacheKey + " not exists");
-        if(pageNum <= 0){
-            pageNum = 1;
-        }
-        int pageSize = CommonConstants.PAGE_SIZE;
-        PageHelper.startPage(pageNum, pageSize);
-        List<UserSubmit> list = userSubmitMapper.selectList(new LambdaQueryWrapper<UserSubmit>()
-                .eq(UserSubmit::getUserId, userId)
-                .orderByDesc(UserSubmit::getCreateTime)
-        );
         if (list == null) list = Collections.emptyList();
-        PageInfo<UserSubmit> pageInfo = new PageInfo<>(list);
-        submitHistoryVO.setTotal(pageInfo.getTotal());
-        submitHistoryVO.setPages(pageInfo.getPages());
+        submitHistoryVO.setTotal(total);
+        submitHistoryVO.setPages(pages);
         submitHistoryVO.setPageNum(pageNum);
         submitHistoryVO.setPageSize(pageSize);
 
@@ -241,12 +262,11 @@ public class JobService {
             submitHistoryVO.setHas(false);
             return submitHistoryVO;
         }
-
         List<SubmitVO> retList = BeanCopyUtil.copyListProperties(list, SubmitVO::new);
+
         submitHistoryVO.setHas(true);
         submitHistoryVO.setList(retList);
 
-        redisService.setCacheObject(cacheKey, submitHistoryVO);
         return submitHistoryVO;
     }
 

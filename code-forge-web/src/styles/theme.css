@@ -140,6 +140,7 @@ body {
   flex-direction: column;
   height: 100%;
   background: var(--bg);
+  position: relative;
 }
 
 /* 滚动条 */
@@ -245,6 +246,38 @@ body {
 }
 
 .nav-btn svg {
+  display: block;
+}
+
+/* 题库按钮（顶栏，位于 Code Forge 与上/下一题之间） */
+.library-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--header-control-border);
+  background: transparent;
+  color: var(--header-text);
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--transition), background var(--transition),
+    color var(--transition), transform var(--transition);
+}
+
+.library-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--header-control-hover);
+}
+
+.library-btn:active {
+  transform: scale(0.97);
+}
+
+.library-btn svg {
   display: block;
 }
 
@@ -744,6 +777,178 @@ body {
     opacity: 1;
     transform: translate(-50%, -50%) scale(1);
   }
+}
+
+/* ============ 题库抽屉 ============ */
+.library-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 40;
+}
+
+/* 从左侧滑出，宽度占屏幕 1/3，纵向铺满 */
+.library-drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 33.333%;
+  min-width: 280px;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  z-index: 41;
+  animation: library-in 0.2s ease-out;
+}
+
+@keyframes library-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.library-title-text {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.library-count {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.library-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.library-close:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.library-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.library-item {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.library-item:hover {
+  background: var(--accent-soft);
+}
+
+.library-item.active {
+  background: var(--accent-soft);
+}
+
+.library-item.active .library-item-title {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.library-index {
+  color: var(--text-muted);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.library-item-title {
+  color: var(--text);
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-diff {
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.library-diff.diff-easy {
+  color: var(--success);
+}
+
+.library-diff.diff-medium {
+  color: var(--warning);
+}
+
+.library-diff.diff-hard {
+  color: var(--error);
+}
+
+.library-diff.diff-muted {
+  color: var(--text-muted);
+}
+
+.library-status {
+  padding: 16px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.library-error {
+  color: var(--error);
+}
+
+.library-retry {
+  margin-left: var(--space-2);
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 12px;
 }
 
 .question-meta {

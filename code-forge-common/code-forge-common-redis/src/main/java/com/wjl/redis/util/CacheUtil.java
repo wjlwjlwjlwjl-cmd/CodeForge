@@ -32,12 +32,12 @@ public class CacheUtil {
         return String.format(CacheConstants.USER_EXAM_PREFIX, userId);
     }
 
-    public static String getQuesSubmitKey(Long questionId, Long userId, Integer pageNum){
-        return String.format(CacheConstants.QUES_SUBMIT, questionId, userId, pageNum);
+    public static String getQuesSubmitKey(Long questionId, Long userId){
+        return String.format(CacheConstants.QUES_SUBMIT, questionId, userId);
     }
 
-    public static String getUserSubmitKey(Long userId, Integer pageNum){
-        return String.format(CacheConstants.USER_SUBMIT, pageNum, userId);
+    public static String getUserSubmitKey(Long userId){
+        return String.format(CacheConstants.USER_SUBMIT, userId);
     }
 
     public static String getSubmitDetail(Long submitId){

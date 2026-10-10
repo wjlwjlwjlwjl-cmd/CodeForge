@@ -12,6 +12,8 @@ import com.wjl.job.entity.UserSubmit;
 import com.wjl.job.mapper.UserExamMapper;
 import com.wjl.job.mapper.UserSubmitMapper;
 import com.wjl.job.ws.WebSocketSessionManager;
+import com.wjl.redis.service.RedisService;
+import com.wjl.redis.util.CacheUtil;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -29,6 +31,8 @@ public class JudgeRecallConsumer {
     private UserExamMapper userExamMapper;
     @Autowired
     private WebSocketSessionManager sessionManager;
+    @Autowired
+    private RedisService redisService;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -117,6 +121,13 @@ public class JudgeRecallConsumer {
                 );
             }
         }
+
+        //对 redis 中的队列更新缓存
+        UserSubmit userSubmit = userSubmitMapper.selectById(submitId);
+        String cacheKey1 = CacheUtil.getQuesSubmitKey(dto.getQuestionId(), dto.getUserId()); //问题提交记录
+        redisService.rightPushForList(cacheKey1, userSubmit);
+        String cacheKey2 = CacheUtil.getUserSubmitKey(dto.getUserId());//用户提交记录
+        redisService.rightPushForList(cacheKey2, userSubmit);
 
         //完成结果落库后，进行websocket结果推送
         try{

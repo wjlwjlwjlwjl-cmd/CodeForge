@@ -35,6 +35,12 @@ export const getQuestionNextUrl = (id) =>
 export const getQuestionPrevUrl = (id) =>
   `http://${HOST}:${API_GATEWAY_PORT}/question/prev?id=${id}`;
 
+// 获取题目列表（分页）
+// GET {host}:18080/question/list?pageNum={n}
+// 返回 { total, pages, pageNum, pageSize, list: [{ id, title, difficulty, ... }] }
+export const getQuestionListUrl = (pageNum = 1) =>
+  `http://${HOST}:${API_GATEWAY_PORT}/question/list?pageNum=${pageNum}`;
+
 export const getSubmitUrl = () =>
   `http://${HOST}:${API_GATEWAY_PORT}/job/java/submit`;
 
@@ -87,3 +93,10 @@ export const PROGRAM_TYPES = { 0: 'Java', 1: 'C++' };
 
 // 提交记录的 programType → Monaco 语言 id（用于代码高亮）
 export const PROGRAM_LANG = { 0: 'java', 1: 'cpp' };
+
+// 题目难度 → 文案与颜色类型（1-简单 2-中等 3-困难）
+export const DIFFICULTY = {
+  1: { text: '简单', kind: 'easy' },
+  2: { text: '中等', kind: 'medium' },
+  3: { text: '困难', kind: 'hard' },
+};
