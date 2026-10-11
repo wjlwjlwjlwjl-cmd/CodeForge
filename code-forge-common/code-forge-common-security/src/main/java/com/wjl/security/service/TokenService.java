@@ -103,6 +103,7 @@ public class TokenService {
      * @return 用户信息
      */
     public LoginUserDTO getBLoginUser(String token) {
+        ColorLog.debug("验证B端用户token");
         // 1 初始化用户信息
         LoginUserDTO user = null;
         // 2 解析令牌获取用户信息
@@ -110,16 +111,20 @@ public class TokenService {
             if (StringUtils.isNotEmpty(token)) {
                 String userId = JwtUtil.getUserId(token);
                 user = redisService.getCacheObject(getBTokenKey(userId), LoginUserDTO.class);
+
+                refreshBToken(user);
                 return user;
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+
         // 3 返回user
         return user;
     }
 
     public LoginUserDTO getCLoginUser(String token) {
+        ColorLog.debug("验证C端用户token");
         // 1 初始化用户信息
         LoginUserDTO user = null;
         // 2 解析令牌获取用户信息
@@ -127,11 +132,13 @@ public class TokenService {
             if (StringUtils.isNotEmpty(token)) {
                 String userId = JwtUtil.getUserId(token);
                 user = redisService.getCacheObject(getCTokenKey(userId), LoginUserDTO.class);
+                refreshCToken(user);
                 return user;
             }
         } catch (Exception e) {
             System.out.println(e.getMessage());
         }
+
         // 3 返回user
         return user;
     }
@@ -158,6 +165,10 @@ public class TokenService {
      * @param loginUserDTO 用户信息
      */
     public void refreshBToken(LoginUserDTO loginUserDTO) {
+        if(loginUserDTO == null){
+            return;
+        }
+
         loginUserDTO.setLoginTime(System.currentTimeMillis());
         loginUserDTO.setExpireTime(loginUserDTO.getLoginTime() + EXPIRE_TIME * MILLIS_MINUTE);
         // 根据随机产生用户标识生成key
@@ -167,6 +178,10 @@ public class TokenService {
     }
 
     public void refreshCToken(LoginUserDTO loginUserDTO) {
+        if (loginUserDTO == null){
+            return;
+        }
+
         loginUserDTO.setLoginTime(System.currentTimeMillis());
         loginUserDTO.setExpireTime(loginUserDTO.getLoginTime() + EXPIRE_TIME * MILLIS_MINUTE);
         // 根据随机产生用户标识生成key

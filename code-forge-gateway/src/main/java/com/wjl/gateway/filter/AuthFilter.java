@@ -1,5 +1,6 @@
 package com.wjl.gateway.filter;
 
+import com.wjl.core.utils.ColorLog;
 import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ServletUtil;
@@ -30,6 +31,7 @@ public class AuthFilter implements GlobalFilter{
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ColorLog.debug("开始进行鉴权");
         //在此对B、C端用户 jwt token 进行不同处理，如果请求路径中含有 "/b/" 字段，那么就是管理员操作，单独判断身份，否则就是普通操作
 
         //在白名单的直接放行
@@ -47,6 +49,7 @@ public class AuthFilter implements GlobalFilter{
         }
 
         //接下来，根据请求路径特点判断jwt鉴权方式
+        //关于用户态的时长重置，当解析一次成功之后，直接刷新存活时间
         if(path.contains("/b/")){
             //普通用户，不予授权
             if(!JwtUtil.getUserType(token).equals(SecurityConstants.ADMIN)){
@@ -65,8 +68,6 @@ public class AuthFilter implements GlobalFilter{
                     || !loginUserDTO.getUserType().equals(JwtUtil.getUserType(token))){
                 return unauthorized(exchange);
             }
-
-            tokenService.refreshBToken(loginUserDTO); //在一定时间内，如果用户再次操作，重置登录态过期时间
         }
         else{
             String userType = JwtUtil.getUserType(token);

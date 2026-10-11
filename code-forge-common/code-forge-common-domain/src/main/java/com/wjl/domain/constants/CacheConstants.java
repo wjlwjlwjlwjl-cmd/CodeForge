@@ -5,7 +5,7 @@ package com.wjl.domain.constants;
  */
 public class CacheConstants {
     /**
-     * 缓存有效期，默认720（分钟），12h
+     * 用户态缓存有效期，默认720（分钟），12h
      */
     public final static long EXPIRATION = 720;
 
