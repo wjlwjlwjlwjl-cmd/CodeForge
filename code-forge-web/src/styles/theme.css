@@ -1928,7 +1928,7 @@ body {
   top: calc(100% + 8px);
   right: 0;
   z-index: 40;
-  min-width: 200px;
+  min-width: 248px;
   padding: var(--space-2);
   background: var(--panel-bg);
   border: 1px solid var(--border);
@@ -2461,18 +2461,19 @@ body {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: 6px 10px 8px;
+  padding: 10px 12px 12px;
 }
 
+/* 下拉里的头像放大到 64px（原 36px 的 ~1.8 倍），保证照片细节看得清 */
 .user-dropdown-avatar {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 36px;
-  height: 36px;
+  width: 64px;
+  height: 64px;
   overflow: hidden;
-  font-size: 15px;
+  font-size: 26px;
   font-weight: 700;
   color: #1a1a1a;
   background: var(--accent);
@@ -2647,4 +2648,160 @@ body {
   text-align: right;
   color: var(--text-secondary);
   font-variant-numeric: tabular-nums;
+}
+
+/* ============ 竞赛抽屉 ============ */
+/* 比题库抽屉宽一些，方便看竞赛标题与时间 */
+.contest-drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  width: min(520px, 92vw);
+  height: 100%;
+  background: var(--panel-bg);
+  border-right: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: drawer-in 0.22s ease both;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .contest-drawer {
+    animation: none;
+  }
+}
+
+/* 二级页返回按钮 */
+.contest-back {
+  margin-right: var(--space-2);
+  padding: 0 6px;
+  font-size: 16px;
+  line-height: 1;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
+}
+
+.contest-back:hover {
+  color: var(--accent);
+  background: var(--header-control-hover);
+}
+
+.contest-head-title {
+  max-width: 340px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* 副标题（共 N 场 / 共 N 题） */
+.contest-subline {
+  flex-shrink: 0;
+  padding: 8px var(--space-4);
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+/* 竞赛条目 */
+.contest-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-family: inherit;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: background var(--transition);
+}
+
+.contest-row:hover {
+  background: var(--header-control-hover);
+}
+
+.contest-row-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.contest-row-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.contest-row-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.contest-row-time {
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+}
+
+.contest-row-arrow {
+  flex-shrink: 0;
+  font-size: 18px;
+  color: var(--text-muted);
+}
+
+.contest-row:hover .contest-row-arrow {
+  color: var(--accent);
+}
+
+/* ---- 区块标题行（标题 + 右侧「更多」入口）---- */
+.section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.section-head .section-title {
+  margin-bottom: var(--space-3);
+}
+
+.section-more {
+  flex-shrink: 0;
+  padding: 2px 6px;
+  font-size: 13px;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: color var(--transition), background var(--transition);
+}
+
+.section-more:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
 }

@@ -75,17 +75,22 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         if(exams == null){
             PageHelper.startPage(pageNum, pageSize);
             exams = examMapper.selectList(null);
+            if(exams == null){
+                return null;
+            }
             redisService.setCacheList(cacheKey, exams);
             redisService.expire(cacheKey, CacheConstants.EXAM_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }
         List<ExamVO> examVOs = BeanCopyUtil.copyListProperties(exams, ExamVO::new);
-        PageInfo<ExamVO> pageInfo = new PageInfo<>(examVOs);
+
+        Long total = examMapper.selectCount(null);
+        int pages = total / pageSize + total % pageSize == 0 ? 0 : 1;
 
         examListVO.setList(examVOs);
-        examListVO.setPageNum(pageInfo.getPageNum());
-        examListVO.setPageSize(pageInfo.getPageSize());
-        examListVO.setTotal(pageInfo.getTotal());
-        examListVO.setPages(pageInfo.getPages());
+        examListVO.setPageNum(pageNum);
+        examListVO.setPageSize(pageSize);
+        examListVO.setTotal(total);
+        examListVO.setPages(pages);
         return examListVO;
     }
 

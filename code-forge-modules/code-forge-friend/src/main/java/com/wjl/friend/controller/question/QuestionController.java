@@ -19,7 +19,7 @@ public class QuestionController {
     private QuestionService questionService;
 
     @RequestMapping("/filter")
-    @Operation(description = "根据关键字查询标题、正文，")
+    @Operation(description = "根据关键字查询标题、正文，") //done
     public R<ListQuestionVO> getQuestionListByES(@Validated QuestionSearchDTO dto) {
         return R.success(questionService.getQuestionListByES(dto));
     }

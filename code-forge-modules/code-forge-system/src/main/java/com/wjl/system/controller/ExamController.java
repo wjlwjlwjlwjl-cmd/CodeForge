@@ -21,7 +21,7 @@ public class ExamController {
     private ExamService examService;
 
     @GetMapping("/list")
-    @Operation(description = "获取所有竞赛")
+    @Operation(description = "获取所有竞赛") //done
     public R<ExamListVO> list(ExamQueryDTO examQueryDTO){
         return R.success(examService.examList(examQueryDTO));
     }

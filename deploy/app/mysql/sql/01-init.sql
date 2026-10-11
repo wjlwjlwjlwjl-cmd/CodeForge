@@ -18,15 +18,17 @@ USE `db_code_forge`;
 -- 系统管理员信息表
 DROP TABLE IF EXISTS `tb_sys_user`;
 CREATE TABLE `tb_sys_user` (
-    `id`           bigint        unsigned NOT NULL PRIMARY KEY AUTO_INCREMENT COMMENT '主键id',
-    `user_id`      bigint(20)    unsigned NOT NULL COMMENT '用户id' UNIQUE KEY,
+    `id`           bigint        unsigned NOT NULL AUTO_INCREMENT COMMENT '主键id',
+    `user_id`      bigint        unsigned NOT NULL COMMENT '用户id',
     `user_account` varchar(32)   DEFAULT NULL COMMENT '用户账号',
     `password`     varchar(100)  DEFAULT NULL COMMENT '用户密码',
     `nick_name`    varchar(32)   DEFAULT NULL COMMENT '昵称',
-    `create_by`    bigint(8)     NOT NULL COMMENT '创建用户',
+    `create_by`    bigint        NOT NULL COMMENT '创建用户',
     `create_time`  datetime      NOT NULL COMMENT '创建时间',
-    `update_by`    bigint(8)     DEFAULT NULL COMMENT '更新用户',
+    `update_by`    bigint        DEFAULT NULL COMMENT '更新用户',
     `update_time`  datetime      DEFAULT NULL COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `user_id` (`user_id`),
     UNIQUE KEY `user_account` (`user_account`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='管理端用户表';
 
@@ -44,7 +46,7 @@ CREATE TABLE `tb_question` (
     content       varchar(1000) NOT NULL COMMENT '题目内容',
     question_case varchar(1000) COMMENT '题目用例',
     default_code  varchar(500)  NOT NULL COMMENT '默认代码块',
-    main_fuc      varchar(500)  NOT NULL COMMENT 'main函数',
+    main_fuc      text,
     create_by     bigint        unsigned NOT NULL COMMENT '创建人',
     create_time   datetime      NOT NULL COMMENT '创建时间',
     update_by     bigint        unsigned COMMENT '更新人',
@@ -115,18 +117,22 @@ create table tb_user_exam(
 )ENGINE=INNODB default charset=utf8mb4 comment="竞赛报名表";
 
 -- 用户提交表
+DROP TABLE IF EXISTS `tb_user_submit`;
 create table tb_user_submit(
     submit_id bigint unsigned PRIMARY KEY AUTO_INCREMENT COMMENT '提交记录id',
-    user_id   bigint unsigned NOT NULL UNIQUE KEY COMMENT '用户id',
+    user_id   bigint unsigned DEFAULT NULL,
     question_id  bigint unsigned NOT NULL COMMENT '题目id',
+    title  varchar(100) DEFAULT NULL,
     exam_id bigint unsigned DEFAULT NULL COMMENT '竞赛id',
     program_type tinyint NOT NULL COMMENT '代码类型 0-java 1-CPP',
     user_code   text NOT NULL COMMENT '用户代码',
     pass tinyint DEFAULT NULL COMMENT '0：编译错误 1：运行时错误 2：超时 3：解答错误 4：通过',
-    exe_message  varchar(500) DEFAULT NULL COMMENT '执行结果',
     run_time  INT DEFAULT NULL COMMENT '运行时间（ms）',
     create_by    bigint unsigned not null  comment '创建人',
     create_time  datetime not null comment '创建时间',
     update_by    bigint unsigned default null comment '更新人',
-    update_time  datetime default null comment '更新时间'
+    update_time  datetime default null comment '更新时间',
+    exe_message  text,
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_question_id` (`question_id`)
 )ENGINE=INNODB default charset=utf8mb4 comment="用户提交表";

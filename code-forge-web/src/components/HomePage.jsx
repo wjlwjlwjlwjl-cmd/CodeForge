@@ -3,6 +3,7 @@ import AppHeader from '../components/AppHeader.jsx';
 import StatCard from '../components/StatCard.jsx';
 import ContestCard from '../components/ContestCard.jsx';
 import ProblemItem from '../components/ProblemItem.jsx';
+import ContestBrowser from '../components/ContestBrowser.jsx';
 import { useHomeData } from '../hooks/useHomeData.js';
 import { useAvatar } from '../hooks/useAvatar.js';
 import { useProblemSearch } from '../hooks/useProblemSearch.js';
@@ -23,6 +24,9 @@ export default function HomePage({
 }) {
   const { user, stats, ongoing, mine, loading } = useHomeData();
 
+  // 竞赛抽屉（点顶栏「竞赛」打开）
+  const [contestOpen, setContestOpen] = useState(false);
+
   // 进入首页时异步获取头像（不阻塞页面渲染），
   // 结果存入全局 avatarStore，后续所有展示头像的地方共用
   useAvatar({ load: true });
@@ -40,7 +44,7 @@ export default function HomePage({
         onProfile={() => {}}
         onBrandClick={() => {}}
         navItems={[
-          { key: 'contest', label: '竞赛', onClick: onOpenContests },
+          { key: 'contest', label: '竞赛', onClick: () => setContestOpen(true) },
           { key: 'problem', label: '题目', active: true },
           { key: 'history', label: '提交记录', onClick: onOpenHistory },
         ]}
@@ -60,10 +64,20 @@ export default function HomePage({
           mine={mine}
           delay={delay}
           onOpenEditor={onOpenEditor}
+          onOpenAll={() => setContestOpen(true)}
         />
 
         <PracticeSection onOpenEditor={onOpenEditor} />
       </main>
+
+      <ContestBrowser
+        open={contestOpen}
+        onClose={() => setContestOpen(false)}
+        onSelectQuestion={(id) => {
+          setContestOpen(false);
+          onOpenEditor?.(id);
+        }}
+      />
     </div>
   );
 }
@@ -122,7 +136,7 @@ function StatsSection({ stats, delay }) {
 }
 
 /* ============================ 竞赛区 ============================ */
-function ContestsSection({ ongoing, mine, delay, onOpenEditor }) {
+function ContestsSection({ ongoing, mine, delay, onOpenEditor, onOpenAll }) {
   // 已参加的竞赛 id，用于把「进行中」卡片按钮显示为「进入」
   const joinedIds = useMemo(
     () => new Set((mine || []).map((m) => String(m.examId))),
@@ -147,7 +161,12 @@ function ContestsSection({ ongoing, mine, delay, onOpenEditor }) {
   return (
     <section className="home-section two-col" id="home-contests">
       <div className="col">
-        <h2 className="section-title">进行中的竞赛</h2>
+        <div className="section-head">
+          <h2 className="section-title">进行中的竞赛</h2>
+          <button type="button" className="section-more" onClick={onOpenAll}>
+            全部竞赛 ›
+          </button>
+        </div>
         <div className="card-list">
           {(ongoing || []).map((c, i) => {
             const joined = joinedIds.has(String(c.examId));

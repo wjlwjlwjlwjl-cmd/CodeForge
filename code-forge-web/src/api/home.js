@@ -44,12 +44,6 @@ export async function fetchSubmitInfo() {
   return getJson(getUserSubmitInfoUrl());
 }
 
-// 获取用户通过率（旧接口，保留兼容）
-// GET /user/passRate → string
-export async function fetchPassRate() {
-  return getJson(`${base()}/user/passRate`);
-}
-
 // 获取头像预签名 url
 // GET /user/avatar → string（预签名下载地址）
 export async function fetchAvatarUrl() {
@@ -59,11 +53,10 @@ export async function fetchAvatarUrl() {
 // 根据竞赛状态获取竞赛列表
 // GET /user/exam/list/queue?pageNum=&option=
 //   option：0-未开始 1-进行中 2-已结束
+// 注意：该接口在网关侧需要鉴权（无 Authorization 会 401）
 // 返回 ExamListVO = { pageNum, pageSize, list: [{ examId, title, startTime, endTime, status }] }
 export async function fetchOngoingContests({ option = 1, pageNum = 0 } = {}) {
-  return getJson(`${base()}/user/exam/list/queue?pageNum=${pageNum}&option=${option}`, {
-    auth: false,
-  });
+  return getJson(`${base()}/user/exam/list/queue?pageNum=${pageNum}&option=${option}`);
 }
 
 // 获取用户报名参加的竞赛列表
