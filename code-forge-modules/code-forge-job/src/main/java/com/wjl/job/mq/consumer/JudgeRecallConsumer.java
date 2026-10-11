@@ -38,7 +38,6 @@ public class JudgeRecallConsumer {
 
     @RabbitListener(queues = CommonConstants.RESULT_QUEUE)
     public void judgeRecallHandler(JudgeResponseDTO dto) {
-        ColorLog.info(true, "获取判题结果：{}", dto.toString());
 
         Long submitId = dto.getSubmitId();
         JudgeStatus status = dto.getStatus();
@@ -47,6 +46,12 @@ public class JudgeRecallConsumer {
         Integer runTime = dto.getRunTime();
         Long examId = dto.getExamId();
         Long userId = dto.getUserId();
+
+        //更新redis中的提交信息缓存信息
+        String cacheKey = CacheUtil.getSubmitInfoKey(userId);
+        if(redisService.hasKey(cacheKey)){
+            redisService.deleteObject(cacheKey);
+        }
 
         //在前面接收到判题请求时，program_type、question_id、submitId、userId、user_code、create_by、create_time已插入数据库，
         //是否通过 0:compile error 1:未能正常运行 2:超时错误 3:答案错误 4:ac

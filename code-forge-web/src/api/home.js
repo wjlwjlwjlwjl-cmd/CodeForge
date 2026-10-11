@@ -1,0 +1,99 @@
+import { authHeaders, SUCCESS_CODE, HOST, API_GATEWAY_PORT, getUserSubmitInfoUrl } from '../config.js';
+
+// ---------------- 首页相关接口 ----------------
+// 统一解析后端 R<T> 包裹 { code, msg, data }
+
+async function getJson(url, { auth = true } = {}) {
+  let res;
+  try {
+    res = await fetch(url, {
+      method: 'GET',
+      headers: auth ? authHeaders() : undefined,
+    });
+  } catch (e) {
+    throw new Error('网络异常，请检查服务是否可用');
+  }
+
+  let json = null;
+  try {
+    json = await res.json();
+  } catch (e) {
+    throw new Error(`接口返回非 JSON（HTTP ${res.status}）`);
+  }
+
+  if (json?.code !== SUCCESS_CODE) {
+    const err = new Error(json?.msg || `业务错误（code=${json?.code}）`);
+    err.code = json?.code;
+    throw err;
+  }
+  return json.data;
+}
+
+const base = () => `http://${HOST}:${API_GATEWAY_PORT}`;
+
+// 获取 C 端用户信息
+// GET /user/detail  →  { nickName, sex, email, avatarName, schoolName, majorName, introduce }
+export async function fetchUserInfo() {
+  return getJson(`${base()}/user/detail`);
+}
+
+// 提交信息：通过数 / 总提交数 / 通过率
+// GET /user/submitInfo → { submitSum, passSum, passRate }
+//   注意：后端 passRate 是「比值」字符串（如 "0.20" 表示 20%）
+export async function fetchSubmitInfo() {
+  return getJson(getUserSubmitInfoUrl());
+}
+
+// 获取用户通过率（旧接口，保留兼容）
+// GET /user/passRate → string
+export async function fetchPassRate() {
+  return getJson(`${base()}/user/passRate`);
+}
+
+// 获取头像预签名 url
+// GET /user/avatar → string（预签名下载地址）
+export async function fetchAvatarUrl() {
+  return getJson(`${base()}/user/avatar`);
+}
+
+// 根据竞赛状态获取竞赛列表
+// GET /user/exam/list/queue?pageNum=&option=
+//   option：0-未开始 1-进行中 2-已结束
+// 返回 ExamListVO = { pageNum, pageSize, list: [{ examId, title, startTime, endTime, status }] }
+export async function fetchOngoingContests({ option = 1, pageNum = 0 } = {}) {
+  return getJson(`${base()}/user/exam/list/queue?pageNum=${pageNum}&option=${option}`, {
+    auth: false,
+  });
+}
+
+// 获取用户报名参加的竞赛列表
+// GET /user/exam/list/mine?pageNum=
+// 返回 UserExamListVO = { pageNum, pageSize, total, list: [{ userId, examId, score, examRank }] }
+export async function fetchMyContests({ pageNum = 0 } = {}) {
+  return getJson(`${base()}/user/exam/list/mine?pageNum=${pageNum}`);
+}
+
+// 获取用户提交记录（全部题目）
+// GET /job/user/history?pageNum=
+export async function fetchRecentSubmissions({ pageNum = 1 } = {}) {
+  return getJson(`${base()}/job/user/history?pageNum=${pageNum}`);
+}
+
+// 报名竞赛
+// POST /user/exam/signUp?examId=
+export async function signUpContest(examId) {
+  const res = await fetch(`${base()}/user/exam/signUp?examId=${examId}`, {
+    method: 'POST',
+    headers: authHeaders(),
+  });
+  let json = null;
+  try {
+    json = await res.json();
+  } catch (e) {
+    // 成功时 body 可能为空
+  }
+  if (json && json.code !== SUCCESS_CODE) {
+    throw new Error(json.msg || `报名失败（code=${json.code}）`);
+  }
+  return true;
+}

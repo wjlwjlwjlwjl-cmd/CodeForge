@@ -3,6 +3,7 @@ package com.wjl.friend.controller.user;
 import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.domain.R;
 import com.wjl.domain.domain.vo.AvatarUploadVO;
+import com.wjl.friend.domain.submit.SubmitInfoVO;
 import com.wjl.friend.domain.user.dto.UserAddInfoDTO;
 import com.wjl.friend.domain.user.dto.UserLoginDTO;
 import com.wjl.friend.domain.user.dto.UserRegisterDTO;
@@ -26,25 +27,25 @@ public class UserController {
     private UserService userService;
 
     @RequestMapping("/sendCode")
-    @Operation(description = "发送验证码")
+    @Operation(description = "发送验证码") //done
     public R<Boolean> sendCode(@RequestParam String email){
         return R.success(userService.sendCode(email));
     }
 
     @PostMapping("/register")
-    @Operation(description = "用户注册")
+    @Operation(description = "用户注册") //done
     public R<Boolean> register(@Validated @RequestBody UserRegisterDTO dto){
         return R.success(userService.register(dto));
     }
 
     @PostMapping("/login")
-    @Operation(description = "登陆")
+    @Operation(description = "登陆") //done
     public R<String> login(@Validated @RequestBody UserLoginDTO dto){
         return R.success(userService.login(dto));
     }
 
     @DeleteMapping("/logout")
-    @Operation(description = "登出")
+    @Operation(description = "登出") //done
     public R<Void> logout(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         userService.logout(token);
         return R.success();
@@ -63,9 +64,8 @@ public class UserController {
         return R.success(userDetailVO);
     }
 
-    ////////////// 待测试接口 ////////////////
     @GetMapping("/avatar")
-    @Operation(description = "获取用户头像预签名url，前端自行在规定时间内到oss完成文件下载")
+    @Operation(description = "获取用户头像预签名url，前端自行在规定时间内到oss完成文件下载") //done
     public R<String> avatar(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         return R.success(userService.getAvatarUrl(token));
     }
@@ -78,5 +78,11 @@ public class UserController {
     @Operation(description = "上传用户头像")
     public R<AvatarUploadVO> avatarUpload(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, MultipartFile avatar){
         return R.success(userService.avatarUpload(token, avatar));
+    }
+
+    @GetMapping("/submitInfo")
+    @Operation(description = "获取提交信息（通过数、提交数、通过率）") //done
+    public R<SubmitInfoVO> submitSum(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
+        return R.success(userService.getSubmitInfo(token));
     }
 }

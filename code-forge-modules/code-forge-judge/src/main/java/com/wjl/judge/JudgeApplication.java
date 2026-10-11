@@ -11,6 +11,6 @@ public class JudgeApplication {
 
     public static void main(String[] args) {
         SpringApplication.run(JudgeApplication.class, args);
-        ColorLog.info("JudgeApplication starts successfully");
+        ColorLog.ok("JudgeApplication starts successfully");
     }
 }

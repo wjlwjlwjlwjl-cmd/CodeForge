@@ -58,6 +58,7 @@ export default function ProblemDescription({
   editorFontSize,
   result,
   submitError,
+  onCopyCodeToEditor,
 }) {
   const [tab, setTab] = useState('description');
   // 当前查看的提交详情 { submitId }
@@ -189,6 +190,7 @@ export default function ProblemDescription({
             submitId={detail.submitId}
             monacoTheme={monacoTheme}
             editorFontSize={editorFontSize}
+            onCopyCodeToEditor={onCopyCodeToEditor}
           />
         )}
 
@@ -198,6 +200,7 @@ export default function ProblemDescription({
             submitError={submitError}
             monacoTheme={monacoTheme}
             editorFontSize={editorFontSize}
+            onCopyCodeToEditor={onCopyCodeToEditor}
           />
         )}
       </div>

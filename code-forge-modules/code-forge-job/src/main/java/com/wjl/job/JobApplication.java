@@ -8,6 +8,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class JobApplication {
     public static void main(String[] args) {
         SpringApplication.run(JobApplication.class, args);
-        ColorLog.info("JobApplication starts successfully");
+        ColorLog.ok("JobApplication starts successfully");
     }
 }

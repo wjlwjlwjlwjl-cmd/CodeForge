@@ -1,6 +1,6 @@
 import { STATUS_TEXT, PROGRAM_TYPES, PROGRAM_LANG } from '../config.js';
 import { useSubmitDetail } from '../hooks/useSubmitDetail.js';
-import { formatDateTime, formatRuntime } from '../utils/format.js';
+import { formatDateTime, formatJudgeRuntime } from '../utils/format.js';
 import CodeBlock from './CodeBlock.jsx';
 
 // 判题状态 → 颜色类型
@@ -18,6 +18,7 @@ export default function JudgeResultView({
   submitError,
   monacoTheme,
   editorFontSize,
+  onCopyCodeToEditor,
 }) {
   // WS 结果里没有语言与提交日期，用提交详情补全（submitId 由结果带回）
   const { data: detail } = useSubmitDetail(result?.submitId);
@@ -60,7 +61,7 @@ export default function JudgeResultView({
           </span>
           <span className="detail-meta-item">
             <span className="detail-label">运行时间</span>
-            <span className="detail-value">{formatRuntime(result.runTime)}</span>
+            <span className="detail-value">{formatJudgeRuntime(result.runTime)}</span>
           </span>
         </div>
       </div>
@@ -75,6 +76,7 @@ export default function JudgeResultView({
           language={monacoLang}
           theme={monacoTheme}
           fontSize={editorFontSize}
+          onCopyToEditor={onCopyCodeToEditor}
         />
       </div>
     </div>

@@ -4,7 +4,12 @@ import CodeBlock from './CodeBlock.jsx';
 import { formatDateTime, formatRunTime } from '../utils/format.js';
 
 // 提交详情：状态作标题 + 提交时间 + 语言/执行用时，最下方为只读高亮代码块
-export default function SubmitDetail({ submitId, monacoTheme, editorFontSize }) {
+export default function SubmitDetail({
+  submitId,
+  monacoTheme,
+  editorFontSize,
+  onCopyCodeToEditor,
+}) {
   const { data, loading, error, reload } = useSubmitDetail(submitId);
 
   if (loading) {
@@ -53,6 +58,7 @@ export default function SubmitDetail({ submitId, monacoTheme, editorFontSize }) 
           language={monacoLang}
           theme={monacoTheme}
           fontSize={editorFontSize}
+          onCopyToEditor={onCopyCodeToEditor}
         />
       </div>
     </div>

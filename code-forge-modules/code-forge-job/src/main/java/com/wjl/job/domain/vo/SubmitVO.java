@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 @Data
 public class SubmitVO {
     private Long submitId; //获取详细提交信息
+    private Long questionId; //对应的题目
     private Integer pass;
     private Integer programType;
     private Integer runTime;

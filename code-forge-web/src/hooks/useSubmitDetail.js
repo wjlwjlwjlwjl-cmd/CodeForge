@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { handleApiError } from '../config.js';
 import { fetchSubmitDetail } from '../api/history.js';
 
 // 获取单条提交详情
@@ -31,7 +32,8 @@ export function useSubmitDetail(submitId) {
       })
       .catch((e) => {
         if (!cancelled) {
-          setError(e.message || '加载失败');
+          const msg = handleApiError(e, '加载失败');
+          if (msg !== null) setError(msg);
           setLoading(false);
         }
       });

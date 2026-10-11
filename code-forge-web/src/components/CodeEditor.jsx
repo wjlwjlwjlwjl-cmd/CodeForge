@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import Editor from '@monaco-editor/react';
 import { initVimMode } from 'monaco-vim';
 import { LANGUAGES } from '../config.js';
@@ -11,7 +18,8 @@ const FONT_SIZE_STEP = 1;
 const SUBMIT_COOLDOWN_SEC = 4;
 
 // 右侧：语言下拉 + Monaco 编辑器 + 提交按钮 + 判题结果
-export default function CodeEditor({
+// 通过 ref 暴露 setCode（给「提交详情 / 判题结果」的代码块用：复制到编辑区）
+const CodeEditor = forwardRef(function CodeEditor({
   defaultCode,
   monacoTheme,
   editorFontSize,
@@ -20,7 +28,7 @@ export default function CodeEditor({
   onVimModeChange,
   judging,
   onSubmit,
-}) {
+}, ref) {
   const [language, setLanguage] = useState('java');
   const [code, setCode] = useState(defaultCode || '');
   const editorRef = useRef(null);
@@ -75,6 +83,11 @@ export default function CodeEditor({
   }, [vimMode, editorReady]);
 
   const fontSize = editorFontSize;
+
+  // 用整段代码覆盖编辑区（复制到编辑区）
+  useImperativeHandle(ref, () => ({
+    setCode: (value) => setCode(value || ''),
+  }), []);
 
   const handleSubmit = () => {
     // 判题中或冷却中不允许提交
@@ -190,4 +203,6 @@ export default function CodeEditor({
       {vimMode && <div ref={vimStatusRef} className="vim-status-bar" />}
     </div>
   );
-}
+});
+
+export default CodeEditor;

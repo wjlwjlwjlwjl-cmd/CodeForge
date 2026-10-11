@@ -16,9 +16,12 @@ import com.wjl.domain.domain.vo.AvatarUploadVO;
 import com.wjl.domain.exception.ServiceException;
 import com.wjl.file.util.FileUtil;
 import com.wjl.friend.constants.AvatarErrMsg;
+import com.wjl.friend.domain.submit.SubmitInfoVO;
 import com.wjl.friend.domain.user.dto.UserAddInfoDTO;
 import com.wjl.friend.domain.user.dto.UserRegisterDTO;
 import com.wjl.friend.domain.user.vo.UserDetailVO;
+import com.wjl.friend.entity.submit.UserSubmit;
+import com.wjl.friend.mapper.submit.UserSubmitMapper;
 import com.wjl.redis.service.RedisService;
 import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
@@ -46,7 +49,38 @@ public class UserService {
     @Autowired
     private EmailService emailService;
     @Autowired
+    private UserSubmitMapper userSubmitMapper;
+    @Autowired
     private FileUtil fileUtil;
+
+    public SubmitInfoVO getSubmitInfo(String token){
+        //获取总提交次数
+        LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
+        String userId = loginUserDTO.getUserId();
+
+        String cacheKey = CacheUtil.getSubmitInfoKey(Long.valueOf(userId));
+        if(redisService.hasKey(cacheKey)){
+            return redisService.getCacheObject(cacheKey, SubmitInfoVO.class);
+        }
+        else{
+            long submitSum = userSubmitMapper.selectCount(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getUserId, userId)
+            );
+            long passSum = userSubmitMapper.selectCount(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getUserId, userId)
+                    .eq(UserSubmit::getPass, 4)
+            );
+            String passRate = passSum != 0 ? String.format("%.2f", passSum / (double) submitSum) : "0";
+
+            SubmitInfoVO submitInfoVO = new SubmitInfoVO();
+            submitInfoVO.setSubmitSum(submitSum);
+            submitInfoVO.setPassSum(passSum);
+            submitInfoVO.setPassRate(passRate);
+            redisService.setCacheObject(cacheKey, submitInfoVO, CacheConstants.USER_SUBMIT_INFO_EXPIRATION, TimeUnit.MINUTES);
+
+            return submitInfoVO;
+        }
+    }
 
     public Boolean sendCode(String email){
         if(!emailService.sendVerifyCode(email)){

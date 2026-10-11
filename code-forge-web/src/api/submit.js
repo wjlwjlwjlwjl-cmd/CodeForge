@@ -1,4 +1,4 @@
-import { TOKEN, getSubmitUrl } from '../config.js';
+import { authHeaders, getSubmitUrl } from '../config.js';
 
 // 提交判题
 // POST {host}:18080/job/java/submit
@@ -7,10 +7,7 @@ import { TOKEN, getSubmitUrl } from '../config.js';
 export async function submitJudge({ questionId, examId = null, userCode }) {
   const res = await fetch(getSubmitUrl(), {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: TOKEN,
-    },
+    headers: authHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       questionId,
       examId,

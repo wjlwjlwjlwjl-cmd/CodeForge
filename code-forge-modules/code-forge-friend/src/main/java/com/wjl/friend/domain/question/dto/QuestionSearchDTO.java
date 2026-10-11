@@ -9,8 +9,8 @@ import lombok.Data;
 public class QuestionSearchDTO {
     @NotBlank
     private String keyword = null;
-    @Max(value = 2)
-    @Min(value = 0)
+    @Max(value = 3)
+    @Min(value = 1)
     private Integer difficulty = null;
     @Min(value = 1)
     private Integer pageNum = 1;

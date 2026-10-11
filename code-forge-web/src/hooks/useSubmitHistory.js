@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { handleApiError } from '../config.js';
 import { fetchSubmitHistory } from '../api/history.js';
 
 // 每页条数（后端 CommonConstants.PAGE_SIZE）
@@ -46,7 +47,8 @@ export function useSubmitHistory(questionId, active) {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e.message || '加载失败');
+          const msg = handleApiError(e, '加载失败');
+          if (msg !== null) setError(msg);
           setLoading(false);
         }
       }

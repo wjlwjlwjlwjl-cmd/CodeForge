@@ -19,6 +19,8 @@ export default function Layout({
   result,
   submitError,
   onSubmit,
+  onCopyCodeToEditor,
+  editorRef,
   splitRatio,
   onSplitRatioChange,
 }) {
@@ -64,6 +66,7 @@ export default function Layout({
           editorFontSize={editorFontSize}
           result={result}
           submitError={submitError}
+          onCopyCodeToEditor={onCopyCodeToEditor}
         />
       </div>
 
@@ -73,6 +76,7 @@ export default function Layout({
 
       <div className="island island-right">
         <CodeEditor
+          ref={editorRef}
           defaultCode={question?.defaultCode || ''}
           monacoTheme={monacoTheme}
           editorFontSize={editorFontSize}

@@ -87,4 +87,10 @@ public class CacheConstants {
      */
     public final static String SUBMIT_INTERVAL_KEY = "interval:user:%d";
     public final static Long SUBMIT_INTERVAL_SEC = 4L; //s
+
+    /**
+     * 用户提交信息（通过数、提交数、通过率）
+     */
+    public final static String USER_SUBMIT_INFO = "user:submit:info:%d";
+    public final static Long USER_SUBMIT_INFO_EXPIRATION = 1L;
 }

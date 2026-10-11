@@ -4,6 +4,7 @@ import {
   fetchNextQuestion,
   fetchPrevQuestion,
 } from '../api/question.js';
+import { handleApiError } from '../config.js';
 
 // 拉取题目详情 + 上一题/下一题切换
 //
@@ -56,7 +57,8 @@ export function useQuestion(id, { onSwitch } = {}) {
       })
       .catch((e) => {
         if (!cancelled) {
-          setError(e.message || '加载失败');
+          const msg = handleApiError(e, '加载失败');
+          if (msg !== null) setError(msg);
           setLoading(false);
         }
       });
@@ -77,7 +79,8 @@ export function useQuestion(id, { onSwitch } = {}) {
         setLoading(false);
       })
       .catch((e) => {
-        setError(e.message || '加载失败');
+        const msg = handleApiError(e, '加载失败');
+        if (msg !== null) setError(msg);
         setLoading(false);
       });
   }, [id]);
@@ -119,7 +122,8 @@ export function useQuestion(id, { onSwitch } = {}) {
         setData(next);
         onSwitch?.(next.id);
       } catch (e) {
-        setError(e.message || '切换题目失败');
+        const msg = handleApiError(e, '切换题目失败');
+        if (msg !== null) setError(msg);
       } finally {
         setSwitching(false);
       }

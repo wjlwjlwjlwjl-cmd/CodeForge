@@ -1,4 +1,4 @@
-import { TOKEN, SUCCESS_CODE, getSubmitHistoryUrl, getSubmitDetailUrl } from '../config.js';
+import { authHeaders, SUCCESS_CODE, getSubmitHistoryUrl, getSubmitDetailUrl } from '../config.js';
 
 // 获取某道题的提交记录（分页）
 // GET {host}:18080/job/ques/history?questionId={id}&pageNum={n}
@@ -7,9 +7,7 @@ import { TOKEN, SUCCESS_CODE, getSubmitHistoryUrl, getSubmitDetailUrl } from '..
 export async function fetchSubmitHistory(questionId, pageNum = 1) {
   const res = await fetch(getSubmitHistoryUrl(questionId, pageNum), {
     method: 'GET',
-    headers: {
-      Authorization: TOKEN,
-    },
+    headers: authHeaders(),
   });
 
   let json;
@@ -36,9 +34,7 @@ export async function fetchSubmitHistory(questionId, pageNum = 1) {
 export async function fetchSubmitDetail(submitId) {
   const res = await fetch(getSubmitDetailUrl(submitId), {
     method: 'GET',
-    headers: {
-      Authorization: TOKEN,
-    },
+    headers: authHeaders(),
   });
 
   let json;

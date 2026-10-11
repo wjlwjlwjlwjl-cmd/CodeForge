@@ -23,6 +23,7 @@ function ensureConnected({ onMessage }) {
     return ws;
   }
 
+  // 未登录时 getJudgeWsUrl() 会抛错，向上抛出由调用方引导登录
   ws = new WebSocket(getJudgeWsUrl());
 
   ws.onmessage = (event) => {

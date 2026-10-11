@@ -47,4 +47,8 @@ public class CacheUtil {
     public static String getSubmitIntervalKey(Long userId){
         return String.format(CacheConstants.SUBMIT_INTERVAL_KEY, userId);
     }
+
+    public static String getSubmitInfoKey(Long userId){
+        return String.format(CacheConstants.USER_SUBMIT_INFO, userId);
+    }
 }

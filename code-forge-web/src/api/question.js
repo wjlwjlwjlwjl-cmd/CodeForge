@@ -1,5 +1,5 @@
 import {
-  TOKEN,
+  authHeaders,
   SUCCESS_CODE,
   FIRST_QUESTION_CODE,
   LAST_QUESTION_CODE,
@@ -7,6 +7,7 @@ import {
   getQuestionNextUrl,
   getQuestionPrevUrl,
   getQuestionListUrl,
+  getQuestionSearchUrl,
 } from '../config.js';
 
 // 通用请求：题目详情类接口（detail / next / prev）
@@ -14,9 +15,7 @@ import {
 async function requestQuestion(url) {
   const res = await fetch(url, {
     method: 'GET',
-    headers: {
-      Authorization: TOKEN,
-    },
+    headers: authHeaders(),
   });
 
   let json;
@@ -72,6 +71,18 @@ export async function fetchPrevQuestion(id) {
 // 返回 { total, pages, pageNum, pageSize, list }
 export async function fetchQuestionList(pageNum = 1) {
   const { code, data, msg } = await requestQuestion(getQuestionListUrl(pageNum));
+  if (code !== SUCCESS_CODE) throw new Error(msg || `业务错误（code=${code}）`);
+  return data;
+}
+
+// 关键字 + 难度搜索题目（ES）
+// GET {host}:18080/question/search/filter?keyword=&difficulty=&pageNum=
+//   difficulty 可选：1 简单 / 2 中等 / 3 困难
+// 返回 { total, pages, pageNum, pageSize, list }
+export async function searchProblems(keyword, { difficulty = null, pageNum = 1 } = {}) {
+  const { code, data, msg } = await requestQuestion(
+    getQuestionSearchUrl(keyword, difficulty, pageNum)
+  );
   if (code !== SUCCESS_CODE) throw new Error(msg || `业务错误（code=${code}）`);
   return data;
 }

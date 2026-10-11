@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { submitJudge } from '../api/submit.js';
 import { subscribeJudge, unsubscribeJudge } from '../api/judgeSocket.js';
+import { goToLogin } from '../config.js';
 
 // 提交判题 + 订阅结果
 // 返回：
@@ -27,7 +28,10 @@ export function useJudge(questionId) {
   }, [questionId]);
 
   // 订阅 WS，按 questionId 路由结果
+  // 仅在非登录页（questionId 存在）时建连：未登录时建连会抛错
   useEffect(() => {
+    if (questionId == null) return undefined;
+
     const onMessage = (msg) => {
       // 只处理与当前题目匹配的结果（后端字段 questionId 为数字）
       if (questionIdRef.current != null && msg?.questionId != null) {
@@ -38,9 +42,14 @@ export function useJudge(questionId) {
       }
     };
 
-    subscribeJudge(onMessage);
+    try {
+      subscribeJudge(onMessage);
+    } catch (e) {
+      // 未登录：交给外层（App）统一重定向到登录页，这里不抛错
+      return undefined;
+    }
     return () => unsubscribeJudge(onMessage);
-  }, []);
+  }, [questionId]);
 
   const submit = useCallback(
     async (userCode) => {
@@ -48,7 +57,13 @@ export function useJudge(questionId) {
 
       // 先确保 WS 已建连（惰性），再发 HTTP 提交
       // subscribeJudge 内部会复用已有连接
-      subscribeJudge(null);
+      try {
+        subscribeJudge(null);
+      } catch (e) {
+        // 未登录：跳转登录页
+        goToLogin();
+        return;
+      }
 
       setJudging(true);
       setSubmitError(null);
@@ -62,6 +77,11 @@ export function useJudge(questionId) {
         // 提交成功后，等待 WS 推送结果；onMessage 里会置 judging=false
       } catch (e) {
         setJudging(false);
+        // 未登录/登录过期：引导重新登录
+        if (e?.code === 'UNAUTHORIZED') {
+          goToLogin();
+          return;
+        }
         setSubmitError(e.message || '提交失败');
       }
     },

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { handleApiError } from '../config.js';
 import { fetchQuestionList } from '../api/question.js';
 
 // 题库列表：按需分页加载（无限列表）
@@ -65,7 +66,8 @@ export function useQuestionList(open) {
         return next;
       });
     } catch (e) {
-      setError(e.message || '加载失败');
+      const msg = handleApiError(e, '加载失败');
+      if (msg !== null) setError(msg);
     } finally {
       busyRef.current = false;
       setLoading(false);
