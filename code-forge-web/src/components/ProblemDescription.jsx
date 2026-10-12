@@ -58,6 +58,8 @@ export default function ProblemDescription({
   editorFontSize,
   result,
   submitError,
+  judging,
+  pendingCode,
   onCopyCodeToEditor,
 }) {
   const [tab, setTab] = useState('description');
@@ -69,13 +71,14 @@ export default function ProblemDescription({
   const tabRef = useRef(tab);
   tabRef.current = tab;
 
-  // 服务端推送判题结果（或提交失败）时，自动切到「判题结果」标签
+  // 一提交就切到「判题结果」标签（先显示运行中），
+  // 收到推送结果或提交失败时也保持在这个标签
   useEffect(() => {
-    if (!result && !submitError) return;
+    if (!judging && !result && !submitError) return;
     const cur = tabRef.current;
     if (cur !== 'detail' && cur !== 'result') prevTabRef.current = cur;
     setTab('result');
-  }, [result, submitError]);
+  }, [judging, result, submitError]);
 
   // 切换题目时，动态标签属于上一题，退回题目描述
   useEffect(() => {
@@ -198,6 +201,8 @@ export default function ProblemDescription({
           <JudgeResultView
             result={result}
             submitError={submitError}
+            judging={judging}
+            pendingCode={pendingCode}
             monacoTheme={monacoTheme}
             editorFontSize={editorFontSize}
             onCopyCodeToEditor={onCopyCodeToEditor}

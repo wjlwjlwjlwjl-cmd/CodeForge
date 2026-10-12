@@ -8,5 +8,6 @@ import java.util.List;
 public class ExamListVO{
     private Integer pageSize;
     private Integer pageNum;
+    private Integer total;
     private List<ExamVO> list;
 }

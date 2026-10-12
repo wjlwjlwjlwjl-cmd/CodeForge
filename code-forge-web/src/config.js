@@ -151,6 +151,37 @@ export const getUserSendCodeUrl = (email) =>
 export const getUserLogoutUrl = () =>
   `http://${HOST}:${API_GATEWAY_PORT}/user/logout`;
 
+// 上传用户头像
+// POST {host}:18080/user/avatar/upload（需要 Authorization，multipart/form-data）
+// 表单字段名固定为 avatar；成功后返回 { success: true }
+// 注意：后端校验不通过时仍是 code=1000，错误在 data.success=false + data.errMsg
+// 对应 com.wjl.friend.controller.user.UserController#avatarUpload
+export const getAvatarUploadUrl = () =>
+  `http://${HOST}:${API_GATEWAY_PORT}/user/avatar/upload`;
+
+// 头像校验规则 —— 与后端保持一致，改动需同步：
+//   CommonConstants.MAX_SIZE    = 2 * 1024 * 1024
+//   CommonConstants.ALLOW_MIME  = {"image/jpeg","image/jpg","image/png","image/webp"}
+//   尺寸限制（UserService#avatarUpload）：宽高均需在 200 ~ 2000 之间
+//   另外 friend 服务 bootstrap.yaml 里 spring.servlet.multipart.max-file-size = 2MB，
+//   实测「正好 2MB」也会被网关拦下返回 code=2000，所以前端按 2MB 以内提示。
+export const AVATAR_MAX_SIZE = 2 * 1024 * 1024;
+export const AVATAR_ALLOW_MIME = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
+];
+export const AVATAR_MIN_EDGE = 200;
+export const AVATAR_MAX_EDGE = 2000;
+
+// 编辑个人资料：学校 / 专业 / 自我介绍
+// POST {host}:18080/user/addInfo（需要 Authorization）
+// 参数 UserAddInfoDTO：schoolName / majorName 各 ≤20 字，introduce ≤100 字
+// 对应 com.wjl.friend.controller.user.UserController#addInfo
+export const getUserAddInfoUrl = () =>
+  `http://${HOST}:${API_GATEWAY_PORT}/user/addInfo`;
+
 // 提交信息（通过数 / 总提交数 / 通过率）
 // GET {host}:18080/user/submitInfo（需要 Authorization）
 // 对应 com.wjl.friend.controller.user.UserController#submitSum

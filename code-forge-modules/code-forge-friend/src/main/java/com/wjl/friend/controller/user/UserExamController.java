@@ -21,20 +21,20 @@ public class UserExamController {
     private UserExamService userExamService;
 
     @PostMapping("/signUp")
-    @Operation(description = "C 端用户报名竞赛")
+    @Operation(description = "C 端用户报名竞赛") //done
     public R<Void> signUp(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, Long examId){
         userExamService.signUp(token,examId);
         return R.success();
     }
 
     @GetMapping("/list/mine")
-    @Operation(description = "获取用户报名的所有竞赛")
+    @Operation(description = "获取用户报名的所有竞赛") //done
     public R<UserExamListVO> getUserExamList(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, UserExamListDTO dto){
         return R.success(userExamService.getUserExamList(token, dto));
     }
 
     @GetMapping("/list/queue")
-    @Operation(description = "根据时间划分获取竞赛列表：0-未开始的竞赛 1-开始但未结束的竞赛 2-已经结束的竞赛")
+    @Operation(description = "根据时间划分获取竞赛列表：0-未开始的竞赛 1-开始但未结束的竞赛 2-已经结束的竞赛") //done
     public R<ExamListVO> getExamListSortByTime(@Validated ExamListSortByTimeDTO dto){
         return R.success(userExamService.getExamListSortByTime(dto));
     }

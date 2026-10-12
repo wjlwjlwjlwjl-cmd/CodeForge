@@ -62,7 +62,7 @@ public class JudgeService {
         // 从容器池取一个容器（池内容器，或池满时新建的临时容器）；
         // 目录随容器走：宿主机 hostDir 与容器内 containerDir 已 bind，
         // 把代码写到 hostDir 容器内就能直接看到，不再需要 docker cp。
-        ContainerInfo container = containerPool.getContainer();
+        ContainerInfo container = containerPool.getContainer(); //从容器池中取，能取到大约节省1s左右
         if (container == null) {
             ColorLog.error("容器池无法提供容器，判题中止");
             judgeResponseDTO.setErrMsg(ResultCode.ERROR.getMsg());
@@ -90,7 +90,7 @@ public class JudgeService {
             return judgeResponseDTO;
         }
 
-        long startTime = 0L;
+        long totalTime = 0;
         try{
             ContainerExecResultDTO containerExecResultDTO = dockerRunner.execute(containerId, compileCmd, compileTimeoutMs);
 
@@ -113,7 +113,6 @@ public class JudgeService {
             }
 
             //编译成功，开始执行运行逻辑
-            startTime = System.currentTimeMillis();
             for(int i = 0; i < testCases.size(); i++){
                 CaseResultDTO caseResult = new CaseResultDTO();
                 caseResult.setCaseIndex(i + 1);
@@ -134,7 +133,11 @@ public class JudgeService {
                     return judgeResponseDTO;
                 }
 
+                long startTime = System.currentTimeMillis();
                 containerExecResultDTO = dockerRunner.execute(containerId, execCmd, totalTimeLimit);
+                long endTime = System.currentTimeMillis();
+                long itemTime = endTime - startTime;
+                totalTime += itemTime;
 
                 String output = containerExecResultDTO.getStdout();
                 String outputHandled = normalize(output);
@@ -193,10 +196,9 @@ public class JudgeService {
             containerPool.release(containerId);
         }
 
-        long endTime = System.currentTimeMillis();
 
         judgeResponseDTO.setStatus(JudgeStatus.ACCEPTED);
-        judgeResponseDTO.setRunTime((int)(endTime - startTime));
+        judgeResponseDTO.setRunTime((int)totalTime);
         judgeResponseDTO.setLang(dto.getLang());
 
         rabbitmqUtil.sendToExchange(CommonConstants.RESULT_EXCHANGE, CommonConstants.RESULT_ROUTING_KEY, judgeResponseDTO);

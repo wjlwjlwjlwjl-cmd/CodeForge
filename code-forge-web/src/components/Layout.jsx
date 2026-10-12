@@ -18,6 +18,7 @@ export default function Layout({
   judging,
   result,
   submitError,
+  pendingCode,
   onSubmit,
   onCopyCodeToEditor,
   editorRef,
@@ -66,6 +67,8 @@ export default function Layout({
           editorFontSize={editorFontSize}
           result={result}
           submitError={submitError}
+          judging={judging}
+          pendingCode={pendingCode}
           onCopyCodeToEditor={onCopyCodeToEditor}
         />
       </div>

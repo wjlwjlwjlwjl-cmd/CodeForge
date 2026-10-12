@@ -8,11 +8,14 @@ import { goToLogin } from '../config.js';
 //   - result: 当前题目最新的判题结果（JudgeResponseDTO 对象，null 表示尚无结果）
 //   - judging: 是否正在判题中
 //   - submitError: 提交过程中的错误
+//   - pendingCode: 正在判题的这份代码（用于「运行中」时先展示代码）
 //   - submit(code): 发起提交
 export function useJudge(questionId) {
   const [result, setResult] = useState(null);
   const [judging, setJudging] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  // 本次提交的代码：等待 WS 结果期间先展示出来
+  const [pendingCode, setPendingCode] = useState('');
 
   // 用 ref 保存当前 questionId，避免在 onMessage 闭包中拿到旧值
   const questionIdRef = useRef(questionId);
@@ -25,6 +28,7 @@ export function useJudge(questionId) {
     setResult(null);
     setJudging(false);
     setSubmitError(null);
+    setPendingCode('');
   }, [questionId]);
 
   // 订阅 WS，按 questionId 路由结果
@@ -65,8 +69,12 @@ export function useJudge(questionId) {
         return;
       }
 
+      // 开始新一次判题：清掉上一次的结果，
+      // 否则左侧会继续显示上一轮结果、看不到「运行中」等待态
       setJudging(true);
+      setResult(null);
       setSubmitError(null);
+      setPendingCode(userCode || '');
 
       try {
         await submitJudge({
@@ -88,5 +96,5 @@ export function useJudge(questionId) {
     [questionId]
   );
 
-  return { result, judging, submitError, submit };
+  return { result, judging, submitError, pendingCode, submit };
 }

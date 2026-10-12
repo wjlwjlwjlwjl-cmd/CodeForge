@@ -1,24 +1,24 @@
 import { useEffect, useRef, useState } from 'react';
-import ThemeToggle from './ThemeToggle.jsx';
 import { useAvatar } from '../hooks/useAvatar.js';
+import { THEME_MODES } from '../hooks/useTheme.js';
 
-// 通用顶栏：左侧 Logo + 导航项，右侧主题切换 + 用户头像下拉
+// 通用顶栏：左侧 Logo + 导航项，右侧用户头像下拉
+// （外观切换已经收进头像菜单里的「外观」二级菜单，顶栏不再单独放按钮）
 //
 // props:
-//   theme / onToggleTheme   主题
 //   navItems                导航项 [{ key, label, active, onClick }]
 //   user                    { nickName, avatarUrl } 为空则不显示头像
 //   onLogout                退出登录
 //   onProfile               个人中心（可选）
-//   hideNav                 隐藏导航（登录页用）
+//   themeMode / onThemeModeChange  外观：'system' | 'light' | 'dark'
 export default function AppHeader({
-  theme,
-  onToggleTheme,
   navItems = [],
   user,
   onLogout,
   onProfile,
   onBrandClick,
+  themeMode,
+  onThemeModeChange,
 }) {
   return (
     <header className="app-header">
@@ -46,30 +46,65 @@ export default function AppHeader({
       </div>
 
       <div className="app-header-actions">
-        <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-        {user && <UserMenu user={user} onLogout={onLogout} onProfile={onProfile} />}
+        {user && (
+          <UserMenu
+            user={user}
+            onLogout={onLogout}
+            onProfile={onProfile}
+            themeMode={themeMode}
+            onThemeModeChange={onThemeModeChange}
+          />
+        )}
       </div>
     </header>
   );
 }
 
 // 用户头像 + 下拉菜单
-function UserMenu({ user, onLogout, onProfile }) {
+// 导出给编辑器页顶栏复用（两处顶栏的用户菜单必须完全一致）
+export function UserMenu({
+  user,
+  onLogout,
+  onProfile,
+  themeMode,
+  onThemeModeChange,
+}) {
   const [open, setOpen] = useState(false);
+  // 「外观」二级菜单是否展开（点一下展开，再点收起）
+  const [appearanceOpen, setAppearanceOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
   const menuRef = useRef(null);
 
-  // 头像统一取自全局存储（首页那一次获取的结果）
-  const { avatarUrl } = useAvatar();
+  // 头像统一取自全局存储；load:true 让「直接进编辑器页」也能拿到头像
+  // （store 内部有并发去重，多次调用只会请求一次）
+  const { avatarUrl } = useAvatar({ load: true });
+
+  // 头像地址变化（例如刚上传完换新头像）时，重新尝试加载图片
+  useEffect(() => {
+    setAvatarError(false);
+  }, [avatarUrl]);
 
   // 点击外部关闭
   useEffect(() => {
     if (!open) return undefined;
     const onDoc = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target)) {
+        setOpen(false);
+        setAppearanceOpen(false);
+      }
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setAppearanceOpen(false);
+      }
     };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open]);
 
   const nick = user?.nickName || user?.email || '';
@@ -82,7 +117,12 @@ function UserMenu({ user, onLogout, onProfile }) {
       <button
         type="button"
         className="user-avatar-btn"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          setOpen((v) => {
+            if (!v) setAppearanceOpen(false);
+            return !v;
+          });
+        }}
         title={nick}
         aria-label="用户菜单"
         aria-expanded={open}
@@ -129,11 +169,51 @@ function UserMenu({ user, onLogout, onProfile }) {
               个人中心
             </button>
           )}
+          {/* 外观：点开后在左侧弹出三个选项 */}
+          <div className="user-submenu-anchor">
+            <button
+              type="button"
+              className={`user-dropdown-item has-sub${appearanceOpen ? ' open' : ''}`}
+              aria-haspopup="menu"
+              aria-expanded={appearanceOpen}
+              onClick={() => setAppearanceOpen((v) => !v)}
+            >
+              外观
+              <span className="user-dropdown-caret" aria-hidden="true">
+                ‹
+              </span>
+            </button>
+
+            {appearanceOpen && (
+              <div className="user-submenu" role="menu" aria-label="外观">
+                {THEME_MODES.map((m) => {
+                  const active = themeMode === m.key;
+                  return (
+                    <button
+                      key={m.key}
+                      type="button"
+                      role="menuitemradio"
+                      aria-checked={active}
+                      className={`user-submenu-item${active ? ' active' : ''}`}
+                      onClick={() => onThemeModeChange?.(m.key)}
+                    >
+                      <span className="user-submenu-check" aria-hidden="true">
+                        {active ? '✓' : ''}
+                      </span>
+                      {m.label}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
             className="user-dropdown-item danger"
             onClick={() => {
               setOpen(false);
+              setAppearanceOpen(false);
               onLogout?.();
             }}
           >

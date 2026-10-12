@@ -55,19 +55,15 @@ export async function fetchAvatarUrl() {
 //   option：0-未开始 1-进行中 2-已结束
 // 注意：该接口在网关侧需要鉴权（无 Authorization 会 401）
 // 返回 ExamListVO = { pageNum, pageSize, list: [{ examId, title, startTime, endTime, status }] }
-export async function fetchOngoingContests({ option = 1, pageNum = 0 } = {}) {
+// 注意 pageNum 必须从 1 开始：后端内部按 LRANGE pageSize*(pageNum-1) .. -1 取，
+// 传 0 会取到「最后 10 条」而不是第一页
+export async function fetchOngoingContests({ option = 1, pageNum = 1 } = {}) {
   return getJson(`${base()}/user/exam/list/queue?pageNum=${pageNum}&option=${option}`);
 }
 
-// 获取用户报名参加的竞赛列表
-// GET /user/exam/list/mine?pageNum=
-// 返回 UserExamListVO = { pageNum, pageSize, total, list: [{ userId, examId, score, examRank }] }
-export async function fetchMyContests({ pageNum = 0 } = {}) {
-  return getJson(`${base()}/user/exam/list/mine?pageNum=${pageNum}`);
-}
-
-// 获取用户提交记录（全部题目）
+// 用户提交记录（全部题目，分页）
 // GET /job/user/history?pageNum=
+// 返回 { has, total, pages, pageNum, pageSize, list: SubmitVO[] }
 export async function fetchRecentSubmissions({ pageNum = 1 } = {}) {
   return getJson(`${base()}/job/user/history?pageNum=${pageNum}`);
 }
@@ -86,7 +82,9 @@ export async function signUpContest(examId) {
     // 成功时 body 可能为空
   }
   if (json && json.code !== SUCCESS_CODE) {
-    throw new Error(json.msg || `报名失败（code=${json.code}）`);
+    const err = new Error(json.msg || `报名失败（code=${json.code}）`);
+    err.code = json.code; // 3301 = 已经报过名
+    throw err;
   }
   return true;
 }

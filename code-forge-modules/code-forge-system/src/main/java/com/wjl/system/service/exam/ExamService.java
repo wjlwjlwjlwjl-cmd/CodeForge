@@ -78,6 +78,8 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             if(exams == null){
                 return null;
             }
+            // 同理：setCacheList 是追加语义，先删 key 再写，避免并发下重复
+            redisService.deleteObject(cacheKey);
             redisService.setCacheList(cacheKey, exams);
             redisService.expire(cacheKey, CacheConstants.EXAM_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }
@@ -99,7 +101,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         ExamQuestionListVO examQuestionListVO = new ExamQuestionListVO();
         Long examId = dto.getExamId();
         Integer pageNum = dto.getPageNum();
-        Integer pageSize = CommonConstants.PAGE_SIZE;
+        int pageSize = CommonConstants.PAGE_SIZE;
         List<Long> questionIds = new ArrayList<>();
 
         //缓存一个竞赛的所有问题的 questionId，这样如果题目发生更改，那么就不需要失效竞赛题目列表的缓存
@@ -116,6 +118,10 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             for(ExamQuestion examQuestion: exams){
                 questionIds.add(examQuestion.getQuestionId());
             }
+            // setCacheList 内部是 rightPushAll（追加）。若两个请求同时未命中缓存，
+            // 后一个会把同一批 questionId 再追加一遍，导致题目重复。
+            // 先删 key 保证是覆盖语义，并在删之后立刻写入。
+            redisService.deleteObject(cacheKey);
             redisService.setCacheList(cacheKey, questionIds);
             redisService.expire(cacheKey, CacheConstants.EXAM_QUESTION_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }

@@ -6,6 +6,56 @@
     <link rel="apple-touch-icon" href="/code.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Code Forge · 题目详情</title>
+    <script>
+      // 首屏主题引导：必须放在样式表之前同步执行。
+      // 否则页面切来切去（本项目用整页跳转）时，浏览器会先按默认亮色画一帧
+      // 再等 JS 把 data-theme 加上，看起来就是「闪白」。
+      // 规则必须和 src/hooks/useTheme.js 保持一致：
+      //   cf:theme 存 'system' | 'light' | 'dark'，默认 system
+      (function () {
+        var mode = 'system';
+        try {
+          var raw = window.localStorage.getItem('cf:theme');
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            if (parsed === 'system' || parsed === 'light' || parsed === 'dark') {
+              mode = parsed;
+            }
+          }
+        } catch (e) {
+          /* 读取失败按默认处理 */
+        }
+
+        var theme = mode;
+        if (mode === 'system') {
+          theme = 'light';
+          try {
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+              theme = 'dark';
+            }
+          } catch (e) {
+            /* matchMedia 不可用则按亮色 */
+          }
+        }
+
+        document.documentElement.setAttribute('data-theme', theme);
+        document.documentElement.style.colorScheme = theme;
+      })();
+    </script>
+    <style>
+      /* 在 theme.css 载入前，先用主题底色铺满画布，避免中间出现白底 */
+      html {
+        background: #f2f3f5;
+      }
+      html[data-theme='dark'] {
+        background: #1b1b1c;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { STATUS_TEXT, PROGRAM_TYPES, PROGRAM_LANG } from '../config.js';
 import { useSubmitDetail } from '../hooks/useSubmitDetail.js';
 import { formatDateTime, formatJudgeRuntime } from '../utils/format.js';
@@ -16,12 +17,37 @@ function statusKind(status) {
 export default function JudgeResultView({
   result,
   submitError,
+  judging,
+  pendingCode,
   monacoTheme,
   editorFontSize,
   onCopyCodeToEditor,
 }) {
   // WS 结果里没有语言与提交日期，用提交详情补全（submitId 由结果带回）
   const { data: detail } = useSubmitDetail(result?.submitId);
+
+  // 已提交、还没收到 WS 推送：先展示「运行中」
+  if (judging && !result && !submitError) {
+    return (
+      <div className="submit-detail">
+        <div className="detail-header">
+          <h2 className="detail-status status-muted judging-title">
+            运行中
+            <PullingBar />
+          </h2>
+        </div>
+        <div className="detail-code-block">
+          <CodeBlock
+            code={pendingCode || ''}
+            language="java"
+            theme={monacoTheme}
+            fontSize={editorFontSize}
+            onCopyToEditor={onCopyCodeToEditor}
+          />
+        </div>
+      </div>
+    );
+  }
 
   // 提交失败
   if (submitError && !result) {
@@ -163,5 +189,33 @@ function CaseDetails({ result }) {
         </div>
       )}
     </div>
+  );
+}
+
+// 等待动画：一条由盲文点组成的横条，亮点环绕滚动（类似 docker 拉取镜像的等待效果）
+const BAR_CELLS = 14;   // 横条格子数
+const BAR_WINDOW = 5;   // 高亮窗口宽度
+const BAR_INTERVAL = 90; // 帧间隔 ms
+
+function PullingBar() {
+  const [frame, setFrame] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(
+      () => setFrame((f) => (f + 1) % BAR_CELLS),
+      BAR_INTERVAL
+    );
+    return () => clearInterval(timer);
+  }, []);
+
+  const cells = Array.from({ length: BAR_CELLS }, (_, i) => {
+    const offset = (i - frame + BAR_CELLS) % BAR_CELLS;
+    return offset < BAR_WINDOW ? '⣿' : '⠄';
+  }).join('');
+
+  return (
+    <span className="pulling-bar" role="status" aria-label="运行中">
+      {cells}
+    </span>
   );
 }

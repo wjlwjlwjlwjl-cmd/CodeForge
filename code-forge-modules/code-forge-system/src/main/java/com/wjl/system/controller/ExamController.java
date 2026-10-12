@@ -13,6 +13,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/exam")
 @Tag(name="竞赛管理接口")
@@ -27,9 +29,9 @@ public class ExamController {
     }
 
     @GetMapping("/listQuestion")
-    @Operation(description = "获取竞赛的所有题目")
+    @Operation(description = "获取竞赛的所有题目") //done
     public R<ExamQuestionListVO> listQuestion(ExamQuestionListDTO dto){
-        return R.success(examService.examListQuestion(dto));
+        return R.success(examService.examListQuestion(dto)); //这里createTime因为字段复用，为null，不影响前端展示
     }
 
     @PostMapping("/b/add")

@@ -1,13 +1,14 @@
 import { useCallback } from 'react';
 import { useLocalStorage } from './useLocalStorage.js';
+import { useTheme, THEME_STORAGE_KEY } from './useTheme.js';
 
 // 全局偏好设置，统一持久化到 localStorage
-//   - theme: 'light' | 'dark'
+//   - 外观: 'system' | 'light' | 'dark'（见 useTheme，key 为 cf:theme）
 //   - editorFontSize: 编辑器字号
 //   - zoom: 整体 UI 缩放比例（0.8 ~ 1.5）
 //   - splitRatio: 左侧题面宽度占比（0 ~ 1）
 const KEYS = {
-  theme: 'cf:theme',
+  theme: THEME_STORAGE_KEY,
   editorFontSize: 'cf:editorFontSize',
   zoom: 'cf:zoom',
   splitRatio: 'cf:splitRatio',
@@ -15,7 +16,6 @@ const KEYS = {
 };
 
 const DEFAULTS = {
-  theme: 'light',
   editorFontSize: 14,
   zoom: 1,
   splitRatio: 0.4,
@@ -27,7 +27,9 @@ export const ZOOM_MAX = 1.5;
 export const ZOOM_STEP = 0.1;
 
 export function usePreferences() {
-  const [theme, setTheme] = useLocalStorage(KEYS.theme, DEFAULTS.theme);
+  // 外观：mode 是用户选的（含跟随系统），theme 是解析后的实际亮/暗
+  const { mode: themeMode, setMode: setThemeMode, theme, toggleTheme } =
+    useTheme();
   const [editorFontSize, setEditorFontSize] = useLocalStorage(
     KEYS.editorFontSize,
     DEFAULTS.editorFontSize
@@ -42,10 +44,6 @@ export function usePreferences() {
     DEFAULTS.vimMode
   );
 
-  const toggleTheme = useCallback(() => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
-  }, [setTheme]);
-
   const changeZoom = useCallback(
     (delta) => {
       setZoom((prev) =>
@@ -56,7 +54,11 @@ export function usePreferences() {
   );
 
   return {
+    // 解析后的实际主题：'light' | 'dark'
     theme,
+    // 用户选择的外观：'system' | 'light' | 'dark'
+    themeMode,
+    setThemeMode,
     // 编辑器主题跟随页面主题：浅色用 light，深色用 vs-dark
     monacoTheme: theme === 'dark' ? 'vs-dark' : 'light',
     toggleTheme,

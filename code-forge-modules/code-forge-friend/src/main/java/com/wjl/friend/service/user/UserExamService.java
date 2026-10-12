@@ -47,12 +47,18 @@ public class UserExamService {
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
         String userId = loginUserDTO.getUserId();
 
-        Exam exam = examMapper.selectById(examId);
+        Exam exam = examMapper.selectById(examId); //从数据库中获取竞赛信息
         if(exam == null){ //竞赛不存在
             throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
         }
-        if(LocalDateTime.now().isAfter(exam.getEndTime())){ //竞赛结束，禁止报名
+
+        //时间校验
+        LocalDateTime now = LocalDateTime.now();
+        if(now.isAfter(exam.getEndTime())){ //竞赛结束，禁止报名
             throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+        else if(now.isBefore(exam.getStartTime())){ //竞赛未开始，禁止报名
+            throw new ServiceException(ResultCode.EXAM_NOT_STARTED.getCode(), ResultCode.EXAM_NOT_STARTED.getMsg());
         }
 
         UserExam userExam = new UserExam();
@@ -107,6 +113,9 @@ public class UserExamService {
                 return null;
             }
             list = BeanCopyUtil.copyListProperties(tmp, UserExamVO::new);
+            // setCacheList 内部是 rightPushAll（追加），并发时两个请求都判定未命中
+            // 会各写一次导致列表出现重复行，所以写入前先删除旧 key（覆盖语义）
+            redisService.deleteObject(cacheKey);
             redisService.setCacheList(cacheKey, list);
             redisService.expire(cacheKey, CacheConstants.USER_EXAM_EXPIRATION, TimeUnit.MINUTES);
         }
@@ -143,6 +152,7 @@ public class UserExamService {
         }
         List<ExamVO> examVOs = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * pageNum - 1, ExamVO.class);
 
+        examListVO.setTotal(Math.toIntExact(redisService.getCacheListSize(cacheKey)));
         examListVO.setList(examVOs);
         examListVO.setPageNum(pageNum);
         examListVO.setPageSize(pageSize);

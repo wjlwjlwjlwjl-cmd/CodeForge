@@ -1,12 +1,21 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchExamList, fetchExamQuestions } from '../api/exam.js';
+import {
+  fetchExamList,
+  fetchExamQueue,
+  fetchExamDetail,
+  fetchExamQuestions,
+} from '../api/exam.js';
 import { handleApiError } from '../config.js';
+import { useMyExams } from './useMyExams.js';
+
+const NOOP = () => {};
 
 // 通用「分页 + 无限滚动」列表
 //   fetchPage(pageNum) => Promise<{ list, pageSize?, total? }>
 //   enabled 为 false 时不请求（例如尚未选中竞赛）
 // 终止判断用「本页是否满页」，不依赖后端的 total/pages。
-function useInfinite(fetchPage, enabled = true) {
+// keyOf: 取业务主键用于去重（后端缓存为追加语义时可能返回重复项）
+function useInfinite(fetchPage, enabled = true, keyOf = null) {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -46,7 +55,20 @@ function useInfinite(fetchPage, enabled = true) {
         Number(data?.pageSize) > 0 ? Number(data.pageSize) : list.length || 10;
 
       pageRef.current = nextPage;
-      setItems((prev) => (nextPage === 1 ? list : prev.concat(list)));
+      setItems((prev) => {
+        const base = nextPage === 1 ? [] : prev;
+        if (!keyOf) return base.concat(list);
+        // 去重，避免重复行与 React key 冲突
+        const seen = new Set();
+        const merged = [];
+        for (const item of base.concat(list)) {
+          const k = String(keyOf(item));
+          if (seen.has(k)) continue;
+          seen.add(k);
+          merged.push(item);
+        }
+        return merged;
+      });
 
       const more = list.length > 0 && list.length >= pageSize;
       hasMoreRef.current = more;
@@ -91,10 +113,83 @@ function useInfinite(fetchPage, enabled = true) {
   return { items, total, loading, error, hasMore, loadMore, reset };
 }
 
-// 竞赛列表
-export function useExamList() {
-  const fetchPage = useCallback((pageNum) => fetchExamList(pageNum), []);
-  return useInfinite(fetchPage, true);
+// 分类 → /user/exam/list/queue 的 option
+//   0-未开始  1-开始但未结束（进行中）  2-已结束
+export const EXAM_TIME_OPTION = {
+  unstart: 0,
+  unfinish: 1,
+  finished: 2,
+};
+
+// 竞赛列表（分类 + 分页 + 无限滚动）
+//   tab: 'unfinish' | 'unstart' | 'finished' → /user/exam/list/queue
+//        'all'                              → /exam/list
+//        'mine'                             → 不走这里（见 useMyExamList）
+// 切换分类时 fetchPage 变化会自动重置并拉第一页。
+export function useExamListByTab(tab) {
+  const isAll = tab === 'all';
+  const option = EXAM_TIME_OPTION[tab];
+  const enabled = Boolean(tab) && tab !== 'mine';
+
+  const fetchPage = useCallback(
+    (pageNum) =>
+      isAll ? fetchExamList(pageNum) : fetchExamQueue(option, pageNum),
+    [isAll, option]
+  );
+
+  return useInfinite(fetchPage, enabled, (e) => e.examId);
+}
+
+// 我的竞赛：/user/exam/list/mine 只给 examId / 分数 / 名次，
+// 这里再逐个 /exam/detail 把标题与时间补齐，拼成和别的分类一样的行数据。
+// 返回结构与 useInfinite 对齐（hasMore 恒为 false），方便列表统一渲染。
+export function useMyExamList(enabled = true) {
+  const { ids, loading: idsLoading, error: idsError, loaded } = useMyExams({
+    load: enabled,
+  });
+  const [items, setItems] = useState([]);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  // ids 变化（报名成功 / 重新加载）时重新取详情
+  const idKey = ids.join(',');
+
+  useEffect(() => {
+    if (!enabled || !loaded) return undefined;
+    if (!ids.length) {
+      setItems([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+    setDetailLoading(true);
+
+    Promise.all(
+      ids.map((id) =>
+        fetchExamDetail(id).catch(() => null) // 单个失败不影响其它
+      )
+    )
+      .then((list) => {
+        if (cancelled) return;
+        setItems(list.filter(Boolean));
+      })
+      .finally(() => {
+        if (!cancelled) setDetailLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [enabled, loaded, idKey]);
+
+  return {
+    items,
+    total: items.length,
+    loading: idsLoading || detailLoading,
+    error: idsError,
+    hasMore: false,
+    loadMore: NOOP,
+  };
 }
 
 // 某个竞赛的题目列表（examId 为空时不请求）
@@ -104,5 +199,5 @@ export function useExamQuestions(examId) {
     (pageNum) => fetchExamQuestions(examId, pageNum),
     [examId]
   );
-  return useInfinite(fetchPage, enabled);
+  return useInfinite(fetchPage, enabled, (q) => q.id);
 }

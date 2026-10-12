@@ -2,12 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchRecentSubmissions } from '../api/home.js';
 import { handleApiError } from '../config.js';
 
-// 最近提交：分页 + 无限滚动（拖动到底部自动加载下一页）
+// 最近提交：分页 + 无限滚动
 // 接口：GET /job/user/history?pageNum=
 //   返回 { has, total, pages, pageNum, pageSize, list: SubmitVO[] }
 //   SubmitVO = { submitId, questionId, pass, programType, runTime, title, createTime }
 //
-// 终止判断同样用「本页是否满页」，不依赖后端的 total/pages。
+// 终止判断用「本页是否满页」，不依赖后端的 total/pages。
 export function useRecentSubmissions() {
   const [items, setItems] = useState([]);
   const [total, setTotal] = useState(0);
@@ -36,6 +36,7 @@ export function useRecentSubmissions() {
       pageRef.current = nextPage;
       setItems((prev) => {
         const base = nextPage === 1 ? [] : prev;
+        // 去重（后端缓存异常时可能返回重复项）
         const seen = new Set();
         const merged = [];
         for (const s of base.concat(list)) {

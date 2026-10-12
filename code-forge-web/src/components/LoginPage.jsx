@@ -37,7 +37,7 @@ export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
 
       <main className="login-main">
         <CodeForgeLogo className="login-title" animated />
-        <p className="login-tagline">// Forge your code, sharpen your mind</p>
+        <p className="login-tagline">Forge your code, sharpen your mind</p>
 
         {mode === 'login' ? (
           <LoginForm

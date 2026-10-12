@@ -14,8 +14,13 @@ const FONT_SIZE_MIN = 10;
 const FONT_SIZE_MAX = 32;
 const FONT_SIZE_STEP = 1;
 
-// 提交冷却：两次提交至少间隔（秒）
-const SUBMIT_COOLDOWN_SEC = 4;
+// 提交最小间隔（与后端 CacheConstants.SUBMIT_INTERVAL_SEC 保持一致）。
+// 注意：后端对过于频繁的提交是「静默忽略」并仍返回成功，
+// 所以这个限制必须由前端自己拦截并提示。
+const SUBMIT_COOLDOWN_MS = 4000;
+
+// 提交过于频繁时的提示
+const TOO_FREQUENT_MSG = '提交过于频繁，请稍后重试';
 
 // 右侧：语言下拉 + Monaco 编辑器 + 提交按钮 + 判题结果
 // 通过 ref 暴露 setCode（给「提交详情 / 判题结果」的代码块用：复制到编辑区）
@@ -34,19 +39,14 @@ const CodeEditor = forwardRef(function CodeEditor({
   const editorRef = useRef(null);
   const vimStatusRef = useRef(null);
   const [editorReady, setEditorReady] = useState(false);
-  // 提交冷却剩余秒数
-  const [cooldown, setCooldown] = useState(0);
+  // 上次提交时间戳（用于前端拦截过于频繁的提交）
+  const lastSubmitAtRef = useRef(0);
+  // 报错弹窗文案（如「提交过于频繁，请稍后重试」）
+  const [notice, setNotice] = useState('');
 
-  // 冷却倒计时（每秒减一）
+  // 题目切换时重置间隔限制
   useEffect(() => {
-    if (cooldown <= 0) return;
-    const t = setTimeout(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
-    return () => clearTimeout(t);
-  }, [cooldown]);
-
-  // 题目切换时重置冷却
-  useEffect(() => {
-    setCooldown(0);
+    lastSubmitAtRef.current = 0;
   }, [defaultCode]);
 
   // 当题目切换（defaultCode 变化）时回填编辑器
@@ -90,10 +90,17 @@ const CodeEditor = forwardRef(function CodeEditor({
   }), []);
 
   const handleSubmit = () => {
-    // 判题中或冷却中不允许提交
-    if (judging || cooldown > 0) return;
+    // 判题中不允许重复提交
+    if (judging) return;
+
+    const elapsed = Date.now() - lastSubmitAtRef.current;
+    if (lastSubmitAtRef.current && elapsed < SUBMIT_COOLDOWN_MS) {
+      setNotice(TOO_FREQUENT_MSG);
+      return;
+    }
+
+    lastSubmitAtRef.current = Date.now();
     onSubmit(code);
-    setCooldown(SUBMIT_COOLDOWN_SEC);
   };
 
   const handleResetCode = () => {
@@ -169,15 +176,11 @@ const CodeEditor = forwardRef(function CodeEditor({
 
         <button
           type="button"
-          className="submit-btn"
+          className={`submit-btn${judging ? ' is-judging' : ''}`}
           onClick={handleSubmit}
-          disabled={judging || cooldown > 0}
+          disabled={judging}
         >
-          {judging
-            ? '判题中…'
-            : cooldown > 0
-              ? `提交 (${cooldown}s)`
-              : '提交'}
+          {judging ? '正在判题…' : '提交'}
         </button>
       </div>
 
@@ -201,6 +204,34 @@ const CodeEditor = forwardRef(function CodeEditor({
       </div>
 
       {vimMode && <div ref={vimStatusRef} className="vim-status-bar" />}
+
+      {/* 报错弹窗（例如提交过于频繁） */}
+      {notice && (
+        <div
+          className="dialog-backdrop"
+          onClick={() => setNotice('')}
+          role="presentation"
+        >
+          <div
+            className="dialog"
+            role="alertdialog"
+            aria-modal="true"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="dialog-title">提交失败</div>
+            <div className="dialog-body">{notice}</div>
+            <div className="dialog-actions">
+              <button
+                type="button"
+                className="dialog-ok"
+                onClick={() => setNotice('')}
+              >
+                确定
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 });

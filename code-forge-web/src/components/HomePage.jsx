@@ -7,10 +7,10 @@ import ContestBrowser from '../components/ContestBrowser.jsx';
 import { useHomeData } from '../hooks/useHomeData.js';
 import { useAvatar } from '../hooks/useAvatar.js';
 import { useProblemSearch } from '../hooks/useProblemSearch.js';
-import { useRecentSubmissions } from '../hooks/useRecentSubmissions.js';
 import { signUpContest } from '../api/home.js';
-import { PASS_STATUS, DIFFICULTY } from '../config.js';
-import { formatDateCN, formatRunTime } from '../utils/format.js';
+import { useMyExams } from '../hooks/useMyExams.js';
+import { fetchQuestionList } from '../api/question.js';
+import { DIFFICULTY } from '../config.js';
 
 // 首页（登录后跳转至此）
 //   顶栏 / 欢迎区 / 数据概览 / 竞赛区（两栏）/ 刷题区（两栏）
@@ -19,13 +19,54 @@ export default function HomePage({
   onToggleTheme,
   onLogout,
   onOpenEditor,
-  onOpenContests,
-  onOpenHistory,
+  onOpenProfile,
+  themeMode,
+  onThemeModeChange,
 }) {
-  const { user, stats, ongoing, mine, loading } = useHomeData();
+  const { user, ongoing, loading } = useHomeData();
 
   // 竞赛抽屉（点顶栏「竞赛」打开）
   const [contestOpen, setContestOpen] = useState(false);
+
+  // 「开始刷题」要跳哪道题：优先用下方题目列表的第一条（避免写死 id）
+  const [firstProblemId, setFirstProblemId] = useState(null);
+
+  const handleStartPractice = useCallback(async () => {
+    if (firstProblemId != null) {
+      onOpenEditor?.(firstProblemId);
+      return;
+    }
+    // 列表还没加载出来时的兜底：直接问后端要第一页的第一题
+    try {
+      const data = await fetchQuestionList(1);
+      const id = data?.list?.[0]?.id;
+      if (id != null) onOpenEditor?.(id);
+    } catch (e) {
+      console.warn('[start] 获取首题失败:', e.message);
+    }
+  }, [firstProblemId, onOpenEditor]);
+
+  // 已报名状态来自 GET /user/exam/list/mine：报名成功后按钮变「已报名」灰色
+  const { isSigned, markSigned } = useMyExams({ load: true });
+
+  const handleSignUp = useCallback(
+    async (examId) => {
+      try {
+        // 成功时后端返回 R.success()，data 全是 null
+        await signUpContest(examId);
+        markSigned(examId);
+      } catch (e) {
+        // 3301：后端告知已经报过名
+        if (e?.code === 3301) {
+          markSigned(examId);
+          return;
+        }
+        // 其他失败静默忽略，页面仍可浏览
+        console.warn('[contest] 报名失败:', e.message);
+      }
+    },
+    [markSigned]
+  );
 
   // 进入首页时异步获取头像（不阻塞页面渲染），
   // 结果存入全局 avatarStore，后续所有展示头像的地方共用
@@ -41,33 +82,41 @@ export default function HomePage({
         onToggleTheme={onToggleTheme}
         user={user}
         onLogout={onLogout}
-        onProfile={() => {}}
+        onProfile={onOpenProfile}
+        themeMode={themeMode}
+        onThemeModeChange={onThemeModeChange}
         onBrandClick={() => {}}
         navItems={[
           { key: 'contest', label: '竞赛', onClick: () => setContestOpen(true) },
           { key: 'problem', label: '题目', active: true },
-          { key: 'history', label: '提交记录', onClick: onOpenHistory },
         ]}
       />
 
       <main className="home-main">
+        <div className="home-inner">
         <WelcomeSection
           user={user}
           loading={loading}
-          onStart={() => onOpenEditor?.(920)}
+          onStart={handleStartPractice}
         />
 
-        <StatsSection stats={stats} delay={delay} />
 
-        <ContestsSection
-          ongoing={ongoing}
-          mine={mine}
-          delay={delay}
-          onOpenEditor={onOpenEditor}
-          onOpenAll={() => setContestOpen(true)}
-        />
-
-        <PracticeSection onOpenEditor={onOpenEditor} />
+        {/* 数据概览 → 快速刷题 → 进行中的竞赛（纵向堆叠） */}
+        <section className="home-section home-stack">
+          <PracticeProblemsCol
+            onOpenEditor={onOpenEditor}
+            onFirstItem={setFirstProblemId}
+          />
+          <OngoingContestsCol
+            ongoing={ongoing}
+            delay={delay}
+            onOpenEditor={onOpenEditor}
+            onSignUp={handleSignUp}
+            isSigned={isSigned}
+            onOpenAll={() => setContestOpen(true)}
+          />
+        </section>
+        </div>
       </main>
 
       <ContestBrowser
@@ -92,7 +141,7 @@ function WelcomeSection({ user, loading, onStart }) {
         <h1 className="welcome-title">
           欢迎回来，<span className="welcome-name">{loading ? '…' : name}</span>
         </h1>
-        <p className="welcome-tagline">// Forge your code, sharpen your mind</p>
+        <p className="welcome-tagline">Forge your code, sharpen your mind</p>
       </div>
       <button type="button" className="welcome-start" onClick={onStart}>
         开始刷题
@@ -101,117 +150,40 @@ function WelcomeSection({ user, loading, onStart }) {
   );
 }
 
-/* ============================ 数据概览 ============================ */
-function StatsSection({ stats, delay }) {
-  // 数据来自 GET /user/submitInfo，任一项不合法则展示 N/A
-  const cards = [
-    { label: '通过数', value: stats?.passSum ?? 'N/A', hint: 'AC 提交次数' },
-    {
-      label: '通过率',
-      value: stats?.passRate ?? 'N/A',
-      hint: '通过数 / 总提交数',
-      accent: true,
-      progress: stats?.passRatePercent ?? null,
-    },
-    { label: '总提交数', value: stats?.submitSum ?? 'N/A', hint: '累计提交次数' },
-  ];
-
+/* ==================== 竞赛区（两个独立列） ==================== */
+// 左上：进行中的竞赛
+function OngoingContestsCol({
+  ongoing,
+  delay,
+  onOpenEditor,
+  onSignUp,
+  onOpenAll,
+  isSigned,
+}) {
   return (
-    <section className="home-section">
-      <div className="stat-grid">
-        {cards.map((c, i) => (
-          <StatCard
-            key={c.label}
-            label={c.label}
-            value={c.value}
-            hint={c.hint}
-            accent={c.accent}
-            progress={c.progress}
+    <div className="col" id="home-contests">
+      <div className="section-head">
+        <h2 className="section-title">进行中的竞赛</h2>
+        <button type="button" className="section-more" onClick={onOpenAll}>
+          全部竞赛 ›
+        </button>
+      </div>
+      <div className="card-list">
+        {(ongoing || []).map((c, i) => (
+          <ContestCard
+            key={c.examId ?? i}
+            title={c.title}
+            startTime={c.startTime}
+            endTime={c.endTime}
+            actionLabel={isSigned?.(c.examId) ? '已报名' : '报名'}
+            actionDisabled={!!isSigned?.(c.examId)}
+            onAction={() => onSignUp?.(c.examId)}
             delay={delay(i)}
           />
         ))}
+        {!ongoing?.length && <div className="empty-hint">暂无进行中的竞赛</div>}
       </div>
-    </section>
-  );
-}
-
-/* ============================ 竞赛区 ============================ */
-function ContestsSection({ ongoing, mine, delay, onOpenEditor, onOpenAll }) {
-  // 已参加的竞赛 id，用于把「进行中」卡片按钮显示为「进入」
-  const joinedIds = useMemo(
-    () => new Set((mine || []).map((m) => String(m.examId))),
-    [mine]
-  );
-
-  const mineMap = useMemo(() => {
-    const m = new Map();
-    (mine || []).forEach((x) => m.set(String(x.examId), x));
-    return m;
-  }, [mine]);
-
-  const handleSignUp = useCallback(async (examId) => {
-    try {
-      await signUpContest(examId);
-    } catch (e) {
-      // 报名失败（如后端未启动）静默忽略，页面仍可浏览
-      console.warn('[contest] 报名失败:', e.message);
-    }
-  }, []);
-
-  return (
-    <section className="home-section two-col" id="home-contests">
-      <div className="col">
-        <div className="section-head">
-          <h2 className="section-title">进行中的竞赛</h2>
-          <button type="button" className="section-more" onClick={onOpenAll}>
-            全部竞赛 ›
-          </button>
-        </div>
-        <div className="card-list">
-          {(ongoing || []).map((c, i) => {
-            const joined = joinedIds.has(String(c.examId));
-            return (
-              <ContestCard
-                key={c.examId ?? i}
-                title={c.title}
-                startTime={c.startTime}
-                endTime={c.endTime}
-                actionLabel={joined ? '进入' : '报名'}
-                onAction={() =>
-                  joined ? onOpenEditor?.(920) : handleSignUp(c.examId)
-                }
-                delay={delay(i)}
-              />
-            );
-          })}
-          {!ongoing?.length && <div className="empty-hint">暂无进行中的竞赛</div>}
-        </div>
-      </div>
-
-      <div className="col">
-        <h2 className="section-title">我参加的竞赛</h2>
-        <div className="card-list">
-          {(mine || []).map((c, i) => {
-            const meta = mineMap.get(String(c.examId)) || c;
-            const info = { ...c, ...meta };
-            return (
-              <ContestCard
-                key={c.examId ?? i}
-                title={info.title || `竞赛 #${c.examId}`}
-                startTime={info.startTime}
-                endTime={info.endTime}
-                statusText={statusLabel(info.status)}
-                statusKind={statusKind(info.status)}
-                rank={info.examRank}
-                rankTime={info.rankTime}
-                delay={delay(i)}
-              />
-            );
-          })}
-          {!mine?.length && <div className="empty-hint">还没有参加过竞赛</div>}
-        </div>
-      </div>
-    </section>
+    </div>
   );
 }
 
@@ -229,8 +201,8 @@ function statusKind(status) {
   return 'muted';
 }
 
-/* ============================ 刷题区 ============================ */
-function PracticeSection({ onOpenEditor }) {
+/* ==================== 刷题区（右上：快速刷题） ==================== */
+function PracticeProblemsCol({ onOpenEditor, onFirstItem }) {
   // 输入框里的关键字（未提交）与真正生效的关键字
   const [input, setInput] = useState('');
   const [keyword, setKeyword] = useState('');
@@ -242,18 +214,26 @@ function PracticeSection({ onOpenEditor }) {
     difficulty,
   });
 
-  // 滚动到底部附近时加载下一页
-  const handleScroll = useCallback(
-    (e) => {
-      if (!hasMore || loading) return;
-      const el = e.currentTarget;
-      // 距底部 80px 内触发
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
-        loadMore();
-      }
-    },
-    [hasMore, loading, loadMore]
-  );
+  // 无限滚动：列表固定在「8 条高」的框内（不随题库总数变高），
+  // 框内滚到底部的哨兵进入视口即加载下一页。
+  const scrollRef = useRef(null);
+  const sentinelRef = useRef(null);
+  useEffect(() => {
+    const root = scrollRef.current;
+    const el = sentinelRef.current;
+    if (!root || !el || !hasMore) return undefined;
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) loadMore();
+      },
+      { root, rootMargin: '120px 0px' } // 在框内提前 120px 触发
+    );
+    io.observe(el);
+    return () => io.disconnect();
+    // items.length / loading 变化时重建：
+    // 若哨兵仍在框内会再次回调，从而继续把框填满
+  }, [hasMore, loading, items.length, loadMore]);
 
   const applySearch = useCallback(() => {
     setKeyword(input.trim());
@@ -271,12 +251,17 @@ function PracticeSection({ onOpenEditor }) {
     [applySearch]
   );
 
+  // 把当前列表的第一条报给外层，「开始刷题」用它作为跳转目标
+  useEffect(() => {
+    const id = items[0]?.id;
+    if (id != null) onFirstItem?.(id);
+  }, [items, onFirstItem]);
+
   const searching = keyword.length > 0;
 
   return (
-    <section className="home-section two-col" id="home-history">
-      <div className="col">
-        <h2 className="section-title">快速刷题</h2>
+    <div className="col" id="home-practice">
+      <h2 className="section-title">快速刷题</h2>
 
         <div className="search-box">
           <input
@@ -326,8 +311,8 @@ function PracticeSection({ onOpenEditor }) {
           ))}
         </div>
 
-        {/* 可滚动题目列表：高度约 8 条，滚到底部自动加载下一页 */}
-        <div className="problem-scroll" onScroll={handleScroll}>
+        {/* 题目列表：固定在 8 条高的框内滚动，框内滑到底自动加载下一页 */}
+        <div className="problem-scroll" ref={scrollRef}>
           <div className="problem-list">
             {items.map((p, i) => (
               <ProblemItem
@@ -349,82 +334,9 @@ function PracticeSection({ onOpenEditor }) {
               <div className="list-end">没有更多了</div>
             )}
           </div>
+          {/* 无限滚动哨兵（在滚动框内部） */}
+          <div ref={sentinelRef} className="list-sentinel" aria-hidden="true" />
         </div>
-      </div>
-
-      <RecentSubmissions onOpenEditor={onOpenEditor} />
-    </section>
-  );
-}
-
-/* ============================ 最近提交 ============================ */
-// 可滚动 + 拖动到底部分页加载（与题目列表同一思路）
-// 条目：日期（xxxx年xx月xx日） / 题目 / 结果状态 / 运行时间（未通过为 N/A）
-// 点击 → 跳到该条提交对应的题目
-function RecentSubmissions({ onOpenEditor }) {
-  const { items, loading, error, hasMore, loadMore } = useRecentSubmissions();
-  const scrollRef = useRef(null);
-
-  // 滚动到底部附近 → 加载下一页
-  const handleScroll = useCallback(
-    (e) => {
-      if (!hasMore || loading) return;
-      const el = e.currentTarget;
-      if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) loadMore();
-    },
-    [hasMore, loading, loadMore]
-  );
-
-  // 内容完全撑不满容器（无法拖动）时自动续加载；
-  // 只要能滚动就交给用户拖动触发（阈值取小，避免一次拉好几页）
-  useEffect(() => {
-    const el = scrollRef.current;
-    if (!el || loading || !hasMore) return;
-    if (el.scrollHeight - el.clientHeight < 4) loadMore();
-  }, [items, loading, hasMore, loadMore]);
-
-  return (
-    <div className="col">
-      <h2 className="section-title">最近提交</h2>
-      <div className="submit-scroll" ref={scrollRef} onScroll={handleScroll}>
-        <div className="submit-list">
-          {items.map((s, i) => (
-            <SubmitRow
-              key={s.submitId ?? i}
-              title={s.title || `题目 #${s.questionId}`}
-              pass={s.pass}
-              runTime={s.runTime}
-              createTime={s.createTime}
-              onClick={() => onOpenEditor?.(s.questionId)}
-            />
-          ))}
-          {!items.length && !loading && (
-            <div className="empty-hint">{error || '暂无提交记录'}</div>
-          )}
-          {loading && <div className="list-loading">加载中…</div>}
-          {!hasMore && items.length > 0 && (
-            <div className="list-end">没有更多了</div>
-          )}
-        </div>
-      </div>
     </div>
-  );
-}
-
-// 提交行：日期 / 题目 / 结果状态 / 运行时间
-// 运行时间只在「通过」时有意义，其余展示 N/A
-// 注意：用 formatRunTime(pass, runTime)（双参，仅 pass===4 才出值）
-function SubmitRow({ title, pass, runTime, createTime, onClick }) {
-  const isAc = pass === 4 || pass === 'ACCEPTED';
-  const status = PASS_STATUS[pass];
-  const label = isAc ? '通过' : status?.text || '未通过';
-
-  return (
-    <button type="button" className="submit-row" onClick={onClick}>
-      <span className="submit-row-date">{formatDateCN(createTime)}</span>
-      <span className="submit-row-title">{title}</span>
-      <span className={`submit-row-status ${isAc ? 'ok' : 'bad'}`}>{label}</span>
-      <span className="submit-row-runtime">{formatRunTime(pass, runTime)}</span>
-    </button>
   );
 }

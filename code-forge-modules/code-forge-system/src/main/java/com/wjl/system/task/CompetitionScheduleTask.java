@@ -1,12 +1,12 @@
-package com.wjl.friend.task;
+package com.wjl.system.task;
 
 import com.wjl.domain.constants.CacheConstants;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
-import com.wjl.friend.domain.exam.vo.ExamVO;
-import com.wjl.friend.entity.exam.Exam;
-import com.wjl.friend.mapper.exam.ExamMapper;
 import com.wjl.redis.service.RedisService;
+import com.wjl.system.domain.exam.vo.ExamVO;
+import com.wjl.system.entity.exam.Exam;
+import com.wjl.system.mapper.ExamMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;

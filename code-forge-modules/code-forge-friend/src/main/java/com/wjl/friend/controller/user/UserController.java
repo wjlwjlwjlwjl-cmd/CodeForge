@@ -52,13 +52,13 @@ public class UserController {
     }
 
     @PostMapping("/addInfo")
-    @Operation(description = "增添用户信息（学校、专业、自我介绍）")
+    @Operation(description = "增添用户信息（学校、专业、自我介绍）") //done
     public R<String> addInfo(@Validated @RequestBody UserAddInfoDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         return R.success(userService.addUserInfo(token, dto));
     }
 
     @GetMapping("/detail")
-    @Operation(description = "获取用户详细信息")
+    @Operation(description = "获取用户详细信息") //done
     public R<UserDetailVO> detail(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
         UserDetailVO userDetailVO = userService.detail(token);
         return R.success(userDetailVO);
@@ -75,7 +75,7 @@ public class UserController {
     // 2. 文件类型限制  "image/jpeg", "image/jpg", "image/png", "image/webp"
     // 3. 文件尺寸限制 200×200 ~ 2000×2000
     @PostMapping("/avatar/upload")
-    @Operation(description = "上传用户头像")
+    @Operation(description = "上传用户头像") //done
     public R<AvatarUploadVO> avatarUpload(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, MultipartFile avatar){
         return R.success(userService.avatarUpload(token, avatar));
     }
