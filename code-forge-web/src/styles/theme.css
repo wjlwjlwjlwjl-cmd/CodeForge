@@ -1789,6 +1789,12 @@ body {
   box-shadow: 0 0 0 2px var(--border-strong);
 }
 
+/* 有头像图片时不铺主题色：透明底的头像直接融进所在底色
+   （顶栏是 --bg，卡片/菜单是 --panel-bg），不再看到橙色圆圈 */
+.user-avatar-btn.has-img {
+  background: transparent;
+}
+
 
 .user-avatar-img {
   width: 100%;
@@ -1799,7 +1805,7 @@ body {
 .user-avatar-initial {
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a1a;
+  color: var(--accent-contrast);
   line-height: 1;
 }
 
@@ -2343,6 +2349,10 @@ body {
   border-radius: 50%;
 }
 
+.user-dropdown-avatar.has-img {
+  background: transparent;
+}
+
 .user-dropdown-avatar img {
   width: 100%;
   height: 100%;
@@ -2777,6 +2787,10 @@ body {
   color: var(--accent-contrast);
   background: var(--accent);
   border-radius: 50%;
+}
+
+.profile-avatar.has-img {
+  background: transparent;
 }
 
 .profile-avatar img {

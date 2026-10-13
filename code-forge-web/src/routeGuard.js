@@ -3,6 +3,7 @@ import { getToken } from './config.js';
 // 进入页面前的同步路由守卫（在 React 挂载之前调用）
 //
 // 规则：
+//   0. B 端管理后台自行鉴权，直接放行；
 //   1. 没有 jwt token → 一律先去登录页（任何页面，包括以后新增的）；
 //      同时把原来的目标（?id=xxx）保留在 URL 上，登录成功后回到那里。
 //   2. 已经有 jwt token → 直接进入目标页面；如果访问的是登录页，则跳走。
@@ -15,8 +16,17 @@ function redirect(url) {
   window.location.replace(url.toString());
 }
 
+// B 端管理后台（?page=admin 或 /admin）有独立的管理员登录态
+// （localStorage['cf:adminToken']），不参与 C 端的登录守卫。
+function isAdminEntry(url) {
+  if (url.searchParams.get('page') === 'admin') return true;
+  return url.pathname.replace(/\/+$/, '') === '/admin';
+}
+
 export function guardRoute() {
   const url = new URL(window.location.href);
+  if (isAdminEntry(url)) return true;
+
   const isLoginPage = url.searchParams.get('page') === 'login';
   const hasToken = !!getToken();
 

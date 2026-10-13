@@ -158,7 +158,7 @@ function ProfileCard({ user, loading, onEdit, savedTick }) {
   return (
     <div className="profile-card">
       <div className="profile-avatar-wrap">
-        <div className="profile-avatar">
+        <div className={`profile-avatar${showImg ? ' has-img' : ''}`}>
           {showImg ? (
             <img src={avatarUrl} alt={nick} onError={() => setAvatarError(true)} />
           ) : (

@@ -116,7 +116,7 @@ export function UserMenu({
     <div className="user-menu" ref={menuRef}>
       <button
         type="button"
-        className="user-avatar-btn"
+        className={`user-avatar-btn${showImg ? ' has-img' : ''}`}
         onClick={() => {
           setOpen((v) => {
             if (!v) setAppearanceOpen(false);
@@ -142,7 +142,9 @@ export function UserMenu({
       {open && (
         <div className="user-dropdown" role="menu">
           <div className="user-dropdown-user">
-            <span className="user-dropdown-avatar">
+            <span
+              className={`user-dropdown-avatar${showImg ? ' has-img' : ''}`}
+            >
               {showImg ? (
                 <img src={avatarUrl} alt={nick} onError={() => setAvatarError(true)} />
               ) : (

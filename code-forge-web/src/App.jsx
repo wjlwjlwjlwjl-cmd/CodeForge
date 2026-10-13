@@ -4,6 +4,7 @@ import QuestionLibrary from './components/QuestionLibrary.jsx';
 import LoginPage from './components/LoginPage.jsx';
 import HomePage from './components/HomePage.jsx';
 import ProfilePage from './components/ProfilePage.jsx';
+import AdminApp from './pages/admin/AdminApp.jsx';
 import { UserMenu } from './components/AppHeader.jsx';
 import { useQuestion } from './hooks/useQuestion.js';
 import { useJudge } from './hooks/useJudge.js';
@@ -28,12 +29,21 @@ function isLoginPage() {
   return params.get('page') === 'login';
 }
 
+// B 端管理后台入口：?page=admin 或路径 /admin
+// （B 端有自己独立的管理员登录，不复用 C 端 token）
+function isAdminEntry() {
+  const params = new URLSearchParams(window.location.search);
+  if (params.get('page') === 'admin') return true;
+  return window.location.pathname.replace(/\/+$/, '') === '/admin';
+}
+
 // 页面模式：?page=login → 登录页；?id=xxx → 代码编辑页；否则 → 首页
 function parsePage() {
   const params = new URLSearchParams(window.location.search);
   const page = params.get('page');
   if (page === 'login') return 'login';
   if (page === 'profile') return 'profile';
+  if (isAdminEntry()) return 'admin';
   if (params.get('id') != null && params.get('id').trim() !== '') return 'editor';
   return 'home';
 }
@@ -178,7 +188,9 @@ export default function App() {
 
   return (
     <div className="app" data-theme={theme} style={{ zoom: zoom }}>
-      {loginPage ? (
+      {page === 'admin' ? (
+        <AdminApp theme={theme} onToggleTheme={toggleTheme} />
+      ) : loginPage ? (
         <LoginPage
           theme={theme}
           onToggleTheme={toggleTheme}
