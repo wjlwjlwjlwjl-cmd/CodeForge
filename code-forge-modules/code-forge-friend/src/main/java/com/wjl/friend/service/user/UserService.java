@@ -138,6 +138,9 @@ public class UserService {
         if(!trueCode.equals(code)){
             throw new ServiceException(ResultCode.FAILED_ERROR_CODE.getCode(),ResultCode.FAILED_ERROR_CODE.getMsg());
         }
+        //验证码通过，删除验证码缓存
+        redisService.deleteObject(CacheConstants.VERIFY_PREFIX + email);
+
         String hashedPassword = BCryptPwdUtil.encode(rawPassword);
 
         User user = new User();
@@ -295,6 +298,9 @@ public class UserService {
             //用户上传过头像，update
             fileUtil.updateFile(avatarName, avatar);
         }
+
+        //清除redis中缓存
+        redisService.deleteObject(cacheKey);
 
         avatarUploadVO.setSuccess(true);
 

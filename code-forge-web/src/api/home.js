@@ -70,6 +70,12 @@ export async function fetchRecentSubmissions({ pageNum = 1 } = {}) {
 
 // 报名竞赛
 // POST /user/exam/signUp?examId=
+//
+// 注意：本接口成功时后端用的是「无参」R.success()，字段全是 null：
+//   { code: null, msg: null, data: null }   —— code 并不是 1000
+// 失败时才由全局异常处理返回带错误码与错误信息的 R（如 3301 已报名）。
+// 因此这里不能用 `code !== 1000` 判失败，否则会把成功误判成失败。
+// 判定规则：只要没有错误码、也没有错误信息，就视为报名成功。
 export async function signUpContest(examId) {
   const res = await fetch(`${base()}/user/exam/signUp?examId=${examId}`, {
     method: 'POST',
@@ -81,9 +87,16 @@ export async function signUpContest(examId) {
   } catch (e) {
     // 成功时 body 可能为空
   }
-  if (json && json.code !== SUCCESS_CODE) {
-    const err = new Error(json.msg || `报名失败（code=${json.code}）`);
-    err.code = json.code; // 3301 = 已经报过名
+
+  const code = json?.code;
+  const msg = typeof json?.msg === 'string' ? json.msg.trim() : '';
+  // 有非成功错误码，或有错误信息（R.success(data) 的 msg 固定为 "success"，不算错误）
+  const hasError =
+    (code != null && code !== SUCCESS_CODE) || (msg !== '' && msg !== 'success');
+
+  if (hasError) {
+    const err = new Error(msg || `报名失败（code=${code}）`);
+    err.code = code; // 3301 = 已经报过名
     throw err;
   }
   return true;
