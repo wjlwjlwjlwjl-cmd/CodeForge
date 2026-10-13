@@ -572,6 +572,11 @@
   border-bottom: none;
 }
 
+/* 列表交错底色：第 1、3、5… 行铺浅灰底（权重低于下方 hover） */
+.admin-table tbody tr:where(:nth-child(odd)) td {
+  background: var(--row-alt);
+}
+
 .admin-table tbody tr:hover td {
   background: var(--header-control-hover);
 }

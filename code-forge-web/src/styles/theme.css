@@ -43,6 +43,8 @@
   --judge-pre-bg: #f5f6f7;
   --judge-pre-border: #d8dce0;
   --editor-surface: #ffffff;
+  /* 列表交错底色（第 1、3、5… 条） */
+  --row-alt: #f5f7f9;
 
   /* 阴影只保留两层：sm 给下拉/浮层，md 给真正的模态 */
   --shadow-sm: 0 1px 0 rgba(31, 35, 40, 0.04);
@@ -109,6 +111,7 @@ html[data-theme='dark'] {
   --judge-pre-bg: #1b1b1c;
   --judge-pre-border: #343436;
   --editor-surface: #1e1e1e;
+  --row-alt: rgba(255, 255, 255, 0.04);
 
   --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.3);
   --shadow-md: 0 3px 12px rgba(0, 0, 0, 0.45);
@@ -542,10 +545,6 @@ body {
   transition: background var(--transition);
 }
 
-.history-row:hover {
-  background: var(--header-control-hover);
-}
-
 .history-row:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: -2px;
@@ -901,10 +900,6 @@ body {
   text-align: left;
   cursor: pointer;
   transition: background var(--transition);
-}
-
-.library-item:hover {
-  background: var(--header-control-hover);
 }
 
 .library-item.active {
@@ -2057,10 +2052,6 @@ body {
   transition: background-color var(--transition);
 }
 
-.contest-card:hover {
-  background: var(--header-control-hover);
-}
-
 .contest-card-main {
   min-width: 0;
   flex: 1;
@@ -2225,10 +2216,6 @@ body {
   border-radius: 0;
   cursor: pointer;
   transition: background-color var(--transition);
-}
-
-.problem-item:hover {
-  background: var(--header-control-hover);
 }
 
 /* 题目序号 */
@@ -2511,10 +2498,6 @@ body {
   padding: 10px var(--space-4);
   border-bottom: 1px solid var(--border);
   transition: background-color var(--transition);
-}
-
-.contest-row:hover {
-  background: var(--header-control-hover);
 }
 
 .contest-row-main {
@@ -2887,10 +2870,6 @@ body {
   border-radius: 0;
   cursor: pointer;
   transition: background-color var(--transition);
-}
-
-.submit-row:hover {
-  background: var(--header-control-hover);
 }
 
 .submit-row + .submit-row {
@@ -3330,4 +3309,33 @@ body {
   font-size: 12px;
   line-height: 1;
   text-align: center;
+}
+
+/* ============ 列表：交错底色 + 自定义光标 ============ */
+/*
+ * · 第 1、3、5… 条铺 --row-alt 浅灰底，第 2、4… 条保持原样；
+ * · 用 :where() 包住 :nth-child，使选择器权重保持为「单个类」，
+ *   这样 .library-item.active 这类状态样式（0,2,0）仍能盖过交错底色；
+ * · 悬停不再用高亮底色，改为「大拇指 + 食指伸出」的自定义手型光标。
+ */
+.problem-item:where(:nth-child(odd)),
+.library-item:where(:nth-child(odd)),
+.contest-card:where(:nth-child(odd)),
+.contest-row:where(:nth-child(odd)),
+.submit-row:where(:nth-child(odd)),
+.history-row:where(:nth-child(even)) {
+  background: var(--row-alt);
+}
+
+/* 手型光标热点取食指指尖（public/cursor-hand.svg） */
+.problem-item,
+.library-item,
+.contest-card,
+.contest-card .contest-action:not(:disabled),
+.contest-row,
+.contest-row .contest-row-main,
+.contest-row .contest-row-action.primary,
+.submit-row,
+.history-row {
+  cursor: url('/cursor-hand.svg') 15 3, pointer;
 }

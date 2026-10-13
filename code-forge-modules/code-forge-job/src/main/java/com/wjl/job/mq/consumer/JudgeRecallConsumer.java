@@ -113,6 +113,8 @@ public class JudgeRecallConsumer {
             // 竞赛计分逻辑
             // 1. score，直接取决于解题数量，即：解题越多，排名越高
             // 2. 罚时，非ac的一律增加罚时，一次加5min，作为score相同时的排序
+
+            //如果
             if(pass == 4){
                 userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
                         .eq(UserExam::getExamId, examId)

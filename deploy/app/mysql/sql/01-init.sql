@@ -117,6 +117,7 @@ create table tb_user_exam(
 )ENGINE=INNODB default charset=utf8mb4 comment="竞赛报名表";
 
 -- 用户提交表
+-- 结合查询需求（uid、uid-qid、uid-eid），设计为两组联合索引（uid, qid)，(uid, eid)
 DROP TABLE IF EXISTS `tb_user_submit`;
 create table tb_user_submit(
     submit_id bigint unsigned PRIMARY KEY AUTO_INCREMENT COMMENT '提交记录id',
@@ -133,6 +134,6 @@ create table tb_user_submit(
     update_by    bigint unsigned default null comment '更新人',
     update_time  datetime default null comment '更新时间',
     exe_message  text,
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_question_id` (`question_id`)
+    KEY `idx_uid_qid` (`user_id`, `question_id`),
+    KEY `idx_uid_eid` (`user_id`, `exam_id`)
 )ENGINE=INNODB default charset=utf8mb4 comment="用户提交表";
