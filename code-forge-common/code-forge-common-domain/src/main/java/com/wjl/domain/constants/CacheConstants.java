@@ -93,4 +93,9 @@ public class CacheConstants {
      */
     public final static String USER_SUBMIT_INFO = "user:submit:info:%d";
     public final static Long USER_SUBMIT_INFO_EXPIRATION = 1L;
+
+    /**
+     * 竞赛排名缓存
+     */
+    public final static String EXAM_RANK = "exam:%d:rank";
 }

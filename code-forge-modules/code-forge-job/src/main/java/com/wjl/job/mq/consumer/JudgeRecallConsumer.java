@@ -1,5 +1,6 @@
 package com.wjl.job.mq.consumer;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wjl.domain.constants.CommonConstants;
@@ -46,6 +47,7 @@ public class JudgeRecallConsumer {
         Integer runTime = dto.getRunTime();
         Long examId = dto.getExamId();
         Long userId = dto.getUserId();
+        Long questionId = dto.getQuestionId();
 
         //更新redis中的提交信息缓存信息
         String cacheKey = CacheUtil.getSubmitInfoKey(userId);
@@ -114,18 +116,33 @@ public class JudgeRecallConsumer {
             // 1. score，直接取决于解题数量，即：解题越多，排名越高
             // 2. 罚时，非ac的一律增加罚时，一次加5min，作为score相同时的排序
 
-            //如果
-            if(pass == 4){
-                userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
-                        .eq(UserExam::getExamId, examId)
-                        .setSql("score=score+1")
-                );
+            //后端提交表建了两个索引，这里使用第二组(uid-eid-qid)
+            //先检查，如果是已经提交的结果，那么不进行加分处理
+            UserSubmit userSubmit = userSubmitMapper.selectOne(new LambdaQueryWrapper<UserSubmit>()
+                    .eq(UserSubmit::getUserId, userId)
+                    .eq(UserSubmit::getExamId, examId)
+                    .eq(UserSubmit::getQuestionId, questionId)
+            );
+            if(userSubmit == null){
+                //当前题目已经提交过，不再积分
             }
             else{
-                userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
-                        .eq(UserExam::getExamId, examId)
-                        .setSql("penalty=penalty+5")
-                );
+                //将排名信息维护在redis中，使用 ZSet
+
+                if(pass == 4){
+                    userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
+                            .eq(UserExam::getUserId, userId)
+                            .eq(UserExam::getExamId, examId)
+                            .setSql("score=score+1")
+                    );
+                }
+                else{
+                    userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
+                            .eq(UserExam::getExamId, examId)
+                            .setSql("penalty=penalty+5")
+                    );
+                }
+
             }
         }
 

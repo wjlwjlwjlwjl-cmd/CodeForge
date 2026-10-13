@@ -106,9 +106,9 @@ create table tb_user_exam(
     user_exam_id bigint unsigned primary key auto_increment COMMENT '用户竞赛关系id',
     user_id bigint unsigned NOT NULL COMMENT '用户id',
     exam_id bigint unsigned NOT NULL COMMENT '竞赛id',
-    score int unsigned COMMENT '得分',
-    penalty int unsigned default null comment '罚时',
-    exam_rank  int unsigned COMMENT '排名',
+    score int unsigned default 0 COMMENT '得分',
+    penalty int unsigned default 0 comment '罚时',
+    exam_rank  int unsigned default 0 COMMENT '排名',
     create_by    bigint unsigned not null  comment '创建人',
     create_time  datetime not null comment '创建时间',
     update_by    bigint unsigned  comment '更新人',
@@ -135,5 +135,5 @@ create table tb_user_submit(
     update_time  datetime default null comment '更新时间',
     exe_message  text,
     KEY `idx_uid_qid` (`user_id`, `question_id`),
-    KEY `idx_uid_eid` (`user_id`, `exam_id`)
+    KEY `idx_uid_eid_qid` (`user_id`, `exam_id`,  `question_id`)
 )ENGINE=INNODB default charset=utf8mb4 comment="用户提交表";
