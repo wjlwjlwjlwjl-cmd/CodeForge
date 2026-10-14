@@ -46,15 +46,13 @@ export default function AppHeader({
       </div>
 
       <div className="app-header-actions">
-        {user && (
-          <UserMenu
-            user={user}
-            onLogout={onLogout}
-            onProfile={onProfile}
-            themeMode={themeMode}
-            onThemeModeChange={onThemeModeChange}
-          />
-        )}
+        <UserMenu
+          user={user}
+          onLogout={onLogout}
+          onProfile={onProfile}
+          themeMode={themeMode}
+          onThemeModeChange={onThemeModeChange}
+        />
       </div>
     </header>
   );
@@ -109,8 +107,13 @@ export function UserMenu({
 
   const nick = user?.nickName || user?.email || '';
   const initial = (nick.trim()[0] || '?').toUpperCase();
-  // 拿不到（未签名 / 加载失败 / 图片加载失败）则回退默认头像
-  const showImg = avatarUrl && !avatarError;
+  // 优先级：真实头像 > 昵称首字母 > 默认头像。
+  // 未授权 / 取不到用户信息（nick 为空）时兜底展示默认头像，
+  // 保证右上角头像始终存在，进而能打开菜单退出登录。
+  const hasAvatar = !!avatarUrl && !avatarError;
+  const useDefault = !hasAvatar && !nick;
+  const showImg = hasAvatar || useDefault;
+  const imgSrc = hasAvatar ? avatarUrl : '/avatar-default.svg';
 
   return (
     <div className="user-menu" ref={menuRef}>
@@ -123,16 +126,16 @@ export function UserMenu({
             return !v;
           });
         }}
-        title={nick}
+        title={nick || '用户菜单'}
         aria-label="用户菜单"
         aria-expanded={open}
       >
         {showImg ? (
           <img
             className="user-avatar-img"
-            src={avatarUrl}
-            alt={nick}
-            onError={() => setAvatarError(true)}
+            src={imgSrc}
+            alt={nick || '默认头像'}
+            onError={hasAvatar ? () => setAvatarError(true) : undefined}
           />
         ) : (
           <span className="user-avatar-initial">{initial}</span>
@@ -146,13 +149,17 @@ export function UserMenu({
               className={`user-dropdown-avatar${showImg ? ' has-img' : ''}`}
             >
               {showImg ? (
-                <img src={avatarUrl} alt={nick} onError={() => setAvatarError(true)} />
+                <img
+                  src={imgSrc}
+                  alt={nick || '默认头像'}
+                  onError={hasAvatar ? () => setAvatarError(true) : undefined}
+                />
               ) : (
                 initial
               )}
             </span>
             <span className="user-dropdown-info">
-              <span className="user-dropdown-name">{nick}</span>
+              <span className="user-dropdown-name">{nick || '未登录'}</span>
               {user?.email && (
                 <span className="user-dropdown-email">{user.email}</span>
               )}

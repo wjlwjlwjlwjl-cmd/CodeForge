@@ -94,4 +94,7 @@ public class CommonConstants {
     public static final String RESULT_EXCHANGE = "judge.result.exchange";
     public static final String RESULT_ROUTING_KEY = "judge.result";
     public static final String RESULT_QUEUE = "judge.result.queue";
+
+    // 竞赛罚时与得分参数
+    public static final Integer SCORE_WEIGHT = 1_000_000;
 }

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <!-- 默认头像：中性灰底 + 人形剪影，亮/暗主题下都清晰 -->
+  <rect width="96" height="96" fill="#dbe0e6"/>
+  <circle cx="48" cy="36" r="17" fill="#94a0ac"/>
+  <path d="M15 92a33 33 0 0 1 66 0z" fill="#94a0ac"/>
+</svg>

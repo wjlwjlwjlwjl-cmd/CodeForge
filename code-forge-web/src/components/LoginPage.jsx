@@ -2,7 +2,17 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import ThemeToggle from './ThemeToggle.jsx';
 import CodeForgeLogo from './CodeForgeLogo.jsx';
 import { login as loginApi, register as registerApi, sendCode as sendCodeApi } from '../api/user.js';
-import { SEND_CODE_COOLDOWN_SEC } from '../config.js';
+import { fetchUserInfo } from '../api/home.js';
+import { clearAvatar } from '../api/avatarStore.js';
+import { clearMyExams } from '../api/myExamStore.js';
+import { clearCurrentUser } from '../hooks/useCurrentUser.js';
+import {
+  SEND_CODE_COOLDOWN_SEC,
+  TOKEN_STORAGE_KEY,
+  getToken,
+  markAuthed,
+  goAfterAuth,
+} from '../config.js';
 
 // 登录 / 注册页
 //   - 顶栏与代码编辑页一致（Logo + Code Forge + 主题切换）
@@ -11,9 +21,47 @@ import { SEND_CODE_COOLDOWN_SEC } from '../config.js';
 export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
   // 'login' | 'register'
   const [mode, setMode] = useState('login');
+  // 本地已持有 token 时，先调后端接口核验一次登录态
+  const [checking, setChecking] = useState(() => !!getToken());
 
   const switchMode = useCallback((next) => {
     setMode(next);
+  }, []);
+
+  // 已持 token：用它调一次需要鉴权的接口
+  //   · 调通 → 说明登录态有效，标记本会话已校验，直接回目标页
+  //   · 失败 → 说明 token 失效（网关 401 / code=3001），清掉本地登录态，停在登录表单
+  useEffect(() => {
+    if (!getToken()) {
+      setChecking(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    fetchUserInfo()
+      .then(() => {
+        if (cancelled) return;
+        markAuthed();
+        goAfterAuth();
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        if (e?.code === 3001 || e?.code === 'UNAUTHORIZED') {
+          try {
+            window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+          } catch (err) {
+            // 忽略
+          }
+          clearAvatar();
+          clearCurrentUser();
+          clearMyExams();
+        }
+        setChecking(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (
@@ -39,7 +87,12 @@ export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
         <CodeForgeLogo className="login-title" animated />
         <p className="login-tagline">Forge your code, sharpen your mind</p>
 
-        {mode === 'login' ? (
+        {checking ? (
+          <div className="login-checking" role="status" aria-live="polite">
+            <span className="login-checking-spinner" aria-hidden="true" />
+            正在验证登录状态…
+          </div>
+        ) : mode === 'login' ? (
           <LoginForm
             key="login"
             onSwitch={() => switchMode('register')}

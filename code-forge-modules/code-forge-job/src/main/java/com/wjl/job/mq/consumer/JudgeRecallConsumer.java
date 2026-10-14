@@ -118,31 +118,39 @@ public class JudgeRecallConsumer {
 
             //后端提交表建了两个索引，这里使用第二组(uid-eid-qid)
             //先检查，如果是已经提交的结果，那么不进行加分处理
-            UserSubmit userSubmit = userSubmitMapper.selectOne(new LambdaQueryWrapper<UserSubmit>()
+            Boolean exists = userSubmitMapper.exists(new LambdaQueryWrapper<UserSubmit>()
                     .eq(UserSubmit::getUserId, userId)
                     .eq(UserSubmit::getExamId, examId)
                     .eq(UserSubmit::getQuestionId, questionId)
             );
-            if(userSubmit == null){
-                //当前题目已经提交过，不再积分
+            if(exists && pass == 4){
+                ColorLog.info("用户 {} 在竞赛 {} 中已经有提交记录，并且是ac的结果，不进行加分处理", userId, examId);
             }
             else{
-                //将排名信息维护在redis中，使用 ZSet
+                //当前题目没有在竞赛中提交过
+                String examRankCacheKey = CacheUtil.getExamRankKey(examId);
+                String examUserCacheKey = String.valueOf(userId);
 
-                if(pass == 4){
-                    userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
-                            .eq(UserExam::getUserId, userId)
-                            .eq(UserExam::getExamId, examId)
-                            .setSql("score=score+1")
-                    );
+                double score = pass == 4 ? CommonConstants.SCORE_WEIGHT : 0;
+                double penalty = pass == 4 ? 0 : 5; //非ac的罚时为5分
+
+                Double cur = redisService.getScoreZSet(examRankCacheKey, examUserCacheKey);
+                if(cur != null){
+                    ColorLog.info("用户 {} 在竞赛 {} 中已经有提交记录，更新分数 {}", userId, examId, cur + score - penalty);
+                    redisService.incrementScoreZSet(examRankCacheKey, examUserCacheKey, cur + score - penalty);
                 }
                 else{
-                    userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
-                            .eq(UserExam::getExamId, examId)
-                            .setSql("penalty=penalty+5")
-                    );
+                    ColorLog.info("用户 {} 在竞赛 {} 中没有提交记录，新增分数 {}", userId, examId, CommonConstants.SCORE_WEIGHT + score - penalty);
+                    redisService.addMemberZSet(examRankCacheKey, examUserCacheKey, CommonConstants.SCORE_WEIGHT + score - penalty); //所有人默认一次提交，来防止负数分数
                 }
 
+                //在 Redis 中更新竞赛排名缓存后，更新数据库中的得分、罚时（上面的计算公式适用Redis，因为score>0）
+                userExamMapper.update(new LambdaUpdateWrapper<UserExam>()
+                        .eq(UserExam::getUserId, userId)
+                        .eq(UserExam::getExamId, examId)
+                        .setSql("score = score + " + score)
+                        .setSql("penalty = penalty + " + penalty)
+                );
             }
         }
 

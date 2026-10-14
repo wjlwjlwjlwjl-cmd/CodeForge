@@ -43,4 +43,10 @@ public class JobController {
     public R<SubmitDetailVO> submitDetail(@NotNull Long submitId) {
         return R.success(jobService.getSubmitDetail(submitId));
     }
+
+    @GetMapping("/exam/rank")
+    @Operation(description = "获取当前用户的竞赛排名")
+    public R<Integer> examRank(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
+        return R.success();
+    }
 }

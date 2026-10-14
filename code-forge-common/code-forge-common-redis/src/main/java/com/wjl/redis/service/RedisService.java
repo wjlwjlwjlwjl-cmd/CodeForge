@@ -43,6 +43,7 @@ public class RedisService {
      * @return          是否成功设置键值对
      */
     public boolean expire(final String key, final long timeout){
+        if(key == null) return false;
         return redisTemplate.expire(key, timeout, TimeUnit.MINUTES);
     }
 
@@ -55,6 +56,7 @@ public class RedisService {
      * @return          是否成功设置键值对
      */
     public boolean expire(final String key, final long timeout, TimeUnit unit){
+        if(key == null) return false;
         return redisTemplate.expire(key, timeout, unit);
     }
 
@@ -65,6 +67,7 @@ public class RedisService {
      * @return      过期时间
      */
     public long getExpire(final String key){
+        if(key == null) return -1;
         return redisTemplate.getExpire(key);
     }
 
@@ -75,6 +78,7 @@ public class RedisService {
      * @return      是否存在
      */
     public boolean hasKey(final String key){
+        if(key == null) return false;
         return redisTemplate.hasKey(key);
     }
 
@@ -85,6 +89,7 @@ public class RedisService {
      * @return              匹配到的键值对主键
      */
     public Collection<String> keys(final String patteString){
+        if(patteString == null) return Collections.emptySet();
         return redisTemplate.keys(patteString);
     }
 
@@ -97,6 +102,9 @@ public class RedisService {
      */
     public void scan(final String pattern, final int count, final Consumer<String> consumer){
         if(consumer == null){
+            return;
+        }
+        if(pattern == null) {
             return;
         }
 
@@ -126,6 +134,7 @@ public class RedisService {
      * @param newName   新名
      */
     public void renameKey(final String oldName, final String newName){
+        if(oldName == null || newName == null) return;
         redisTemplate.rename(oldName, newName);
     }    
 
@@ -163,7 +172,7 @@ public class RedisService {
      * @param obj   缓存对象
      */
     public <T> void setCacheObject(final String key, T obj){
-        if(obj == null) return;
+        if(key == null || obj == null) return;
         redisTemplate.opsForValue().set(key, obj);
     }
 
@@ -177,7 +186,7 @@ public class RedisService {
      * @param unit      时间颗粒度
      */
     public <T> void setCacheObject(final String key, T obj, long timeout, TimeUnit unit){
-        if(obj == null) return;
+        if(key == null || obj == null) return;
         redisTemplate.opsForValue().set(key, obj, timeout, unit);
     }
 
@@ -191,7 +200,7 @@ public class RedisService {
      * @param unit
      */
     public <T> void setCacheObjectIfAbsent(final String key, T obj, long timeout, TimeUnit unit){
-        if(obj == null){
+        if(key == null || obj == null){
             return;
         }
         redisTemplate.opsForValue().setIfAbsent(key, obj, timeout, unit);
@@ -205,7 +214,7 @@ public class RedisService {
      * @param obj
      */
     public <T> void setCacheObjectIfAbsent(final String key, T obj){
-        if(obj == null) return;
+        if(key == null || obj == null) return;
         redisTemplate.opsForValue().setIfAbsent(key, obj);
     }
 
@@ -218,6 +227,7 @@ public class RedisService {
      * @return      获得的缓存对象
      */
     public <T> T getCacheObject(final String key, Class<T> clazz){
+        if(key == null) return null;
         ValueOperations<String, T> operation = redisTemplate.opsForValue();
         Object t = operation.get(key);
         if(t == null){  //解析失败
@@ -235,6 +245,7 @@ public class RedisService {
      * @return
      */
     public <T> T getCacheObject(final String key, TypeReference<T> reference){
+        if(key == null) return null;
         ValueOperations valueOperations = redisTemplate.opsForValue();
         Object o = valueOperations.get(key);
         if(o == null) return null;
@@ -254,7 +265,7 @@ public class RedisService {
      * @return          添加元素后 list 长度
      */
     public <T> long setCacheList(final String key, final List<T> dataList){
-        if(dataList == null || dataList.isEmpty()){
+        if(key == null || dataList == null || dataList.isEmpty()){
             return 0;
         }
         Long count = redisTemplate.opsForList().rightPushAll(key, dataList);
@@ -269,7 +280,7 @@ public class RedisService {
      * @param value 添加元素
      */
     public <T> void leftPushForList(final String key, final T value){
-        if(value == null) return;
+        if(key == null || value == null) return;
         redisTemplate.opsForList().leftPush(key, value);
     }
 
@@ -281,7 +292,7 @@ public class RedisService {
      * @param value 添加元素
      */
     public <T> void rightPushForList(final String key, final T value){
-        if(value == null) return;
+        if(key == null || value == null) return;
         redisTemplate.opsForList().rightPush(key, value);
     }
 
@@ -291,6 +302,7 @@ public class RedisService {
      * @param key 目标键值
      */
     public void leftPopForList(final String key){
+        if(key == null) return;
         redisTemplate.opsForList().leftPop(key);
     }
 
@@ -300,6 +312,7 @@ public class RedisService {
      * @param key 目标键值
      */
     public void rightPopForList(final String key){
+        if(key == null) return;
         redisTemplate.opsForList().rightPop(key);
     }
 
@@ -311,7 +324,7 @@ public class RedisService {
      * @param value     移除元素
      */
     public <T> void removeForList(final String key, T value){
-        if(value == null) return;
+        if(key == null || value == null) return;
         redisTemplate.opsForList().remove(key, 1L, value);
     }
 
@@ -323,7 +336,7 @@ public class RedisService {
      * @param value     移除的元素
      */
     public <T> void removeAllForList(final String key, T value){
-        if(value == null) return;
+        if(key == null || value == null) return;
         redisTemplate.opsForList().remove(key, 0, value);
     }
 
@@ -333,6 +346,7 @@ public class RedisService {
      * @param key list 对应的 key
      */
     public void removeForAllList(final String key){
+        if(key == null) return;
         redisTemplate.opsForList().trim(key, -1, 0); 
     }
 
@@ -345,7 +359,7 @@ public class RedisService {
      * @param value
      */
     public <T> void setElementAtIndex(final String key, int index, T value){
-        if(value == null){
+        if(key == null || value == null){
             return;
         }
         redisTemplate.opsForList().set(key, index, value);
@@ -360,6 +374,7 @@ public class RedisService {
      * @return          获取到的列表
      */
     public <T> List<T> getCacheList(final String key, Class<T> clazz){
+        if(key == null) return null;
         List list = redisTemplate.opsForList().range(key, 0, -1); // Redis 对于列表区间的指定策略是左闭右闭
         return JsonUtil.string2List(JsonUtil.object2String(list), clazz);
     }
@@ -383,6 +398,7 @@ public class RedisService {
      * @return              获取到的列表
      */
     public <T> List<T> getCacheList(final String key, TypeReference<List<T>> reference){
+        if(key == null) return null;
         List list = redisTemplate.opsForList().range(key, 0, -1);
         return JsonUtil.string2Object(JsonUtil.object2String(list), reference);
     }
@@ -398,6 +414,7 @@ public class RedisService {
      * @return          获取到的列表
      */
     public <T> List<T> getCacheListByRange(final String key, long start, long end, Class<T> clazz){
+        if(key == null) return null;
         List list = redisTemplate.opsForList().range(key, start, end);
         return JsonUtil.string2List(JsonUtil.object2String(list), clazz);
     }
@@ -413,6 +430,7 @@ public class RedisService {
      * @return          获取到的列表
      */
     public <T> List<T> getCacheListByRange(final String key, long start, long end, TypeReference<List<T>> reference){
+        if(key == null) return null;
         List list = redisTemplate.opsForList().range(key, start, end);
         return JsonUtil.string2Object(JsonUtil.object2String(list), reference);
     }
@@ -424,6 +442,7 @@ public class RedisService {
      * @return      list 长度
      */
     public Long getCacheListSize(final String key){
+        if(key == null) return null;
         Long ret = redisTemplate.opsForList().size(key);
         return ret == null ? 0L : ret;
     }
@@ -439,7 +458,7 @@ public class RedisService {
      * @param objs  要插入的一个或多个元素
      */
     public void addMember(final String key, Object... objs){
-        if(objs == null) return;
+        if(key == null || objs == null) return;
         redisTemplate.opsForSet().add(key, objs);
     }
 
@@ -450,7 +469,7 @@ public class RedisService {
      * @param objs  要删除的一个或多个元素
      */
     public void deleteMember(final String key, Object... objs){
-        if(objs == null) return;
+        if(key == null || objs == null) return;
         redisTemplate.opsForSet().remove(key, objs);
     }
 
@@ -463,6 +482,7 @@ public class RedisService {
      * @return              查询得到的 Set
      */
     public <T> Set<T> getCacheSet(final String key, TypeReference<Set<T>> reference){
+        if(key == null) return null;
         Set set = redisTemplate.opsForSet().members(key);
         return JsonUtil.string2Object(JsonUtil.object2String(set), reference);
     }
@@ -472,15 +492,39 @@ public class RedisService {
     //******************* */
 
     /**
-     * 添加单个元素到 ZSet 中
+     * 添加单个元素到 ZSet 中（新增元素）
      * 
      * @param key       Zset 键值
      * @param obj       要添加的元素
      * @param seqNo     seqNo，元素分数
      */
-    public void addMemberZSet(final String key, Object obj, double seqNo){
-        if(obj == null) return;
-        redisTemplate.opsForZSet().add(key, obj, seqNo);
+    public void addMemberZSet(final String key, Object mem, double score){
+        if(key == null || mem == null) return;
+        redisTemplate.opsForZSet().add(key, mem, score);
+    }
+
+    /**
+     * ZSet 中指定元素的分数增加 score
+     * 
+     * @param key      ZSet 键值
+     * @param mem      要增加分数的元素
+     * @param score    增加的分数
+     */
+    public void incrementScoreZSet(final String key, Object mem, double score){
+        if(key == null || mem == null) return;
+        redisTemplate.opsForZSet().incrementScore(key, mem, score);
+    }
+
+    /**
+     * 获取 ZSet 中指定元素的分数（如果竞赛或元素不存在，则返回 null）
+     * 
+     * @param key  ZSet 键值
+     * @param mem 要查询的元素
+     * @return    元素分数(null表示竞赛或元素不存在)
+     */
+    public Double getScoreZSet(final String key, String mem){
+        if(key == null || mem == null) return null;
+        return redisTemplate.opsForZSet().score(key, mem);
     }
 
     /**
@@ -490,7 +534,7 @@ public class RedisService {
      * @param obj   要移除的对象
      */
     public void delMemberZSet(final String key, Object obj){
-        if(obj == null) return;
+        if(key == null || obj == null) return;
         redisTemplate.opsForZSet().remove(key, obj);
     }
 
@@ -502,6 +546,7 @@ public class RedisService {
      * @param endScore      结束分数
      */
     public void removeZSetByScore(final String key, double startScore, double endScore){
+        if(key == null) return;
         redisTemplate.opsForZSet().removeRangeByScore(key, startScore, endScore);
     }
 
@@ -514,6 +559,7 @@ public class RedisService {
      * @return              获取到的 Set
      */
     public <T> Set<T> getCacheZSet(final String key, TypeReference<LinkedHashSet<T>> reference){
+        if(key == null) return null;
         Set set = redisTemplate.opsForZSet().range(key, 0, -1);
         return JsonUtil.string2Object(JsonUtil.object2String(set), reference);
     }
@@ -527,6 +573,7 @@ public class RedisService {
      * @return              获取到的 Set
      */
     public <T> Set<T> getCacheZSetReverse(final String key, TypeReference<LinkedHashSet<T>> reference){
+        if(key == null) return null;
         Set set = redisTemplate.opsForZSet().reverseRange(key, 0, -1);
         return JsonUtil.string2Object(JsonUtil.object2String(set), reference);
     }
@@ -543,7 +590,7 @@ public class RedisService {
      * @param dataMap   承载着所有需要存放的键值对的 Map
      */
     public <T> void setCacheHash(final String key, final Map<String, T> dataMap){
-        if(dataMap == null || dataMap.isEmpty()){
+        if(key == null || dataMap == null || dataMap.isEmpty()){
             return;
         }
         redisTemplate.opsForHash().putAll(key, dataMap); 
@@ -558,7 +605,7 @@ public class RedisService {
      * @param value     键值对值
      */
     public <T> void setCacheMapValue(final String key, final String hKey, T value){
-        if(hKey == null || value == null){
+        if(key == null || hKey == null || value == null){
             return;
         }
         redisTemplate.opsForHash().put(key, hKey, value);
@@ -572,7 +619,7 @@ public class RedisService {
      * @return          是否删除成功
      */
     public boolean deleteCacheMapValue(final String key, final String hKey){
-        if(hKey == null) return true;
+        if(key == null || hKey == null) return true;
         return redisTemplate.opsForHash().delete(key, hKey) > 0;
     }
 
@@ -585,6 +632,7 @@ public class RedisService {
      * @return                  返回结果
      */
     public <T> Map<String, T> getCacheMap(final String key, TypeReference<Map<String, T>> typeReference){
+        if(key == null) return null;
         Map map = redisTemplate.opsForHash().entries(key);
         return JsonUtil.string2Object(JsonUtil.object2String(map), typeReference);
     }
@@ -598,7 +646,7 @@ public class RedisService {
      * @return      获取结果
      */
     public <T> T getCacheMapValue(final String key, final String hKey){
-        if(hKey == null) return null;
+        if(key == null || hKey == null) return null;
         HashOperations<String, String, T> operations = redisTemplate.opsForHash();
         return operations.get(key, hKey);
     }
@@ -613,6 +661,7 @@ public class RedisService {
      * @return              查询结果
      */
     public <T> List<T> getCacheMapMultiValue(final String key, final Collection<String> hKeys, TypeReference<List<T>> reference){
+        if(key == null) return null;
         List list = redisTemplate.opsForHash().multiGet(key, hKeys);
         return JsonUtil.string2Object(JsonUtil.object2String(list), reference);
     }
@@ -625,7 +674,7 @@ public class RedisService {
      * @return 是否完成了比较并删除
      */
     public boolean cad(String key, String value) {
-        if (key.contains(StringUtils.SPACE) || value.contains(StringUtils.SPACE)) {
+        if (key == null || value == null) {
             return false;
         }
         String script = "if redis.call('get', KEYS[1]) == ARGV[1] then returnredis.call('del', KEYS[1]) else return 0 end";

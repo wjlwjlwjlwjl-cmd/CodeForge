@@ -44,17 +44,80 @@ export function isLoggedIn() {
   return !!getToken();
 }
 
-// 跳转到登录页（未登录或被踢下线时使用）
-export function goToLogin() {
-  const url = new URL(window.location.href);
-  url.searchParams.set('page', 'login');
-  window.location.replace(url.toString());
+// 本会话是否已经过后端校验的登录态
+// 放 sessionStorage：同一标签页内跨整页跳转复用；新标签页 / 新会话需要重新校验。
+const AUTHED_STORAGE_KEY = 'cf:authed';
+
+export function isAuthed() {
+  try {
+    return window.sessionStorage.getItem(AUTHED_STORAGE_KEY) === '1';
+  } catch (e) {
+    return false;
+  }
 }
 
-// 统一错误处理：未登录（UNAUTHORIZED）则跳转登录页，否则返回可展示的错误文案
+export function markAuthed() {
+  try {
+    window.sessionStorage.setItem(AUTHED_STORAGE_KEY, '1');
+  } catch (e) {
+    // 隐私模式等存储失败忽略
+  }
+}
+
+export function clearAuthed() {
+  try {
+    window.sessionStorage.removeItem(AUTHED_STORAGE_KEY);
+  } catch (e) {
+    // 忽略
+  }
+}
+
+// 登录成功后要回到的目标页（由 ?redirect= 携带）。
+// 只放行以单个 / 开头的站内路径，避免被构造成开放重定向。
+export function readRedirectTarget() {
+  try {
+    const raw = new URLSearchParams(window.location.search).get('redirect');
+    if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
+  } catch (e) {
+    // 忽略
+  }
+  return null;
+}
+
+// 登录态确认后跳转：有目标页就原路返回，否则回首页
+export function goAfterAuth() {
+  const target = readRedirectTarget();
+  if (target) {
+    window.location.replace(target);
+    return;
+  }
+  const url = new URL(window.location.href);
+  url.searchParams.delete('page');
+  url.searchParams.delete('redirect');
+  window.location.replace(url.pathname + url.search + url.hash);
+}
+
+// 跳转到登录页（未登录 / 校验失败 / 被踢下线时使用）。
+// 会把当前页面记进 ?redirect=，登录成功后原路返回。
+export function goToLogin() {
+  clearAuthed();
+  const current = new URL(window.location.href);
+  const alreadyLogin = current.searchParams.get('page') === 'login';
+  const target = current.pathname + current.search + current.hash;
+
+  const login = new URL(current.href);
+  login.search = '';
+  login.searchParams.set('page', 'login');
+  if (!alreadyLogin && target && target !== '/') {
+    login.searchParams.set('redirect', target);
+  }
+  window.location.replace(login.toString());
+}
+
+// 统一错误处理：未登录 / 登录态失效（网关 3001）则跳转登录页，否则返回可展示的错误文案
 // 返回 null 表示已发起跳转，调用方无需再设置 error。
 export function handleApiError(e, fallback = '请求失败') {
-  if (e?.code === 'UNAUTHORIZED') {
+  if (e?.code === 'UNAUTHORIZED' || e?.code === 3001) {
     goToLogin();
     return null;
   }

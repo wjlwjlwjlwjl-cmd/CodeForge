@@ -127,10 +127,9 @@ public class JobService {
         userSubmit.setCreateBy(Long.valueOf(userId));
         userSubmit.setCreateTime(LocalDateTime.now());
         userSubmit.setTitle(title);
+        userSubmit.setExamId(examId);
         ColorLog.info(userSubmit.toString());
         userSubmitMapper.insert(userSubmit);
-
-        ColorLog.info(userSubmitMapper.selectById(userSubmit.getSubmitId()).getTitle());
 
         Long submitId = userSubmit.getSubmitId();
         //完成前置信息入库，接下验证 qid 和 eid，从数据库获取，构建判题请求
@@ -293,11 +292,9 @@ public class JobService {
     public SubmitDetailVO getSubmitDetail(Long submitId) {
         String cacheKey = CacheUtil.getSubmitDetail(submitId);
         if(redisService.hasKey(cacheKey)){
-            ColorLog.info("submit detail" + cacheKey + " exists");
             return redisService.getCacheObject(cacheKey, SubmitDetailVO.class);
         }
 
-        ColorLog.info("submit detail" + cacheKey + " not exists");
         SubmitDetailVO submitDetailVO = new SubmitDetailVO();
         UserSubmit userSubmit = userSubmitMapper.selectById(submitId);
         if(userSubmit == null){

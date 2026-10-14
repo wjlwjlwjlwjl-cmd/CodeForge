@@ -1543,6 +1543,31 @@ body {
   color: var(--text-secondary);
 }
 
+/* 登录页：本地已持有 token 时的后台校验态 */
+.login-checking {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.login-checking-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-strong);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: login-spin 0.8s linear infinite;
+}
+
+@keyframes login-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* 登录表单卡片 */
 .login-card {
   display: flex;

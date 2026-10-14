@@ -9,7 +9,7 @@ import { UserMenu } from './components/AppHeader.jsx';
 import { useQuestion } from './hooks/useQuestion.js';
 import { useJudge } from './hooks/useJudge.js';
 import { usePreferences } from './hooks/usePreferences.js';
-import { goToLogin, TOKEN_STORAGE_KEY } from './config.js';
+import { goToLogin, goAfterAuth, markAuthed, clearAuthed, TOKEN_STORAGE_KEY } from './config.js';
 import { logout as logoutApi } from './api/user.js';
 import { clearAvatar } from './api/avatarStore.js';
 import { clearMyExams } from './api/myExamStore.js';
@@ -56,19 +56,19 @@ export default function App() {
 
   // 鉴权守卫已上移到 main.jsx（同步执行，避免先渲染再跳转导致闪屏）
 
-  // 登录成功后：持久化 token，并回到原本要访问的页面（没指定则回首页）
+  // 登录成功后：持久化 token，标记本会话已通过校验，并回到原本要访问的页面
   const handleLoginSuccess = useCallback((token) => {
     try {
       if (token) window.localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify(token));
     } catch (e) {
       // 存储失败忽略（如隐私模式）
     }
-    // 新登录：清掉上一个账号残留的头像缓存，首页会重新获取
+    // 新登录：清掉上一个账号残留的缓存，首页会重新获取
     clearAvatar();
-    const url = new URL(window.location.href);
-    // 只去掉登录标记；?id= 是进入登录页前想访问的题目，保留它
-    url.searchParams.delete('page');
-    window.location.href = url.toString();
+    clearCurrentUser();
+    clearMyExams();
+    markAuthed();
+    goAfterAuth();
   }, []);
 
   // 退出登录：调后端 /user/logout 删除服务端登录态，再清本地 token、回登录页
@@ -84,10 +84,11 @@ export default function App() {
     } catch (e) {
       // 忽略
     }
-    // 清掉缓存的头像 / 用户信息 / 我的竞赛，避免下个账号串号
+    // 清掉缓存的头像 / 用户信息 / 我的竞赛，以及本会话的校验标记，避免下个账号串号
     clearAvatar();
     clearCurrentUser();
     clearMyExams();
+    clearAuthed();
     goToLogin();
   }, []);
 
@@ -284,15 +285,13 @@ export default function App() {
           </div>
 
           <div className="app-header-actions">
-            {editorUser && (
-              <UserMenu
-                user={editorUser}
-                onLogout={handleLogout}
-                onProfile={handleOpenProfile}
-                themeMode={themeMode}
-                onThemeModeChange={setThemeMode}
-              />
-            )}
+            <UserMenu
+              user={editorUser}
+              onLogout={handleLogout}
+              onProfile={handleOpenProfile}
+              themeMode={themeMode}
+              onThemeModeChange={setThemeMode}
+            />
           </div>
         </header>
         {/* 边界提示：屏幕中央弹出的灰底 toast */}

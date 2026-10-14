@@ -51,4 +51,8 @@ public class CacheUtil {
     public static String getSubmitInfoKey(Long userId){
         return String.format(CacheConstants.USER_SUBMIT_INFO, userId);
     }
+
+    public static String getExamRankKey(Long examId){
+        return String.format(CacheConstants.EXAM_RANK, examId);
+    }
 }

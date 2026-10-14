@@ -55,6 +55,7 @@ public class JudgeService {
         judgeResponseDTO.setUserCode(dto.getSourceCode());
         judgeResponseDTO.setUserId(dto.getUserId());
         judgeResponseDTO.setQuestionId(dto.getQuestionId());
+        judgeResponseDTO.setExamId(dto.getExamId());
 
         String sourceCode = dto.getSourceCode();
         List<TestCaseDTO> testCases = dto.getTestCases();
