@@ -46,6 +46,19 @@ public class JobService {
     @Autowired
     private RedisService redisService;
 
+    public Long getUserExamRank(Long examId, String token){
+        LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
+        String userId = loginUserDTO.getUserId();
+
+        String examRankKey = CacheUtil.getExamRankKey(examId);
+
+        Long rank = redisService.getRank(examRankKey, userId) + 1;
+        if(rank == null){
+            throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
+        }
+        return rank;
+    }
+
     public void handleSubmit(String token, SubmitInfoDTO submitInfoDTO) {
         LoginUserDTO loginUserDTO = tokenService.getCLoginUser(token);
         if(loginUserDTO == null) throw new ServiceException(ResultCode.FAILED_UNAUTHORIZED.getCode(), ResultCode.FAILED_UNAUTHORIZED.getMsg());

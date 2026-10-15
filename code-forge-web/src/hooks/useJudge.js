@@ -10,7 +10,11 @@ import { goToLogin } from '../config.js';
 //   - submitError: 提交过程中的错误
 //   - pendingCode: 正在判题的这份代码（用于「运行中」时先展示代码）
 //   - submit(code): 发起提交
-export function useJudge(questionId) {
+//
+// examId：只有从「竞赛题目列表」点进来的答题页才会传，
+// 提交时随请求一起发给后端，后端据此算作竞赛答题（计入竞赛排名）；
+// 传 null 表示普通刷题提交（题库 / 上一题下一题 / 首页等入口一律为 null）。
+export function useJudge(questionId, examId = null) {
   const [result, setResult] = useState(null);
   const [judging, setJudging] = useState(false);
   const [submitError, setSubmitError] = useState(null);
@@ -79,7 +83,8 @@ export function useJudge(questionId) {
       try {
         await submitJudge({
           questionId,
-          examId: null,
+          // 竞赛答题：仅在竞赛题目列表进入的页面才会是具体值
+          examId: examId == null ? null : Number(examId),
           userCode,
         });
         // 提交成功后，等待 WS 推送结果；onMessage 里会置 judging=false
@@ -93,8 +98,8 @@ export function useJudge(questionId) {
         setSubmitError(e.message || '提交失败');
       }
     },
-    [questionId]
+    [questionId, examId]
   );
 
-  return { result, judging, submitError, pendingCode, submit };
+  return { result, judging, submitError, pendingCode, submit, examId };
 }

@@ -779,64 +779,13 @@
 }
 
 /* ---------------- 登录页 ---------------- */
-.admin-login-wrap {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100vh;
-  padding: var(--space-5);
-  background: var(--bg);
-}
-
-.admin-login {
-  width: min(340px, 100%);
-  padding: var(--space-5);
-  background: var(--panel-bg);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-}
-
-.admin-login-head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  padding-bottom: var(--space-3);
-  margin-bottom: var(--space-4);
-  border-bottom: 1px solid var(--border);
-}
-
-.admin-login-head img {
-  width: 22px;
-  height: 22px;
-  border-radius: var(--radius-sm);
-}
-
-.admin-login-head strong {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.admin-login-head span {
-  display: block;
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-}
-
-.admin-login-title {
-  margin: 0 0 var(--space-4);
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.admin-login-error {
-  margin: 0 0 var(--space-3);
-  padding: 7px 9px;
+/* 登录页整体复用 C 端的 .login-* 样式（同一个字标、同一套卡片/输入框），
+   这里只补一行「管理员登录」副标题 */
+.admin-login-sub {
+  margin: -6px 0 var(--space-4);
   font-size: 12px;
-  color: var(--error);
-  background: var(--error-soft);
-  border: 1px solid transparent;
-  border-radius: var(--radius-sm);
+  letter-spacing: 0.02em;
+  color: var(--text-muted);
 }
 
 /* ---------------- 提示条 ---------------- */

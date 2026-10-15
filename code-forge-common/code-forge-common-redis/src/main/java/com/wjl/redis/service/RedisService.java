@@ -88,7 +88,7 @@ public class RedisService {
      * @param patteString   匹配规则
      * @return              匹配到的键值对主键
      */
-    public Collection<String> keys(final String patteString){
+    public Set<String> keys(final String patteString){
         if(patteString == null) return Collections.emptySet();
         return redisTemplate.keys(patteString);
     }
@@ -495,12 +495,22 @@ public class RedisService {
      * 添加单个元素到 ZSet 中（新增元素）
      * 
      * @param key       Zset 键值
-     * @param obj       要添加的元素
-     * @param seqNo     seqNo，元素分数
+     * @param mem       要添加的元素
+     * @param score     seqNo，元素分数
      */
-    public void addMemberZSet(final String key, Object mem, double score){
+    public void addMemberZSet(final String key, String mem, double score){
         if(key == null || mem == null) return;
         redisTemplate.opsForZSet().add(key, mem, score);
+    }
+
+    public Long getRank(final String key, String mem){
+        if(key == null || mem == null) return null;
+        return redisTemplate.opsForZSet().reverseRank(key, mem);
+    }
+
+    public Set<String> getRankList(String key, int start, int batchSize){
+        if(key == null) return null;
+        return redisTemplate.opsForZSet().reverseRange(key, start, start + batchSize - 1);
     }
 
     /**
@@ -510,7 +520,7 @@ public class RedisService {
      * @param mem      要增加分数的元素
      * @param score    增加的分数
      */
-    public void incrementScoreZSet(final String key, Object mem, double score){
+    public void incrementScoreZSet(final String key, String mem, double score){
         if(key == null || mem == null) return;
         redisTemplate.opsForZSet().incrementScore(key, mem, score);
     }

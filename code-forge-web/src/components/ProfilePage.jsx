@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AppHeader from './AppHeader.jsx';
 import ProfileEditDialog from './ProfileEditDialog.jsx';
 import StatCard from './StatCard.jsx';
 import { useProfileData } from '../hooks/useProfileData.js';
 import { useRecentSubmissions } from '../hooks/useRecentSubmissions.js';
+import { useMyExamList } from '../hooks/useExam.js';
+import { useExamRanks, rankText, rankTimeText } from '../hooks/useExamRank.js';
 import { useAvatar } from '../hooks/useAvatar.js';
 import { uploadAvatar } from '../api/user.js';
 import {
@@ -14,7 +16,7 @@ import {
   AVATAR_MIN_EDGE,
   AVATAR_MAX_EDGE,
 } from '../config.js';
-import { formatDateCN, formatRunTime } from '../utils/format.js';
+import { formatDateCN, formatDateTime, formatRunTime } from '../utils/format.js';
 
 // 用户主页（个人中心）：类个人博客的两栏布局
 //   左上：头像 + 个人信息（GET /user/detail）
@@ -71,9 +73,10 @@ export default function ProfilePage({
               />
             </aside>
 
-            {/* 右：提交信息 + 最近提交 */}
+            {/* 右：提交信息 + 竞赛排名 + 最近提交 */}
             <div className="profile-main">
               <StatsRow stats={stats} />
+              <ContestRanks />
               <RecentSubmissions onOpenEditor={onOpenEditor} />
             </div>
           </div>
@@ -328,6 +331,59 @@ function StatsRow({ stats }) {
         />
       ))}
     </div>
+  );
+}
+
+/* ---------------- 竞赛排名 ---------------- */
+// 名次来自 GET /job/exam/rank?examId=，后端给的是「查询这一刻」的值，
+// 所以这里按 30 秒轮询刷新（多个竞赛并行请求，单个失败不影响其它）。
+function ContestRanks() {
+  const { items, loading: examsLoading } = useMyExamList(true);
+  const examIds = useMemo(
+    () => items.map((e) => String(e.examId)),
+    [items]
+  );
+  const { ranks, updatedAt, loading: rankLoading } = useExamRanks(examIds, {
+    enabled: examIds.length > 0,
+  });
+
+  return (
+    <section className="profile-ranks">
+      <div className="section-head">
+        <h2 className="section-title">竞赛排名</h2>
+        <span className="profile-ranks-meta">
+          {rankLoading && !updatedAt
+            ? '加载中…'
+            : `${rankTimeText(updatedAt) || '每 30 秒自动刷新'} · 30s 自动刷新`}
+        </span>
+      </div>
+
+      <div className="rank-list">
+        {items.map((e) => {
+          const rank = ranks[String(e.examId)];
+          return (
+            <div className="rank-row" key={e.examId}>
+              <span className="rank-row-main">
+                <span className="rank-row-title">{e.title}</span>
+                <span className="rank-row-time">
+                  {formatDateTime(e.startTime)} ~ {formatDateTime(e.endTime)}
+                </span>
+              </span>
+              <span className={`rank-row-value${rank == null ? ' is-muted' : ''}`}>
+                {rankText(rank)}
+              </span>
+            </div>
+          );
+        })}
+
+        {!examsLoading && items.length === 0 && (
+          <div className="empty-hint">你还没有报名任何竞赛</div>
+        )}
+        {examsLoading && items.length === 0 && (
+          <div className="list-loading">加载中…</div>
+        )}
+      </div>
+    </section>
   );
 }
 

@@ -48,7 +48,21 @@ export function useQuestionList(open) {
         Number(data?.pageSize) > 0 ? Number(data.pageSize) : list.length;
 
       pageRef.current = nextPage;
-      setItems((prev) => (nextPage === 1 ? list : prev.concat(list)));
+      setItems((prev) => {
+        const base = nextPage === 1 ? [] : prev;
+        // 按题目 id 去重：后端题库缓存用的是 list 追加语义，
+        // 历史脏数据（或并发写入）会让同一页返回重复行，
+        // 不去重就会出现重复条目与 React key 冲突。
+        const seen = new Set();
+        const merged = [];
+        for (const q of base.concat(list)) {
+          const key = String(q?.id);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          merged.push(q);
+        }
+        return merged;
+      });
 
       // 满页 → 可能还有下一页；不满页（或空页）→ 到底了
       const more = list.length > 0 && (pageSize > 0 ? list.length >= pageSize : true);

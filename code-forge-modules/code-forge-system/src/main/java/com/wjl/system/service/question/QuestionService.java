@@ -50,6 +50,10 @@ public class QuestionService {
             //数据库获取并更新缓存
             PageHelper.startPage(pageNum, pageSize);
             questions = questionMapper.selectList(null);
+            // setCacheList 内部是 rightPushAll（追加）：并发时两个请求都会判定
+            // hasKey=false，各写一次会让缓存里出现重复行（列表重复渲染）。
+            // 写入前先删掉旧 key，保证是「覆盖」而不是「追加」。
+            redisService.deleteObject(cacheKey);
             redisService.setCacheList(cacheKey, questions);
             redisService.expire(cacheKey, CacheConstants.QUESTION_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }

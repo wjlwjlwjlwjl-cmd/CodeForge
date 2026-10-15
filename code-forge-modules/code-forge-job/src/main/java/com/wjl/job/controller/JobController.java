@@ -46,7 +46,7 @@ public class JobController {
 
     @GetMapping("/exam/rank")
     @Operation(description = "获取当前用户的竞赛排名")
-    public R<Integer> examRank(@RequestHeader(SecurityConstants.AUTHENTICATION) String token){
-        return R.success();
+    public R<Long> examRank(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, Long examId){
+        return R.success(jobService.getUserExamRank(examId, token));
     }
 }

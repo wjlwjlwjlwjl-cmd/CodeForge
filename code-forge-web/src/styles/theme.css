@@ -3364,3 +3364,109 @@ body {
 .history-row {
   cursor: url('/cursor-hand.svg') 15 3, pointer;
 }
+
+/* ============ 竞赛排名 ============ */
+/* 竞赛题目列表页顶部的一条排名栏 */
+.contest-rankbar {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  padding: 7px var(--space-4);
+  font-size: 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.contest-rankbar-label {
+  color: var(--text-muted);
+}
+
+.contest-rankbar-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+.contest-rankbar-value.is-muted {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.contest-rankbar-hint {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* 个人主页：竞赛排名列表（细线分隔的行，不套卡片） */
+.profile-ranks-meta {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-list {
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+}
+
+.rank-list > .empty-hint,
+.rank-list > .list-loading {
+  padding: var(--space-4);
+}
+
+.rank-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 9px var(--space-4);
+}
+
+.rank-row + .rank-row {
+  border-top: 1px solid var(--border);
+}
+
+.rank-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.rank-row-title {
+  font-size: 13px;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rank-row-time {
+  font-size: 12px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.rank-row-value {
+  flex-shrink: 0;
+  min-width: 62px;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--text);
+}
+
+.rank-row-value.is-muted {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+}

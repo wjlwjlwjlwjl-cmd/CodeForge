@@ -5,6 +5,7 @@ import {
   useExamQuestions,
 } from '../hooks/useExam.js';
 import { useMyExams } from '../hooks/useMyExams.js';
+import { useExamRank, rankText, rankTimeText } from '../hooks/useExamRank.js';
 import { signUpContest } from '../api/home.js';
 import { DIFFICULTY, handleApiError } from '../config.js';
 import { formatDateTime } from '../utils/format.js';
@@ -320,9 +321,15 @@ function ExamQuestionPane({ exam, kind, onSelectQuestion }) {
   const canAnswer = kind === 'unfinish';
   const [notice, setNotice] = useState('');
 
+  // 当前用户在这场比赛里的名次（后端只给「查询这一刻」的值，靠前端轮询刷新）
+  const { rank, updatedAt, loading: rankLoading } = useExamRank(exam?.examId, {
+    enabled: exam?.examId != null,
+  });
+
   const handlePick = (questionId) => {
     if (canAnswer) {
-      onSelectQuestion?.(questionId);
+      // 带上本场竞赛的 examId：答题页提交时会被视为竞赛答题
+      onSelectQuestion?.(questionId, exam?.examId);
       return;
     }
     setNotice(
@@ -361,6 +368,22 @@ function ExamQuestionPane({ exam, kind, onSelectQuestion }) {
           </span>
         )}
       </div>
+      {/* 我的排名：每 30 秒轮询一次；未提交过时后端返回 2000，这里显示「暂无排名」 */}
+      <div className="contest-rankbar">
+        <span className="contest-rankbar-label">我的排名</span>
+        <span
+          className={`contest-rankbar-value${rank == null ? ' is-muted' : ''}`}
+          title="每 30 秒自动刷新"
+        >
+          {rankText(rank)}
+        </span>
+        <span className="contest-rankbar-hint">
+          {rankLoading && rank === undefined
+            ? '加载中…'
+            : `${rankTimeText(updatedAt) || '—'} · 30s 自动刷新`}
+        </span>
+      </div>
+
       <div className="library-list" ref={listRef} onScroll={handleScroll}>
         {items.map((q, i) => {
           const diff = DIFFICULTY[q.difficulty] || { text: '—', kind: 'muted' };

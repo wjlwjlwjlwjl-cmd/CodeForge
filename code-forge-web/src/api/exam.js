@@ -70,6 +70,22 @@ export async function fetchMyExams() {
   return rows;
 }
 
+// 竞赛排名（当前用户在该竞赛的名次）
+// GET /job/exam/rank?examId=（需要 Authorization）
+//   返回 data 是名次数字（1 开始）
+//   注意：用户在该竞赛里没有任何提交时，Redis ZSET 里没有这个成员，
+//   后端 getRank(...)+1 会 NPE，被全局异常处理包成 code=2000「服务繁忙」。
+//   这属于正常语义（暂无排名），这里直接归一成 null，不要当错误上报。
+export async function fetchExamRank(examId) {
+  try {
+    const data = await getJson(`${base()}/job/exam/rank?examId=${examId}`);
+    return typeof data === 'number' ? data : null;
+  } catch (e) {
+    if (e?.code === 2000) return null;
+    throw e;
+  }
+}
+
 // 竞赛详情：GET /exam/detail?examId=  → ExamVO { examId, title, startTime, endTime, status }
 export async function fetchExamDetail(examId) {
   return getJson(`${base()}/exam/detail?examId=${examId}`);

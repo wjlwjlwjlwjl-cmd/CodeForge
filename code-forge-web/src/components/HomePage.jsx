@@ -122,9 +122,10 @@ export default function HomePage({
       <ContestBrowser
         open={contestOpen}
         onClose={() => setContestOpen(false)}
-        onSelectQuestion={(id) => {
+        onSelectQuestion={(id, examId) => {
           setContestOpen(false);
-          onOpenEditor?.(id);
+          // 竞赛入口：把 examId 一并带到答题页
+          onOpenEditor?.(id, examId);
         }}
       />
     </div>

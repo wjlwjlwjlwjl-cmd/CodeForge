@@ -101,33 +101,30 @@ public class JudgeRecallConsumer {
             }
         }
 
-        userSubmitMapper.update(new LambdaUpdateWrapper<UserSubmit>()
-                .eq(UserSubmit::getSubmitId, submitId)
-                .set(UserSubmit::getExamId, examId)
-                .set(UserSubmit::getRunTime, runTime)
-                .set(UserSubmit::getPass, pass)
-                .set(UserSubmit::getExeMessage, exeMessage)
-                .set(UserSubmit::getUpdateBy, 1L)
-                .set(UserSubmit::getUpdateTime, LocalDateTime.now())
-        );
-
-        if(examId != null){
+        //当前是从竞赛接口来的请求，并且用户报名了竞赛
+        if(examId != null && userExamMapper.exists(new LambdaQueryWrapper<UserExam>()
+                .eq(UserExam::getExamId, examId)
+                .eq(UserExam::getUserId, userId)
+        )){
             // 竞赛计分逻辑
             // 1. score，直接取决于解题数量，即：解题越多，排名越高
             // 2. 罚时，非ac的一律增加罚时，一次加5min，作为score相同时的排序
 
             //后端提交表建了两个索引，这里使用第二组(uid-eid-qid)
             //先检查，如果是已经提交的结果，那么不进行加分处理
-            Boolean exists = userSubmitMapper.exists(new LambdaQueryWrapper<UserSubmit>()
+            boolean exists = userSubmitMapper.exists(new LambdaQueryWrapper<UserSubmit>()
                     .eq(UserSubmit::getUserId, userId)
                     .eq(UserSubmit::getExamId, examId)
                     .eq(UserSubmit::getQuestionId, questionId)
+                    .eq(UserSubmit::getPass, 4)
             );
-            if(exists && pass == 4){
-                ColorLog.info("用户 {} 在竞赛 {} 中已经有提交记录，并且是ac的结果，不进行加分处理", userId, examId);
+
+            //存在错误
+            if(exists){
+                ColorLog.info(true, "用户 {} 在竞赛 {} 中已经有 {} 提交记录，pass = {}", userId, examId, questionId, pass);
             }
             else{
-                //当前题目没有在竞赛中提交过
+                //没有提交记录，或者只有错误的提交记录
                 String examRankCacheKey = CacheUtil.getExamRankKey(examId);
                 String examUserCacheKey = String.valueOf(userId);
 
@@ -136,12 +133,13 @@ public class JudgeRecallConsumer {
 
                 Double cur = redisService.getScoreZSet(examRankCacheKey, examUserCacheKey);
                 if(cur != null){
-                    ColorLog.info("用户 {} 在竞赛 {} 中已经有提交记录，更新分数 {}", userId, examId, cur + score - penalty);
-                    redisService.incrementScoreZSet(examRankCacheKey, examUserCacheKey, cur + score - penalty);
+                    ColorLog.info(true, "用户 {} 在竞赛 {} 中已经有提交记录，更新分数 {}", userId, examId, score - penalty);
+                    redisService.incrementScoreZSet(examRankCacheKey, examUserCacheKey, score - penalty);
                 }
                 else{
-                    ColorLog.info("用户 {} 在竞赛 {} 中没有提交记录，新增分数 {}", userId, examId, CommonConstants.SCORE_WEIGHT + score - penalty);
-                    redisService.addMemberZSet(examRankCacheKey, examUserCacheKey, CommonConstants.SCORE_WEIGHT + score - penalty); //所有人默认一次提交，来防止负数分数
+                    ColorLog.info(true, "用户 {} 在竞赛 {} 中没有提交记录，新增分数 {}", userId, examId, CommonConstants.SCORE_WEIGHT + score - penalty);
+                    //所有人默认一次提交，来防止负数分数
+                    redisService.addMemberZSet(examRankCacheKey, examUserCacheKey, CommonConstants.SCORE_WEIGHT + score - penalty);
                 }
 
                 //在 Redis 中更新竞赛排名缓存后，更新数据库中的得分、罚时（上面的计算公式适用Redis，因为score>0）
@@ -153,6 +151,16 @@ public class JudgeRecallConsumer {
                 );
             }
         }
+
+        userSubmitMapper.update(new LambdaUpdateWrapper<UserSubmit>()
+                .eq(UserSubmit::getSubmitId, submitId)
+                .set(UserSubmit::getExamId, examId)
+                .set(UserSubmit::getRunTime, runTime)
+                .set(UserSubmit::getPass, pass)
+                .set(UserSubmit::getExeMessage, exeMessage)
+                .set(UserSubmit::getUpdateBy, 1L)
+                .set(UserSubmit::getUpdateTime, LocalDateTime.now())
+        );
 
         // 更新提交记录缓存：
         //   只有缓存已存在（说明里面是全量列表）才做增量插入；

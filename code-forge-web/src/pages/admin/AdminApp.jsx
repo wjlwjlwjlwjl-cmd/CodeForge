@@ -30,7 +30,7 @@ function readSection() {
 }
 
 export default function AdminApp({ theme, onToggleTheme }) {
-  const { token, info, login, logout } = useAdminSession();
+  const { token, info, loading, login, logout } = useAdminSession();
   const [section, setSection] = useState(readSection);
   // 宽屏下是否收起导航（窄屏由 CSS 强制收成图标栏）
   const [collapsed, setCollapsed] = useState(false);
@@ -56,8 +56,17 @@ export default function AdminApp({ theme, onToggleTheme }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  if (!token) {
-    return <AdminLogin theme={theme} onToggleTheme={onToggleTheme} onLogin={login} />;
+  // 手上已经有 token 但还没拿到管理员信息：先显示「正在验证登录状态…」，
+  // 避免 token 失效时先闪一下后台界面
+  if (!token || (loading && !info)) {
+    return (
+      <AdminLogin
+        theme={theme}
+        onToggleTheme={onToggleTheme}
+        onLogin={login}
+        checking={!!token && loading && !info}
+      />
+    );
   }
 
   const nick = info?.nickName || '—';

@@ -23,6 +23,15 @@ function parseIdFromQuery() {
   return id.trim();
 }
 
+// 从 URL query 解析竞赛 id（如 ?examId=13）
+// 只有从「竞赛题目列表」点进答题页时才会带这个参数，用于把提交标记为竞赛答题
+function parseExamIdFromQuery() {
+  const params = new URLSearchParams(window.location.search);
+  const examId = params.get('examId');
+  if (examId == null || examId.trim() === '') return null;
+  return examId.trim();
+}
+
 // 是否显示登录页（如 ?page=login）。不引入路由，只用一个 query 开关
 function isLoginPage() {
   const params = new URLSearchParams(window.location.search);
@@ -50,6 +59,8 @@ function parsePage() {
 
 export default function App() {
   const [currentId, setCurrentId] = useState(parseIdFromQuery);
+  // 当前答题页所属的竞赛（null = 普通刷题）
+  const [currentExamId, setCurrentExamId] = useState(parseExamIdFromQuery);
   // 当前页面：'login' | 'home' | 'editor'
   const [page, setPage] = useState(parsePage);
   const loginPage = page === 'login';
@@ -104,12 +115,15 @@ export default function App() {
   const handleOpenEditorHome = useCallback(() => {
     const url = new URL(window.location.href);
     url.searchParams.delete('id');
+    url.searchParams.delete('examId');
     url.searchParams.delete('page');
     window.location.href = url.toString();
   }, []);
 
   // 打开代码编辑页（需要明确的题目 id；不确定时由调用方先取到真实 id）
-  const handleOpenEditor = useCallback((id) => {
+  // examId 只有竞赛题目列表会传；其它入口不传，并会清掉地址栏里遗留的 examId，
+  // 保证「只有从竞赛题目列表进入的答题页」提交时才携带竞赛 id。
+  const handleOpenEditor = useCallback((id, examId = null) => {
     if (id == null) {
       console.warn('[nav] 缺少题目 id，忽略本次跳转');
       return;
@@ -117,6 +131,8 @@ export default function App() {
     const url = new URL(window.location.href);
     url.searchParams.delete('page');
     url.searchParams.set('id', String(id));
+    if (examId == null) url.searchParams.delete('examId');
+    else url.searchParams.set('examId', String(examId));
     window.location.href = url.toString();
   }, []);
   // 编辑器页顶栏的用户下拉需要昵称/邮箱（只在编辑器页拉取）
@@ -144,15 +160,22 @@ export default function App() {
   } = usePreferences();
 
   // 切换题目：更新 state，并把 ?id= 同步到地址栏（不新增历史记录）
-  const handleSwitchQuestion = useCallback((newId) => {
+  //
+  // examId 默认 null：上一题 / 下一题 / 题库选择都属于「非竞赛入口」，
+  // 会顺带把地址栏里遗留的 ?examId= 清掉（避免切到别的题还当成竞赛答题）。
+  const handleSwitchQuestion = useCallback((newId, examId = null) => {
     setCurrentId(String(newId));
+    setCurrentExamId(examId == null ? null : String(examId));
     const url = new URL(window.location.href);
     url.searchParams.set('id', newId);
+    if (examId == null) url.searchParams.delete('examId');
+    else url.searchParams.set('examId', String(examId));
     window.history.replaceState(null, '', url);
   }, []);
 
   // 登录页不拉题目数据（且未登录时若去请求会不断重定向，形成死循环）
   const activeId = loginPage ? null : currentId;
+  const activeExamId = loginPage ? null : currentExamId;
 
   const {
     data: question,
@@ -166,7 +189,11 @@ export default function App() {
     goNext,
   } = useQuestion(activeId, { onSwitch: handleSwitchQuestion });
 
-  const { result, judging, submitError, pendingCode, submit } = useJudge(activeId);
+  // 竞赛答题：把 examId 交给提交逻辑，提交时随请求发给后端
+  const { result, judging, submitError, pendingCode, submit } = useJudge(
+    activeId,
+    activeExamId
+  );
 
   // 从题库选择题目：切题 + 关闭抽屉
   const handleSelectQuestion = useCallback(

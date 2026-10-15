@@ -35,7 +35,7 @@ public class SysUserController {
     private SysUserService sysUserService;
     
     @PostMapping ("/b/login")
-    @Operation (summary = "系统用户登录")
+    @Operation (summary = "系统用户登录") //done
     @Parameter (name = "loginDTO", description = "登录参数，提供用户昵称 + 密码")
     @ApiResponse (responseCode = "1000", description = "登录成功")
     @ApiResponse (responseCode = "3103", description = "用户名密码错误")
