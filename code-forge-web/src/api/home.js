@@ -1,4 +1,11 @@
-import { authHeaders, SUCCESS_CODE, HOST, API_GATEWAY_PORT, getUserSubmitInfoUrl } from '../config.js';
+import {
+  authHeaders,
+  SUCCESS_CODE,
+  HOST,
+  API_GATEWAY_PORT,
+  getUserSubmitInfoUrl,
+  isSuccessResponse,
+} from '../config.js';
 
 // ---------------- 首页相关接口 ----------------
 // 统一解析后端 R<T> 包裹 { code, msg, data }
@@ -88,15 +95,11 @@ export async function signUpContest(examId) {
     // 成功时 body 可能为空
   }
 
-  const code = json?.code;
-  const msg = typeof json?.msg === 'string' ? json.msg.trim() : '';
-  // 有非成功错误码，或有错误信息（R.success(data) 的 msg 固定为 "success"，不算错误）
-  const hasError =
-    (code != null && code !== SUCCESS_CODE) || (msg !== '' && msg !== 'success');
-
-  if (hasError) {
-    const err = new Error(msg || `报名失败（code=${code}）`);
-    err.code = code; // 3301 = 已经报过名
+  // 判定规则见 config.js#isSuccessResponse
+  if (!isSuccessResponse(json)) {
+    const msg = typeof json?.msg === 'string' ? json.msg.trim() : '';
+    const err = new Error(msg || `报名失败（code=${json?.code}）`);
+    err.code = json?.code; // 3301 = 已经报过名
     throw err;
   }
   return true;

@@ -1,4 +1,4 @@
-import { SUCCESS_CODE, HOST, API_GATEWAY_PORT } from '../config.js';
+import { HOST, API_GATEWAY_PORT, isSuccessResponse } from '../config.js';
 
 // ============================================================
 // B 端（管理后台）接口封装
@@ -49,6 +49,9 @@ function adminAuthHeaders(extra) {
 const base = () => `http://${HOST}:${API_GATEWAY_PORT}`;
 
 // 统一解析 { code, msg, data }
+//
+// 成功判定统一走 isSuccessResponse：后端无参 R.success() 返回的是全 null 空对象
+// （如 DELETE /system/b/logout），不能只认 code === 1000。
 async function request(path, { method = 'GET', body, auth = true } = {}) {
   const init = {
     method,
@@ -77,12 +80,12 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
     throw err;
   }
 
-  if (json?.code !== SUCCESS_CODE) {
+  if (!isSuccessResponse(json)) {
     const err = new Error(json?.msg || `请求失败（code=${json?.code}）`);
     err.code = json?.code;
     throw err;
   }
-  return json.data;
+  return json?.data ?? null;
 }
 
 /* ---------------- 身份认证 ---------------- */
@@ -96,9 +99,18 @@ export async function adminLogin({ userAccount, password }) {
   });
 }
 
-// DELETE /system/b/logout
+// DELETE /system/b/logout  退出登录（需要 Authorization）
+//
+// 后端这个接口是无参 R.success()，返回 {"code":null,"msg":null,"data":null}；
+// token 已失效时网关返回 3001，等价于「已登出」。
 export async function adminLogout() {
-  return request('/system/b/logout', { method: 'DELETE' });
+  try {
+    return await request('/system/b/logout', { method: 'DELETE' });
+  } catch (e) {
+    // 3001 / 401：后端已经没有这个登录态了，等价于登出成功
+    if (e?.code === 3001 || e?.code === 401) return true;
+    throw e;
+  }
 }
 
 // GET /system/b/info → { id, userId, userAccount, nickName, createBy, updateBy, createTime, updateTime }

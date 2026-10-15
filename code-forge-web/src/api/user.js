@@ -7,6 +7,7 @@ import {
   getUserLogoutUrl,
   getUserAddInfoUrl,
   getAvatarUploadUrl,
+  isSuccessResponse,
 } from '../config.js';
 
 // 统一解析后端 R<T> 包裹：{ code, msg, data }
@@ -203,9 +204,11 @@ export async function logout() {
     json = null;
   }
 
-  if (json && json.code !== SUCCESS_CODE) {
-    const err = new Error(json.msg || `登出失败（code=${json.code}）`);
-    err.code = json.code;
+  // 后端 /user/logout 是无参 R.success()，返回 {"code":null,"msg":null,"data":null}，
+  // 统一按 isSuccessResponse 判定，避免把「正常登出」误判成失败
+  if (!isSuccessResponse(json)) {
+    const err = new Error(json?.msg || `登出失败（code=${json?.code}）`);
+    err.code = json?.code;
     throw err;
   }
   return true;

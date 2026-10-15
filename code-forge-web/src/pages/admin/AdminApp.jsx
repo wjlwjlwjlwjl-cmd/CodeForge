@@ -30,7 +30,8 @@ function readSection() {
 }
 
 export default function AdminApp({ theme, onToggleTheme }) {
-  const { token, info, loading, login, logout } = useAdminSession();
+  const { token, info, loading, error, loggingOut, login, logout } =
+    useAdminSession();
   const [section, setSection] = useState(readSection);
   // 宽屏下是否收起导航（窄屏由 CSS 强制收成图标栏）
   const [collapsed, setCollapsed] = useState(false);
@@ -56,15 +57,17 @@ export default function AdminApp({ theme, onToggleTheme }) {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
 
-  // 手上已经有 token 但还没拿到管理员信息：先显示「正在验证登录状态…」，
-  // 避免 token 失效时先闪一下后台界面
-  if (!token || (loading && !info)) {
+  // 没拿到管理员信息就不进后台：
+  //   · 有 token 且仍在验证 → 「正在验证登录状态…」
+  //   · 其余（无 token / 验证失败）→ 登录表单，并显示失败原因
+  if (!info) {
     return (
       <AdminLogin
         theme={theme}
         onToggleTheme={onToggleTheme}
         onLogin={login}
-        checking={!!token && loading && !info}
+        checking={!!token && loading}
+        sessionError={token && !loading ? error : null}
       />
     );
   }
@@ -136,9 +139,10 @@ export default function AdminApp({ theme, onToggleTheme }) {
               type="button"
               className="admin-side-out"
               onClick={logout}
+              disabled={loggingOut}
               title="退出登录"
             >
-              退出
+              {loggingOut ? '…' : '退出'}
             </button>
           </div>
         </div>
@@ -161,8 +165,13 @@ export default function AdminApp({ theme, onToggleTheme }) {
           </span>
           <span className="admin-topbar-right">
             <ThemeToggle theme={theme} onToggle={onToggleTheme} />
-            <button type="button" className="admin-btn" onClick={logout}>
-              退出登录
+            <button
+              type="button"
+              className="admin-btn"
+              onClick={logout}
+              disabled={loggingOut}
+            >
+              {loggingOut ? '退出中…' : '退出登录'}
             </button>
           </span>
         </div>

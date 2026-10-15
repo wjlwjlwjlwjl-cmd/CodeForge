@@ -10,9 +10,30 @@ export const API_GATEWAY_PORT = 18080;
 export const WS_PORT = 18082;
 
 // 统一响应包裹：code === SUCCESS_CODE 视为成功
+//
+// ⚠️ 特例：后端的 R.success()（无参）返回的是一个全 null 的空对象
+//     { "code": null, "msg": null, "data": null }
+//   只有 R.success(data) 才会带上 code=1000 / msg="success"。
+//   所以判定成功的规则是「没有错误码、也没有错误信息」，
+//   不能用 `code !== SUCCESS_CODE`，否则会把 R.success() 误判成失败。
+//   目前返回无参 R.success() 的接口：
+//     POST   /job/java/submit       提交判题
+//     POST   /user/exam/signUp      竞赛报名
+//     DELETE /user/logout           C 端登出
+//     DELETE /system/b/logout       B 端登出
 export const SUCCESS_CODE = 1000;
 
 // 上一题/下一题到达边界时的业务码（对应后端 ResultCode 枚举）
+// 判断一个 R<T> 响应是否为「成功」
+//   · code 为空 或 1000，且 msg 为空或 "success" → 成功
+//   · json 为 null（HTTP 200 且 body 为空）也按成功处理
+export function isSuccessResponse(json) {
+  if (!json) return true;
+  const code = json.code;
+  const msg = typeof json.msg === 'string' ? json.msg.trim() : '';
+  return (code == null || code === SUCCESS_CODE) && (msg === '' || msg === 'success');
+}
+
 export const FIRST_QUESTION_CODE = 3501; // 已经是第一题
 export const LAST_QUESTION_CODE = 3502; // 已经是最后一题
 

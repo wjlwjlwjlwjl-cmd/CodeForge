@@ -10,7 +10,13 @@ import CodeForgeLogo from '../../components/CodeForgeLogo.jsx';
 //
 // 接口：POST /system/b/login  SysLoginDTO { userAccount, password } → { token }
 //   失败：3103 用户名密码错误 / 3102 用户不存在
-export default function AdminLogin({ theme, onToggleTheme, onLogin, checking = false }) {
+export default function AdminLogin({
+  theme,
+  onToggleTheme,
+  onLogin,
+  checking = false,
+  sessionError = null,
+}) {
   const [form, setForm] = useState({ userAccount: '', password: '' });
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -88,9 +94,9 @@ export default function AdminLogin({ theme, onToggleTheme, onLogin, checking = f
               onChange={(e) => setForm((p) => ({ ...p, password: e.target.value }))}
             />
 
-            {error && (
+            {(error || sessionError) && (
               <div className="login-error" role="alert">
-                {error}
+                {error || sessionError}
               </div>
             )}
 
