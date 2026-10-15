@@ -73,9 +73,7 @@ export default function AdminUsers() {
   return (
     <>
       <h1 className="admin-h1">用户管理</h1>
-      <p className="admin-sub">
-        B 端注册用户列表，可执行拉黑 / 解封。数据来自 GET /user/b/list。
-      </p>
+      <p className="admin-sub">B 端注册用户列表，可执行拉黑 / 解封。</p>
 
       <section className="admin-section">
         <form className="admin-toolbar" onSubmit={search}>

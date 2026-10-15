@@ -172,6 +172,30 @@
   min-width: 0;
 }
 
+/* 点这块打开「管理员详情」（GET /system/b/info） */
+.admin-side-user-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1;
+  min-width: 0;
+  padding: 0;
+  font: inherit;
+  text-align: left;
+  color: inherit;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.admin-side-user-btn:hover .admin-side-user-info strong {
+  color: var(--accent);
+}
+
+.admin-side.is-collapsed .admin-side-user-btn {
+  justify-content: center;
+}
+
 .admin-side-avatar {
   display: flex;
   align-items: center;
@@ -296,11 +320,19 @@
   align-items: center;
   gap: 5px;
   padding: 2px 7px;
+  font: inherit;
   font-size: 11px;
   color: var(--text-secondary);
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease;
+}
+
+.admin-user-badge:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
 }
 
 .admin-content {
@@ -372,11 +404,14 @@
   color: var(--text-muted);
 }
 
-/* 概览下半区：两块并排，窄屏单列 */
-.admin-overview-cols {
-  display: grid;
-  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
-  gap: 0 var(--space-6);
+/* 概览里的当前管理员信息卡：不用拉满整行 */
+.admin-overview-admin {
+  max-width: 420px;
+}
+
+/* 概览的「其他管理员」表：SysUserVO 字段多，窄屏下宁可横向滚动也不挤成一团 */
+.admin-table-vo {
+  min-width: 960px;
 }
 
 /* 管理员管理：列表 + 添加表单 */
@@ -537,6 +572,105 @@
 .admin-kv > dt:last-of-type,
 .admin-kv > dd:last-of-type {
   border-bottom: none;
+}
+
+/* ---------------- 管理员详情弹窗 ---------------- */
+.admin-detail {
+  width: min(420px, 92vw);
+}
+
+.admin-detail .dialog-actions {
+  gap: var(--space-2);
+}
+
+.admin-detail-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  margin-bottom: var(--space-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.admin-detail-avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.admin-detail-name {
+  min-width: 0;
+}
+
+.admin-detail-name strong {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-detail-name em {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.admin-detail-state {
+  margin: var(--space-2) 0;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.admin-detail-note {
+  margin: var(--space-2) 0 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* ---------------- 新增管理员后的结果面板 ---------------- */
+.admin-created {
+  margin-top: var(--space-4);
+  padding-top: var(--space-3);
+  border-top: 1px solid var(--border);
+}
+
+.admin-created-head {
+  display: flex;
+  align-items: baseline;
+  margin-bottom: var(--space-2);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.admin-created-head .admin-btn {
+  margin-left: auto;
+}
+
+.admin-created .admin-kv dd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.admin-created .admin-hint {
+  margin: var(--space-3) 0 0;
+  line-height: 1.6;
+}
+
+.admin-copy-btn {
+  padding: 2px 7px;
+  font-size: 11px;
 }
 
 /* ---------------- 表格 ---------------- */
@@ -818,7 +952,6 @@
 
 /* ---------------- 响应式 ---------------- */
 @media (max-width: 1040px) {
-  .admin-overview-cols,
   .admin-admins-cols {
     grid-template-columns: minmax(0, 1fr);
   }

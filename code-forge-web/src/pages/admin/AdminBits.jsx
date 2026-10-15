@@ -1,5 +1,57 @@
-// B 端通用小部件：状态点、空态、提示条、确认弹窗、图标
+// B 端通用小部件：状态点、空态、提示条、确认弹窗、图标、SysUserVO 字段表
 // 刻意做得很薄，避免变成一套「组件库」
+
+import { Fragment } from 'react';
+import { formatDateTime } from '../../utils/format.js';
+
+/* ---------------- SysUserVO 字段表 ---------------- */
+//
+// 全后台统一用这套字段展示管理员信息，字段和顺序都跟后端 SysUserVO 对齐：
+//   userId / userAccount / nickName / createBy / updateBy / createTime / updateTime
+// 注意：
+//   · VO 里没有自增主键 id，也【没有角色字段】，所以不展示「角色」，不臆造；
+//   · createBy / updateBy 存的是用户 ID（跟 userId 同一个 ID 空间），不是名字，
+//     所以标签写「创建人 ID / 更新人 ID」而不是「创建人 / 更新人」。
+export const SYS_USER_FIELDS = [
+  ['用户 ID', 'userId', 'num'],
+  ['账号', 'userAccount', 'num'],
+  ['昵称', 'nickName', 'text'],
+  ['创建人 ID', 'createBy', 'num'],
+  ['更新人 ID', 'updateBy', 'num'],
+  ['创建时间', 'createTime', 'time'],
+  ['更新时间', 'updateTime', 'time'],
+];
+
+// 按类型把值渲染成展示文本（空值统一「—」）
+export function sysUserText(user, key, kind) {
+  const raw = user?.[key];
+  if (kind === 'time') return formatDateTime(raw);
+  if (raw === null || raw === undefined || raw === '') return '—';
+  return String(raw);
+}
+
+// 表格单元格的 class（时间列次要色，ID 列等宽 + 省略保护）
+export function sysUserCellClass(kind) {
+  if (kind === 'time') return 'col-num col-muted';
+  if (kind === 'num') return 'col-num cell-ellipsis';
+  return undefined;
+}
+
+// 字段列表（概览的「当前管理员」卡片、详情弹窗共用）
+export function SysUserFields({ user }) {
+  return (
+    <dl className="admin-kv">
+      {SYS_USER_FIELDS.map(([label, key, kind]) => (
+        <Fragment key={key}>
+          <dt>{label}</dt>
+          <dd className={kind === 'num' ? 'admin-num' : undefined}>
+            {sysUserText(user, key, kind)}
+          </dd>
+        </Fragment>
+      ))}
+    </dl>
+  );
+}
 
 // 状态：小圆点 + 文字（不用淡色胶囊）
 //   kind: 'ok' | 'bad' | 'neutral'

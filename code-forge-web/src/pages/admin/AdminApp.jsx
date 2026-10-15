@@ -6,6 +6,7 @@ import AdminLogin from './AdminLogin.jsx';
 import AdminOverview from './AdminOverview.jsx';
 import AdminUsers from './AdminUsers.jsx';
 import AdminAdmins from './AdminAdmins.jsx';
+import AdminDetailDialog from './AdminDetailDialog.jsx';
 import AdminPending from './AdminPending.jsx';
 import '../../styles/admin.css';
 
@@ -35,6 +36,8 @@ export default function AdminApp({ theme, onToggleTheme }) {
   const [section, setSection] = useState(readSection);
   // 宽屏下是否收起导航（窄屏由 CSS 强制收成图标栏）
   const [collapsed, setCollapsed] = useState(false);
+  // 「管理员详情」弹窗（数据来自 GET /system/b/info）
+  const [detailOpen, setDetailOpen] = useState(false);
 
   // 切换区块时同步到地址栏（replace，不产生历史记录）
   const go = useCallback((key) => {
@@ -49,13 +52,14 @@ export default function AdminApp({ theme, onToggleTheme }) {
   }, []);
 
   // Esc：宽屏下收起导航（不做抽屉，避免多余交互）
+  // 详情弹窗打开时让路，否则一次 Esc 会既关弹窗又收导航
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape') setCollapsed((v) => v);
+      if (e.key === 'Escape' && !detailOpen) setCollapsed((v) => v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [detailOpen]);
 
   // 没拿到管理员信息就不进后台：
   //   · 有 token 且仍在验证 → 「正在验证登录状态…」
@@ -128,13 +132,20 @@ export default function AdminApp({ theme, onToggleTheme }) {
         {/* 底部：当前管理员信息 + 退出 */}
         <div className="admin-side-foot">
           <div className="admin-side-user">
-            <span className="admin-side-avatar">
-              {(nick[0] || '?').toUpperCase()}
-            </span>
-            <span className="admin-side-user-info">
-              <strong>{nick}</strong>
-              <span title="账号">{account}</span>
-            </span>
+            <button
+              type="button"
+              className="admin-side-user-btn"
+              onClick={() => setDetailOpen(true)}
+              title="查看管理员详情"
+            >
+              <span className="admin-side-avatar">
+                {(nick[0] || '?').toUpperCase()}
+              </span>
+              <span className="admin-side-user-info">
+                <strong>{nick}</strong>
+                <span title="账号">{account}</span>
+              </span>
+            </button>
             <button
               type="button"
               className="admin-side-out"
@@ -155,24 +166,22 @@ export default function AdminApp({ theme, onToggleTheme }) {
           <span className="admin-topbar-sect">{current.label}</span>
           <span className="admin-topbar-sep" />
           <span className="admin-topbar-meta">
-            <span className="admin-user-badge" title="当前管理员">
-              {nick}
-            </span>
-            <em>账号 {account}</em>
-            <em>·</em>
-            {/* 接口 /system/b/info 没有返回角色字段，这里不臆造 */}
-            <em title="接口未返回角色字段">角色 —</em>
-          </span>
-          <span className="admin-topbar-right">
-            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
             <button
               type="button"
-              className="admin-btn"
-              onClick={logout}
-              disabled={loggingOut}
+              className="admin-user-badge"
+              onClick={() => setDetailOpen(true)}
+              title="查看管理员详情"
             >
-              {loggingOut ? '退出中…' : '退出登录'}
+              {nick}
             </button>
+            <em>账号 {account}</em>
+            <em>·</em>
+            {/* 后端没有角色字段，这里不臆造 */}
+            <em>角色 —</em>
+          </span>
+          {/* 退出登录只保留下方侧栏底部那一个 */}
+          <span className="admin-topbar-right">
+            <ThemeToggle theme={theme} onToggle={onToggleTheme} />
           </span>
         </div>
 
@@ -184,33 +193,35 @@ export default function AdminApp({ theme, onToggleTheme }) {
             {section === 'questions' && (
               <AdminPending
                 title="题目管理"
-                note="题目接口已就绪，管理界面待接入。"
-                apis={[
-                  ['POST', '/question/b/add', '添加题目'],
-                  ['POST', '/question/b/edit', '修改题目信息'],
-                  ['DELETE', '/question/b/delete/{id}', '删除题目'],
-                  ['GET', '/question/detail?id=', '题目详情'],
-                ]}
+                note="管理界面待接入。"
+                actions={['添加题目', '修改题目信息', '删除题目', '查看题目详情']}
               />
             )}
             {section === 'exams' && (
               <AdminPending
                 title="竞赛管理"
-                note="竞赛接口已就绪，管理界面待接入。"
-                apis={[
-                  ['POST', '/exam/b/add', '新增竞赛'],
-                  ['POST', '/exam/b/edit', '修改竞赛信息'],
-                  ['DELETE', '/exam/b/delete/{examId}', '删除竞赛'],
-                  ['POST', '/exam/b/question/add', '为竞赛添加题目'],
-                  ['DELETE', '/exam/b/delete', '删除竞赛题目'],
-                  ['PUT', '/exam/b/publish', '发布竞赛'],
-                  ['PUT', '/exam/b/publish_cancel', '取消发布竞赛'],
+                note="管理界面待接入。"
+                actions={[
+                  '新增竞赛',
+                  '修改竞赛信息',
+                  '删除竞赛',
+                  '为竞赛添加题目',
+                  '删除竞赛题目',
+                  '发布竞赛',
+                  '取消发布竞赛',
                 ]}
               />
             )}
           </div>
         </div>
       </div>
+
+      {detailOpen && (
+        <AdminDetailDialog
+          fallback={info}
+          onClose={() => setDetailOpen(false)}
+        />
+      )}
     </div>
   );
 }

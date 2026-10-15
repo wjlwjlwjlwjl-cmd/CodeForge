@@ -8,7 +8,6 @@ import lombok.Data;
 @Data 
 @Schema (description = "系统用户VO")
 public class SysUserVO {
-    private Long id;
     private Long userId;
     private String userAccount;
     private String nickName;

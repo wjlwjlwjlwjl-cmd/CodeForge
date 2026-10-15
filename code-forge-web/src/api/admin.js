@@ -48,6 +48,26 @@ function adminAuthHeaders(extra) {
 
 const base = () => `http://${HOST}:${API_GATEWAY_PORT}`;
 
+// 后端返回的雪花 ID 是 19 位 Long，超出 JS 安全整数范围
+// （Number.MAX_SAFE_INTEGER = 9007199254740991，只有 16 位），
+// 直接 res.json() 会丢精度：
+//   2110744467849048067  →  2110744467849048000
+// 结果就是列表里显示一个不存在的 ID，回传后端（如拉黑用户）也会打到别人身上。
+// 所以在 parse 之前，把「JSON 键后面跟着的 16 位以上整数」先包成字符串。
+// 只认 "key": 1234567890123456 这种结构，不会误伤字符串内部的数字。
+// （更彻底的做法是后端让 Long 序列化成 String，那样这段就能删掉；
+//   前端对字符串 / 数字两种形态都兼容。）
+const BIG_INT_RE = /("(?:[^"\\]|\\.)*"\s*:\s*)(-?\d{16,})(?![\d.])/g;
+
+function parseJson(text) {
+  try {
+    return JSON.parse(text.replace(BIG_INT_RE, '$1"$2"'));
+  } catch (e) {
+    // 预处理万一没兑住，退回标准解析（宁可丢精度，也不能整个请求失败）
+    return JSON.parse(text);
+  }
+}
+
 // 统一解析 { code, msg, data }
 //
 // 成功判定统一走 isSuccessResponse：后端无参 R.success() 返回的是全 null 空对象
@@ -73,7 +93,7 @@ async function request(path, { method = 'GET', body, auth = true } = {}) {
 
   let json = null;
   try {
-    json = await res.json();
+    json = parseJson(await res.text());
   } catch (e) {
     const err = new Error(`服务返回异常（HTTP ${res.status}）`);
     err.code = 'HTTP';
@@ -113,15 +133,15 @@ export async function adminLogout() {
   }
 }
 
-// GET /system/b/info → { id, userId, userAccount, nickName, createBy, updateBy, createTime, updateTime }
-// 注意：接口没有返回角色字段，前端不要臆造
+// GET /system/b/info → { userId, userAccount, nickName, createBy, updateBy, createTime, updateTime }
+// 注意：接口没有返回角色字段，前端不要臆造；userId 是用户 ID（没有自增主键 id）。
 export async function fetchAdminInfo() {
   return request('/system/b/info');
 }
 
 /* ---------------- 管理员管理 ---------------- */
 
-// GET /system/b/list → { list: [{ id, userId, userAccount, nickName, createTime, updateTime, ... }] }
+// GET /system/b/list → { list: [{ userId, userAccount, nickName, createTime, updateTime, ... }] }
 export async function fetchAdminList() {
   return request('/system/b/list');
 }
