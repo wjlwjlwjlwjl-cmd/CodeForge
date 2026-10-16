@@ -1394,3 +1394,50 @@
 .admin-exam-addq-dialog .admin-listfoot {
   justify-content: space-between;
 }
+
+/* ---------------- 行内「⋯」菜单 ---------------- */
+.admin-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.admin-menu-btn {
+  min-width: 30px;
+  padding: 5px 8px;
+  line-height: 1;
+}
+
+.admin-menu-list {
+  position: fixed;
+  z-index: 90;
+  min-width: 132px;
+  padding: 4px;
+  background: var(--panel-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+}
+
+.admin-menu-item {
+  display: block;
+  width: 100%;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  text-align: left;
+  white-space: nowrap;
+  color: var(--text);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.admin-menu-item:hover {
+  background: var(--header-control-hover);
+}
+
+.admin-menu-item.is-danger {
+  color: var(--error);
+}

@@ -262,16 +262,6 @@ export async function fetchExamPage(pageNum = 1) {
   return { ...(d || {}), pages: undefined };
 }
 
-// GET /user/exam/list/queue?option=&pageNum=
-//   option：0 未开始 / 1 进行中（已开始未结束）/ 2 已结束
-//   pageNum 必须从 1 开始：后端是 LRANGE pageSize*(pageNum-1) .. pageSize*pageNum-1，
-//   传 0 会落到负数下标（取到列表末尾的 10 条）。
-//   返回 { pageSize, pageNum, total, list }，没有 pages。
-export async function fetchExamQueuePage(option, pageNum = 1) {
-  const page = Math.max(1, Number(pageNum) || 1);
-  return request(`/user/exam/list/queue?option=${Number(option)}&pageNum=${page}`);
-}
-
 // GET /exam/listQuestion?examId=&pageNum=  → ExamQuestionListVO extends BasePageVO<QuestionVO>
 //   QuestionVO = { id, title, difficulty, timeLimit, spaceLimit }
 // ⚠️ 后端是把「本页 questionId 对应的题目」查出来，再用 PageInfo 包了一层**内存 List**，
@@ -343,4 +333,52 @@ export async function addExamQuestions({ examId, questionIds }) {
     method: 'POST',
     body: { examId, questions: questionIds },
   });
+}
+
+// GET /exam/detail?examId= → ExamVO
+//   { examId, title, startTime, endTime, status, createTime, updateTime, createBy, updateBy }
+//   注意：竞赛不存在时后端返回的是 data:null（不是报错），调用方要判空
+export async function fetchExamDetail(examId) {
+  return request(`/exam/detail?examId=${encodeURIComponent(String(examId))}`);
+}
+
+// POST /exam/b/edit  参数 ExamEditDTO { examId, title, startTime, endTime }
+//   时间格式同 add（"yyyy-MM-dd HH:mm:ss"）
+//   后端校验：checkExam(examId,false) —— 已发布(3208) / 已开始(3201) / 已结束(3207) 都不允许改；
+//   注意后端这里**不**重校 start<end，前端沿用新增那套预先校验。
+export async function editExam({ examId, title, startTime, endTime }) {
+  return request('/exam/b/edit', {
+    method: 'POST',
+    body: {
+      examId: Number(examId),
+      title,
+      startTime: toApiDateTime(startTime),
+      endTime: toApiDateTime(endTime),
+    },
+  });
+}
+
+// DELETE /exam/b/delete/{examId} → 删竞赛（连同竞赛题目关联）
+//   同样走 checkExam(examId,false)，已发布 / 已开始 / 已结束都不能删
+export async function deleteExam(examId) {
+  return request(`/exam/b/delete/${encodeURIComponent(String(examId))}`, {
+    method: 'DELETE',
+  });
+}
+
+// PUT /exam/b/publish?examId=  发布竞赛（status=1，C 端才看得到）
+//   后端 checkExam(examId,false)：必须未发布 + 未开始 + 未结束
+export async function publishExam(examId) {
+  return request(`/exam/b/publish?examId=${encodeURIComponent(String(examId))}`, {
+    method: 'PUT',
+  });
+}
+
+// PUT /exam/b/publish_cancel?examId=  取消发布（status=0）
+//   后端 checkExam(examId,true)：只校验竞赛存在，任何状态都能取消发布
+export async function publishCancelExam(examId) {
+  return request(
+    `/exam/b/publish_cancel?examId=${encodeURIComponent(String(examId))}`,
+    { method: 'PUT' }
+  );
 }

@@ -1,10 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { fetchExamPage, fetchExamQueuePage } from '../../api/admin.js';
+import {
+  deleteExam,
+  fetchExamPage,
+  publishCancelExam,
+  publishExam,
+} from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
 import {
   ColorTag,
+  ConfirmDialog,
   EmptyState,
   Notice,
+  RowMenu,
   StatusDot,
 } from './AdminBits.jsx';
 import AdminExamAddQuestionsDialog from './AdminExamAddQuestionsDialog.jsx';
@@ -14,9 +21,10 @@ import { formatDateTime } from '../../utils/format.js';
 
 // B 端竞赛管理
 //
-//   GET /exam/list?pageNum=                    → 全部竞赛（ExamListVO，带 total）
-//   GET /user/exam/list/queue?option=&pageNum= → 按时间状态筛选
-//                                                option：0 未开始 / 1 进行中 / 2 已结束
+//   GET /exam/list?pageNum=  → 全部竞赛（ExamListVO，带 total）
+//
+// 列表只看全量：按时间划分的那套筛选（/user/exam/list/queue 的 0/1/2）已经去掉，
+// 需要看某场竞赛处于什么时间状态，看「比赛状态」列即可。
 //
 // 列表形态与题目管理一致 = 「区内无限滚动」：区域高度有上限（admin.css 的
 // .admin-scroll-area），在区域里滚到底就自动拉下一页追加。
@@ -25,6 +33,13 @@ import { formatDateTime } from '../../utils/format.js';
 // 「查看竞赛题目」会打开弹窗，里面调 /exam/listQuestion 列出这场竞赛的题目，
 // 并支持把某道题移出竞赛（DELETE /exam/b/delete）。
 // 「添加题目」会打开题目选择弹窗（POST /exam/b/question/add）。
+// 行内「⋯」菜单里是竞赛本身的三个操作：
+//   编辑   POST   /exam/b/edit            （详情 GET /exam/detail 回填）
+//   发布   PUT    /exam/b/publish         （status=1，C 端才看得到）
+//   取消发布 PUT  /exam/b/publish_cancel
+//   删除   DELETE /exam/b/delete/{examId}
+// 除了「取消发布」，其余三个后端都走 checkExam(examId,false)：竞赛「已发布 /
+// 已开始 / 已结束」一律不允许改，报 3208 / 3201 / 3207 —— 前端不预判，原文透出。
 // 修改竞赛、发布 / 取消发布这些后端接口也有了，界面后续再接。
 //
 // 两个列表接口都不返回 pages（queue 本身没有这个字段，list 返回的恒为 1），
@@ -47,36 +62,26 @@ const TIME_STATUS = {
   finished: { text: '已结束', kind: 'muted' },
 };
 
-// 四个分类：全部走 /exam/list，其余走 /user/exam/list/queue 的 option
-const TABS = [
-  { key: 'all', label: '全部', option: null },
-  { key: 'unstart', label: '未开始', option: 0, kind: 'warning' },
-  { key: 'unfinish', label: '进行中', option: 1, kind: 'success' },
-  { key: 'finished', label: '已结束', option: 2, kind: 'muted' },
-];
-
 export default function AdminExams() {
-  const [tab, setTab] = useState('all');
   const [notice, setNotice] = useState(null);
   // 正在查看题目的那场竞赛（null = 没开弹窗）
   const [viewExam, setViewExam] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   // 正在给哪场竞赛添加题目（null = 没开弹窗）
   const [addQExam, setAddQExam] = useState(null);
+  // 正在编辑的竞赛（null = 没开弹窗）
+  const [editExam, setEditExam] = useState(null);
+  // 待确认的操作：{ kind:'publish'|'cancel'|'delete', exam }
+  const [pending, setPending] = useState(null);
+  const [busy, setBusy] = useState(false);
   // 新增成功后是否把列表翻到底（新竞赛的 examId 最大，排在最后一页）
   const [revealEnd, setRevealEnd] = useState(false);
   const areaRef = useRef(null);
 
-  const current = TABS.find((t) => t.key === tab) || TABS[0];
-
   const { items, total, loading, loadingMore, error, hasMore, loadNext, reload } =
     useAdminPagedList(
-      (pageNum) =>
-        current.option == null
-          ? fetchExamPage(pageNum)
-          : fetchExamQueuePage(current.option, pageNum),
-      // 分类就是查询条件：换了分类就清空、从第 1 页重来
-      current.key
+      (pageNum) => fetchExamPage(pageNum),
+      'exams'
     );
 
   // 内容不足一屏时自动再拉一页（否则没有滚动条，就永远触发不了滚动加载）
@@ -96,23 +101,82 @@ export default function AdminExams() {
     [loadNext]
   );
 
-  // 切分类后把滚动区域拉回顶部
-  useEffect(() => {
-    if (areaRef.current) areaRef.current.scrollTop = 0;
-  }, [tab]);
-
   // 新增成功：
   //  1. 后端只失效了 exam:list:page:*，按时间划分的三个缓存（exam:unstart /
   //     unfinish / finished）是每天 0 点和服务启动时才重建的，所以新建的竞赛在
   //     「未开始」等分类里暂时看不到 —— 直接切回「全部」；
   //  2. 新竞赛 examId 最大、排在最后一页，列表又是一页页往后加载的，
   //     所以标记一下让它连续往后拉到底，把新竞赛翻到眼前。
-  const handleAdded = ({ title }) => {
+  const handleAdded = ({ title, mode }) => {
     setAddOpen(false);
-    setNotice(`已新增竞赛「${title}」`);
-    if (tab === 'all') reload();
-    else setTab('all');
+    setEditExam(null);
+    setNotice(`已${mode === 'edit' ? '保存' : '新增'}竞赛「${title}」`);
+    if (mode === 'edit') {
+      refreshAfter();
+      setRevealEnd(true); // 时间变了排序可能变，直接把这场竞赛翻到眼前
+      return;
+    }
+    reload();
     setRevealEnd(true);
+  };
+
+  // 所有增删改（add / edit / delete / publish / publish_cancel）后端都会失效
+  // exam:list:page:*，而列表只读这个接口，所以成功后直接重拉即可，不会看到旧数据。
+  const refreshAfter = () => reload();
+
+  // 确认框里的文案
+  const confirmText = (() => {
+    if (!pending) return null;
+    const name = pending.exam.title || '';
+    if (pending.kind === 'publish') {
+      return {
+        title: '发布竞赛',
+        body: `确定发布竞赛「${name}」吗？发布后 C 端用户就能看到并报名。`,
+        confirmText: '发布',
+        danger: false,
+      };
+    }
+    if (pending.kind === 'cancel') {
+      return {
+        title: '取消发布',
+        body: `确定取消发布竞赛「${name}」吗？取消后 C 端不再展示该竞赛。`,
+        confirmText: '取消发布',
+        danger: false,
+      };
+    }
+    return {
+      title: '删除竞赛',
+      body: `确定删除竞赛「${name}」吗？该竞赛的题目关联会一并删除，操作不可撤销。`,
+      confirmText: '删除',
+      danger: true,
+    };
+  })();
+
+  const runPending = async () => {
+    if (!pending || busy) return;
+    const { kind, exam } = pending;
+    setBusy(true);
+    try {
+      if (kind === 'publish') {
+        await publishExam(exam.examId);
+        setNotice(`已发布竞赛「${exam.title || ''}」`);
+        refreshAfter();
+      } else if (kind === 'cancel') {
+        await publishCancelExam(exam.examId);
+        setNotice(`已取消发布竞赛「${exam.title || ''}」`);
+        refreshAfter();
+      } else {
+        await deleteExam(exam.examId);
+        setNotice(`已删除竞赛「${exam.title || ''}」`);
+        refreshAfter();
+      }
+      setPending(null);
+    } catch (e) {
+      setNotice(e?.message || '操作失败');
+      setPending(null);
+    } finally {
+      setBusy(false);
+    }
   };
 
   // 翻到底直到新竞赛出现（最多再拉 20 页，避免极端数据量下一直请求）
@@ -135,19 +199,8 @@ export default function AdminExams() {
 
       <section className="admin-section">
         <div className="admin-toolbar">
-          <span className="admin-chips">
-            {TABS.map((t) => (
-              <button
-                key={t.key}
-                type="button"
-                className={`admin-chip${t.kind ? ` is-${t.kind}` : ''}${
-                  tab === t.key ? ' is-active' : ''
-                }`}
-                onClick={() => setTab(t.key)}
-              >
-                {t.label}
-              </button>
-            ))}
+          <span className="admin-sub-inline">
+            共 <span className="admin-num">{total ?? '—'}</span> 场竞赛
           </span>
 
           <span className="admin-toolbar-spacer" />
@@ -186,7 +239,7 @@ export default function AdminExams() {
                   <th style={{ width: 170 }} className="col-time">
                     结束时间
                   </th>
-                  <th style={{ width: 230 }} className="col-actions">
+                  <th style={{ width: 240 }} className="col-actions">
                     操作
                   </th>
                 </tr>
@@ -230,6 +283,31 @@ export default function AdminExams() {
                           >
                             添加题目
                           </button>
+                          <RowMenu
+                            items={[
+                              {
+                                label: '编辑',
+                                onClick: () => setEditExam(e),
+                              },
+                              e.status === 1
+                                ? {
+                                    label: '取消发布',
+                                    onClick: () =>
+                                      setPending({ kind: 'cancel', exam: e }),
+                                  }
+                                : {
+                                    label: '发布',
+                                    onClick: () =>
+                                      setPending({ kind: 'publish', exam: e }),
+                                  },
+                              {
+                                label: '删除',
+                                danger: true,
+                                onClick: () =>
+                                  setPending({ kind: 'delete', exam: e }),
+                              },
+                            ]}
+                          />
                         </div>
                       </td>
                     </tr>
@@ -283,12 +361,33 @@ export default function AdminExams() {
         />
       )}
 
+      {editExam && (
+        <AdminExamDialog
+          exam={editExam}
+          onClose={() => setEditExam(null)}
+          onSaved={handleAdded}
+        />
+      )}
+
+      {pending && confirmText && (
+        <ConfirmDialog
+          title={confirmText.title}
+          body={confirmText.body}
+          confirmText={confirmText.confirmText}
+          danger={confirmText.danger}
+          busy={busy}
+          onCancel={() => setPending(null)}
+          onConfirm={runPending}
+        />
+      )}
+
       {addQExam && (
         <AdminExamAddQuestionsDialog
           exam={addQExam}
-          onClose={(msg) => {
+          onClose={() => setAddQExam(null)}
+          onAdded={(msg) => {
             setAddQExam(null);
-            if (msg) setNotice(msg);
+            setNotice(msg);
           }}
         />
       )}

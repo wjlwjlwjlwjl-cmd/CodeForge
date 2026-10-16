@@ -151,9 +151,16 @@ public class UserExamService {
             redisService.deleteObject(CacheConstants.EXAM_UNFINISH);
             redisService.deleteObject(CacheConstants.EXAM_UNSTART);
 
-            List<Exam> exams = examMapper.selectList(null);
+            // 只重建「已发布」的竞赛：C 端只该看到已发布的，
+            // 未发布的混进来会直接展示给用户
+            List<Exam> exams = examMapper.selectList(new LambdaQueryWrapper<Exam>()
+                    .eq(Exam::getStatus, 1));
 
             for(Exam exam:exams){
+                if(exam.getStatus() == 0){
+                    continue; //跳过未发布的竞赛
+                }
+
                 LocalDateTime examStartTime = exam.getStartTime();
                 LocalDateTime examEndTime = exam.getEndTime();
                 String newKey;

@@ -28,7 +28,7 @@ const SCROLL_EDGE = 60;
 // 拉「竞赛已有题目」时最多翻多少页（每页 10 条），只为了标记去重
 const EXISTING_MAX_SCAN_PAGES = 20;
 
-export default function AdminExamAddQuestionsDialog({ exam, onClose }) {
+export default function AdminExamAddQuestionsDialog({ exam, onClose, onAdded }) {
   const [input, setInput] = useState('');
   const [search, setSearch] = useState({ keyword: '', difficulty: null });
   // 已勾选：Map<questionId, title>（跨检索保留，换关键字不会丢）
@@ -145,7 +145,10 @@ export default function AdminExamAddQuestionsDialog({ exam, onClose }) {
     setNotice(null);
     try {
       await addExamQuestions({ examId: exam.examId, questionIds: ids });
-      onClose(`已为「${exam.title || ''}」添加 ${ids.length} 道题目`);
+      // 成功用独立的 onAdded 回调；onClose 只负责关弹窗，
+      // 绝不能再把「消息」塞进 onClose —— 按钮 onClose 直接当 onClick 用时
+      // 会传进来一个 click 事件对象，被当成提示文案渲染 → 报错白屏
+      onAdded?.(`已为「${exam.title || ''}」添加 ${ids.length} 道题目`);
     } catch (e) {
       // 3208 / 3201 / 3207（竞赛状态不允许改）、3209（题目已存在）等原文透出
       setNotice(e?.message || '添加失败');
@@ -367,7 +370,7 @@ export default function AdminExamAddQuestionsDialog({ exam, onClose }) {
           <button
             type="button"
             className="dialog-ok"
-            onClick={onClose}
+            onClick={() => onClose()}
             disabled={saving}
           >
             取消

@@ -1,7 +1,7 @@
 // B 端通用小部件：状态点、空态、提示条、确认弹窗、图标、SysUserVO 字段表
 // 刻意做得很薄，避免变成一套「组件库」
 
-import { Fragment } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { formatDateTime } from '../../utils/format.js';
 
 /* ---------------- SysUserVO 字段表 ---------------- */
@@ -71,7 +71,7 @@ export function Notice({ kind = '', children, onClose }) {
         <button
           type="button"
           className="admin-btn link spacer"
-          onClick={onClose}
+          onClick={() => onClose()}
         >
           关闭
         </button>
@@ -148,6 +148,117 @@ export function DifficultyTag({ level }) {
   const d = DIFFICULTY_LEVELS[level];
   if (!d) return <span className="admin-muted">—</span>;
   return <ColorTag kind={d.kind}>{d.text}</ColorTag>;
+}
+
+/* ---------------- 行内「⋯」更多操作菜单 ---------------- */
+//
+// 表格行里按钮塞不下时用：菜单用 position: fixed 定位，
+// 因为列表区是 overflow:auto（absolute 会被裁掉，靠底部的行看不到菜单）。
+export function RowMenu({ items, label = '⋯' }) {
+  const [open, setOpen] = useState(false);
+  const [pos, setPos] = useState(null);
+  const wrapRef = useRef(null);
+  const btnRef = useRef(null);
+  const listRef = useRef(null);
+  const openedAtRef = useRef(0);
+
+  const close = () => setOpen(false);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) close();
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') close();
+    };
+    // 列表滚动时菜单会飘走，直接关掉（capture 才能抓到内层滚动容器）。
+    // 开菜单后 250ms 内的滚动忽略：浏览器有时会先把按钮滚进视口再派发 click，
+    // 那一下 scroll 会紧接着 click 到达，否则菜单刚开就被自己关掉。
+    const onScroll = () => {
+      if (Date.now() - openedAtRef.current < 250) return;
+      close();
+    };
+    document.addEventListener('mousedown', onDown);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', onScroll, true);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', onScroll, true);
+    };
+  }, [open]);
+
+  // 位置在渲染后按真实尺寸算：下面放不下就往上翻，并夹在视口内
+  // （列表区 overflow:auto 很矮，靠底部的行必须往上翻，否则菜单出屏）
+  useLayoutEffect(() => {
+    if (!open) {
+      setPos(null);
+      return;
+    }
+    const btn = btnRef.current?.getBoundingClientRect();
+    const menu = listRef.current?.getBoundingClientRect();
+    if (!btn || !menu) return;
+    const gap = 4;
+    const pad = 8;
+    const vh = window.innerHeight;
+    let top = btn.bottom + gap;
+    if (top + menu.height > vh - pad) top = btn.top - menu.height - gap;
+    top = Math.min(Math.max(pad, top), Math.max(pad, vh - menu.height - pad));
+    setPos({ top, right: Math.max(pad, window.innerWidth - btn.right) });
+  }, [open, items.length]);
+
+  const toggle = () => {
+    if (open) {
+      close();
+      return;
+    }
+    openedAtRef.current = Date.now();
+    setOpen(true);
+  };
+
+  return (
+    <span className="admin-menu" ref={wrapRef}>
+      <button
+        ref={btnRef}
+        type="button"
+        className="admin-btn admin-menu-btn"
+        onClick={toggle}
+        title="更多操作"
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {label}
+      </button>
+      {open && (
+        <div
+          ref={listRef}
+          className="admin-menu-list"
+          role="menu"
+          style={{
+            top: pos?.top ?? 0,
+            right: pos?.right ?? 0,
+            visibility: pos ? 'visible' : 'hidden',
+          }}
+        >
+          {items.map((it) => (
+            <button
+              key={it.label}
+              type="button"
+              role="menuitem"
+              className={`admin-menu-item${it.danger ? ' is-danger' : ''}`}
+              onClick={() => {
+                close();
+                it.onClick?.();
+              }}
+            >
+              {it.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </span>
+  );
 }
 
 /* ---------------- 图标（16px 线性图标，沿用 C 端描边风格） ---------------- */

@@ -6,6 +6,7 @@ import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
 import com.wjl.redis.service.RedisService;
 import com.wjl.system.domain.exam.vo.ExamVO;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.wjl.system.entity.exam.Exam;
 import com.wjl.system.entity.user.UserExam;
 import com.wjl.system.mapper.ExamMapper;
@@ -37,9 +38,16 @@ public class CompetitionScheduleTask {
         redisService.deleteObject(CacheConstants.EXAM_UNFINISH);
         redisService.deleteObject(CacheConstants.EXAM_UNSTART);
 
-        List<Exam> exams = examMapper.selectList(null);
+        // 只把「已发布」的竞赛放进按时间划分的三个列表：
+        // C 端只看得到已发布的，未发布的进去会被 C 端展示出来
+        List<Exam> exams = examMapper.selectList(new LambdaQueryWrapper<Exam>()
+                .eq(Exam::getStatus, 1));
 
         for(Exam exam:exams){
+            if(exam.getStatus() == 0){
+                continue;
+            }
+
             LocalDateTime examStartTime = exam.getStartTime();
             LocalDateTime examEndTime = exam.getEndTime();
             String cacheKey;
@@ -75,9 +83,16 @@ public class CompetitionScheduleTask {
         redisService.deleteObject(CacheConstants.EXAM_UNFINISH);
         redisService.deleteObject(CacheConstants.EXAM_UNSTART);
 
-        List<Exam> exams = examMapper.selectList(null);
+        // 只把「已发布」的竞赛放进按时间划分的三个列表：
+        // C 端只看得到已发布的，未发布的进去会被 C 端展示出来
+        List<Exam> exams = examMapper.selectList(new LambdaQueryWrapper<Exam>()
+                .eq(Exam::getStatus, 1));
 
         for(Exam exam:exams){
+            if(exam.getStatus() == 0){
+                continue;
+            }
+
             LocalDateTime examStartTime = exam.getStartTime();
             LocalDateTime examEndTime = exam.getEndTime();
             String cacheKey;

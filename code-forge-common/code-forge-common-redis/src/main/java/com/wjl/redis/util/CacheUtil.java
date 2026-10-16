@@ -16,6 +16,17 @@ public class CacheUtil {
         return CacheConstants.EXAM_LIST_PAGE_PREFIX + pageNum;
     }
 
+    /**
+     * 竞赛列表分页缓存 key
+     * <p>
+     * B 端看全部竞赛、C 端只看已发布，同一页在两种口径下内容不同，
+     * 所以 key 必须分开（否则 C 端会拿到含未发布的数据、B 端会拿到被过滤的）。
+     * 失效仍用 {@code exam:list:page:*} 前缀扫描，两种 key 都会被覆盖。
+     */
+    public static String getExamListPageKey(int pageNum, boolean onlyPublished){
+        return CacheConstants.EXAM_LIST_PAGE_PREFIX + pageNum + (onlyPublished ? ":pub" : "");
+    }
+
     public static String getExamQuestionListPageKey(int pageNum, long examId){
         return String.format(CacheConstants.EXAM_QUESTION_LIST_PAGE_PREFIX, examId, pageNum);
     }

@@ -206,7 +206,7 @@ export default function AdminExamQuestionsDialog({ exam, onClose }) {
           </div>
 
           <div className="dialog-actions">
-            <button type="button" className="admin-btn primary" onClick={onClose}>
+            <button type="button" className="admin-btn primary" onClick={() => onClose()}>
               关闭
             </button>
           </div>

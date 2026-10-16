@@ -58,7 +58,7 @@ export default function AdminDetailDialog({ fallback, onClose }) {
     <div
       className="dialog-backdrop"
       role="presentation"
-      onClick={onClose}
+      onClick={() => onClose()}
     >
       <div
         className="dialog admin-detail"
@@ -108,7 +108,7 @@ export default function AdminDetailDialog({ fallback, onClose }) {
           >
             {loading ? '读取中…' : '刷新'}
           </button>
-          <button type="button" className="admin-btn primary" onClick={onClose}>
+          <button type="button" className="admin-btn primary" onClick={() => onClose()}>
             关闭
           </button>
         </div>

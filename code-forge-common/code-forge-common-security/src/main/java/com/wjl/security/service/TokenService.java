@@ -191,6 +191,15 @@ public class TokenService {
     }
 
     /**
+     * 取 token 里的用户类型（SecurityConstants.ADMIN / CONSUMER）
+     * <p>
+     * 原来这里是个 return null 的桩，一旦被调用就会 NPE，直接委托给 JwtUtil 实现。
+     */
+    public String getUserType(String token){
+        return JwtUtil.getUserType(token);
+    }
+
+    /**
      * 获取token key的信息
      * @param  userId 用户 id
      * @return tokenKey

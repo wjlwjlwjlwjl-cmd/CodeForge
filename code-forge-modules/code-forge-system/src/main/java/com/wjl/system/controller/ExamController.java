@@ -25,8 +25,8 @@ public class ExamController {
     //done
     @GetMapping("/list")
     @Operation(description = "获取所有竞赛")
-    public R<ExamListVO> list(ExamQueryDTO examQueryDTO){
-        return R.success(examService.examList(examQueryDTO));
+    public R<ExamListVO> list(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, ExamQueryDTO examQueryDTO){
+        return R.success(examService.examList(token, examQueryDTO));
     }
 
     //done
@@ -43,6 +43,7 @@ public class ExamController {
         return R.success(examService.examAdd(token, examAddDTO));
     }
 
+    //done
     @PostMapping("/b/question/add")
     @Operation(description = "为竞赛添加题目")
     public R<String> questionAdd(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @RequestBody @Validated ExamQuestionAdd examQuestionAdd){
@@ -67,18 +68,21 @@ public class ExamController {
         return R.success(examService.examEdit(token, examEditDTO));
     }
 
+    //done
     @DeleteMapping("/b/delete/{examId}")
     @Operation(description = "删除竞赛")
     public R<String> delete(@PathVariable Long examId){
         return R.success(examService.examDelete(examId));
     }
 
+    //done
     @PutMapping("/b/publish")
     @Operation(description = "发布竞赛")
     public R<String> publish(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, Long examId){
         return R.success(examService.examPublish(token, examId));
     }
 
+    //done
     @PutMapping("/b/publish_cancel")
     @Operation(description = "取消发布竞赛")
     public R<String> publishCancel(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, Long examId){

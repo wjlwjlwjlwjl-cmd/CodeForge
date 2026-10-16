@@ -10,11 +10,13 @@ import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.BeanCopyUtil;
 import com.wjl.core.utils.ColorLog;
+import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.domain.domain.dto.LoginUserDTO;
 import com.wjl.domain.exception.ServiceException;
 import com.wjl.redis.service.RedisService;
 import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
+import com.wjl.security.utils.JwtUtil;
 import com.wjl.system.domain.exam.dto.*;
 import com.wjl.system.domain.exam.vo.ExamListVO;
 import com.wjl.system.domain.exam.vo.ExamQuestionListVO;
@@ -52,42 +54,54 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     @Autowired
     private QuestionService questionService;
 
-    /**
-     * 竞赛服务设计三个缓存列表
-     * 1. 竞赛列表缓存
-     * 2. 竞赛题目列表缓存（examId，缓存的是所有 questionId）
-     * 3. 竞赛信息缓存
-     *
-     * 测试主要从两方面出发：竞赛操作导致的一致性，题目操作导致的一致性
-     */
+    private void clearExamTimeStatusCache() {
+        redisService.deleteObject(CacheConstants.EXAM_UNSTART);
+        redisService.deleteObject(CacheConstants.EXAM_UNFINISH);
+        redisService.deleteObject(CacheConstants.EXAM_FINISHED);
+    }
 
-    public ExamListVO examList(ExamQueryDTO examQueryDTO) {
-        ExamListVO examListVO = new ExamListVO();
+    public ExamListVO examList(String token, ExamQueryDTO examQueryDTO) {
+        String userType = tokenService.getUserType(token);
+        if (userType == null) {
+            throw new ServiceException(ResultCode.FAILED_UNAUTHORIZED.getCode(), ResultCode.FAILED_UNAUTHORIZED.getMsg());
+        }
+        boolean onlyPublished = SecurityConstants.CONSUMER.equals(userType);
+
         int pageNum = Optional.ofNullable(examQueryDTO.getPageNum()).orElse(1);
         int pageSize = CommonConstants.PAGE_SIZE;
 
-        String cacheKey = CacheUtil.getExamListPageKey(pageNum);
-        ColorLog.debug(cacheKey);
+        String cacheKey = CacheUtil.getExamListPageKey(pageNum, onlyPublished);
         List<Exam> exams = null;
-        if(redisService.hasKey(cacheKey)){
+        if (redisService.hasKey(cacheKey)) {
             exams = redisService.getCacheList(cacheKey, Exam.class);
         }
-        if(exams == null){
+        if (exams == null) {
+            LambdaQueryWrapper<Exam> wrapper = new LambdaQueryWrapper<>();
+            if (onlyPublished) {
+                wrapper.eq(Exam::getStatus, 1);
+            }
             PageHelper.startPage(pageNum, pageSize);
-            exams = examMapper.selectList(null);
-            if(exams == null){
+            exams = examMapper.selectList(wrapper);
+            if (exams == null) {
                 return null;
             }
-            // 同理：setCacheList 是追加语义，先删 key 再写，避免并发下重复
+            // setCacheList 是追加语义，先删 key 再写，避免并发下重复
             redisService.deleteObject(cacheKey);
             redisService.setCacheList(cacheKey, exams);
             redisService.expire(cacheKey, CacheConstants.EXAM_LIST_PAGE_EXPIRATION, TimeUnit.MINUTES);
         }
+
+        // total 也按身份算（原来 C 端用全部竞赛数，页脚与翻页都会出错）
+        Long total = examMapper.selectCount(onlyPublished
+                ? new LambdaQueryWrapper<Exam>().eq(Exam::getStatus, 1)
+                : null);
+        // 原来是 total / pageSize + (total % pageSize == 0 ? 0 : 1) 的写法，
+        // 括号优先级不对，pages 恒为 1
+        int pages = (int) ((total + pageSize - 1) / pageSize);
+
         List<ExamVO> examVOs = BeanCopyUtil.copyListProperties(exams, ExamVO::new);
 
-        Long total = examMapper.selectCount(null);
-        int pages = total / pageSize + total % pageSize == 0 ? 0 : 1;
-
+        ExamListVO examListVO = new ExamListVO();
         examListVO.setList(examVOs);
         examListVO.setPageNum(pageNum);
         examListVO.setPageSize(pageSize);
@@ -135,12 +149,18 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             questions.add(quest);
         }
 
-        PageInfo<QuestionVO> pageInfo = new PageInfo<>(questions);
+        // total/pages 必须按数据库真实条数算：
+        // 原来是把拼好的内存 List 塞进 PageInfo，于是 total = 本页条数（第 2 页起直接是 0）、
+        // pageSize 也是本页条数、pages 恒为 1，前端拿这些值分页会出错。
+        long total = examQuestionMapper.selectCount(new LambdaQueryWrapper<ExamQuestion>()
+                .eq(ExamQuestion::getExamId, examId));
+        int pages = (int) ((total + pageSize - 1) / pageSize);
+
         examQuestionListVO.setList(questions);
-        examQuestionListVO.setPageNum(pageInfo.getPageNum());
-        examQuestionListVO.setPages(pageInfo.getPages());
-        examQuestionListVO.setPageSize(pageInfo.getPageSize());
-        examQuestionListVO.setTotal(pageInfo.getTotal());
+        examQuestionListVO.setPageNum(pageNum);
+        examQuestionListVO.setPages(pages);
+        examQuestionListVO.setPageSize(pageSize);
+        examQuestionListVO.setTotal(total);
 
         return examQuestionListVO;
     }
@@ -177,6 +197,8 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
             redisService.deleteObject(key);
         });
+        // 新竞赛还没发布、但按时间它属于「未开始」，三个按时间划分的列表也要重建
+        clearExamTimeStatusCache();
         ColorLog.debug("竞赛列表缓存失效");
 
         return String.format("%s，竞赛新建成功", title);
@@ -227,7 +249,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         redisService.scan(pattern, 100, key -> {
             redisService.deleteObject(key);
         });
-        ColorLog.debug("竞赛题目列表失效");
+        ColorLog.debug("竞赛{}题目列表失效", pattern);
 
         return String.format("成功添加%d条题目", questions.size());
     }
@@ -274,9 +296,34 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         return examVO;
     }
 
+    /**
+     * 修改竞赛信息
+     * <p>
+     * 可编辑性只看「时间」，**不看发布状态**：
+     * <ul>
+     *   <li>未开始：可以编辑（已发布也可以）</li>
+     *   <li>进行中：不可以（3210 竞赛已经开始，不能进行编辑操作）</li>
+     *   <li>已结束：不可以（3207 竞赛已经结束不能进行操作）</li>
+     * </ul>
+     * 原来这里调的是 checkExam(examId, false)，它要求竞赛「未发布」且「未开始」，
+     * 于是已发布的未开始竞赛改不了、而已开始（进行中）的竞赛报的是 3201
+     * 「竞赛开始时间不能早于当前时间」，语义对不上。
+     */
     public String examEdit(String token, ExamEditDTO examEditDTO){
         Long examId = examEditDTO.getExamId();
-        checkExam(examId, false);
+        checkExamCanEdit(examId);
+
+        // 新时间也要合法，规则与 examAdd 保持一致：
+        // 不能为空（否则会把 NOT NULL 列写坏）、开始不能晚于结束、开始不能早于当前时间
+        if (examEditDTO.getStartTime() == null || examEditDTO.getEndTime() == null) {
+            throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+        }
+        if (examEditDTO.getStartTime().isAfter(examEditDTO.getEndTime())) {
+            throw new ServiceException(ResultCode.EXAM_START_TIME_AFTER_END_TIME.getCode(), ResultCode.EXAM_START_TIME_AFTER_END_TIME.getMsg());
+        }
+        if (examEditDTO.getStartTime().isBefore(LocalDateTime.now())) {
+            throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getCode(), ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getMsg());
+        }
 
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
 
@@ -289,11 +336,13 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
                 .set(Exam::getUpdateTime, LocalDateTime.now())
         );
 
-        //有两个缓存需要失效：竞赛列表缓存以及竞赛信息缓存
+        //有三个缓存需要失效：竞赛列表缓存、竞赛信息缓存、按时间划分的三个列表
         redisService.scan(CacheConstants.EXAM_LIST_PAGE_PREFIX + "*", 100, key ->{
             redisService.deleteObject(key);
         });
         redisService.deleteObject(CacheUtil.getExamKey(examId));
+        // 时间被改过 → 它可能在「未开始/进行中/已结束」之间换桶
+        clearExamTimeStatusCache();
 
         return String.format("更新%d竞赛成功", examId);
     }
@@ -314,6 +363,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         });
 
         redisService.deleteObject(CacheUtil.getExamKey(examId));
+        clearExamTimeStatusCache();
 
         return String.format("成功删除%d的竞赛信息", examId);
     }
@@ -334,6 +384,7 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         });
         redisService.deleteObject(CacheUtil.getExamKey(examId));
 
+        clearExamTimeStatusCache();
         return String.format("成功发布%d", examId);
     }
 
@@ -353,7 +404,27 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
         });
         redisService.deleteObject(CacheUtil.getExamKey(examId));
 
+        clearExamTimeStatusCache();
         return String.format("成功取消发布%d", examId);
+    }
+
+    /**
+     * 编辑专用的可编辑性校验：只按时间判断，与发布状态无关
+     * <p>
+     * 已结束 → 3207；已开始（进行中）→ 3210；竞赛不存在 → 3203。
+     */
+    private void checkExamCanEdit(Long examId) {
+        Exam exam = examMapper.selectById(examId);
+        if (exam == null) {
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        LocalDateTime now = LocalDateTime.now();
+        if (exam.getEndTime() != null && exam.getEndTime().isBefore(now)) {
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+        if (exam.getStartTime() != null && exam.getStartTime().isBefore(now)) {
+            throw new ServiceException(ResultCode.EXAM_HAS_START.getCode(), ResultCode.EXAM_HAS_START.getMsg());
+        }
     }
 
     private void checkExam(Long examId, boolean force) {

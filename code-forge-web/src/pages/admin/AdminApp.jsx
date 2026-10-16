@@ -7,6 +7,7 @@ import AdminOverview from './AdminOverview.jsx';
 import AdminUsers from './AdminUsers.jsx';
 import AdminAdmins from './AdminAdmins.jsx';
 import AdminDetailDialog from './AdminDetailDialog.jsx';
+import AdminErrorBoundary from './AdminErrorBoundary.jsx';
 import AdminExams from './AdminExams.jsx';
 import AdminQuestions from './AdminQuestions.jsx';
 import '../../styles/admin.css';
@@ -190,11 +191,14 @@ export default function AdminApp({ theme, onToggleTheme }) {
 
         <div className="admin-content">
           <div className="admin-content-inner">
+            {/* 兜住渲染期异常，避免整页白屏（换区块会自动重置，见 key） */}
+            <AdminErrorBoundary key={section}>
             {section === 'overview' && <AdminOverview info={info} onGo={go} />}
             {section === 'users' && <AdminUsers />}
             {section === 'admins' && <AdminAdmins selfAccount={account} />}
             {section === 'questions' && <AdminQuestions />}
             {section === 'exams' && <AdminExams />}
+            </AdminErrorBoundary>
           </div>
         </div>
       </div>

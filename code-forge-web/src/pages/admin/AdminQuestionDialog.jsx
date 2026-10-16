@@ -343,7 +343,7 @@ export default function AdminQuestionDialog({ mode, id, onClose, onSaved }) {
           <button
             type="button"
             className="dialog-ok"
-            onClick={onClose}
+            onClick={() => onClose()}
             disabled={saving}
           >
             取消
