@@ -354,7 +354,9 @@ function ContestRanks() {
         <span className="profile-ranks-meta">
           {rankLoading && !updatedAt
             ? '加载中…'
-            : `${rankTimeText(updatedAt) || '每 30 秒自动刷新'} · 30s 自动刷新`}
+            : updatedAt
+              ? `${rankTimeText(updatedAt)} · 30s 自动刷新`
+              : '每 30 秒自动刷新'}
         </span>
       </div>
 
