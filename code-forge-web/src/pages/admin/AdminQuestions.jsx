@@ -1,13 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { deleteQuestion, fetchQuestionPage } from '../../api/admin.js';
+import {
+  deleteQuestion,
+  fetchQuestionPage,
+  searchQuestions,
+} from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
-import { ConfirmDialog, DifficultyTag, EmptyState, Notice } from './AdminBits.jsx';
+import {
+  ConfirmDialog,
+  DIFFICULTY_LEVELS,
+  DifficultyTag,
+  EmptyState,
+  Notice,
+} from './AdminBits.jsx';
 import AdminQuestionDialog from './AdminQuestionDialog.jsx';
 import { adminNameOf, useAdminNameMap } from '../../hooks/useAdminNameMap.js';
 import { formatDateTime } from '../../utils/format.js';
 
 // B 端题目管理
 //   GET    /question/list?pageNum=      → 分页题目列表（QuestionVO）
+//   GET    /question/search/filter?keyword=&difficulty=&pageNum=
+//                                       → 关键字（+可选难度）搜索，结构同上
 //   GET    /question/detail?id=         → 题目详情（编辑时回填）
 //   POST   /question/b/add              → 新增
 //   POST   /question/b/edit             → 修改
@@ -24,6 +36,28 @@ import { formatDateTime } from '../../utils/format.js';
 //   - 后端 add/edit/delete 都会失效 question:list:page:* 缓存，重拉拿到的才是新数据
 //   - 删除会让后面所有页的偏移整体前移，就地删一行会让后续分页错位、出现漏项
 const SCROLL_EDGE = 80;
+const SCAN_PAGE_SIZE = 10; // 前端分页的每页条数（和后端 PAGE_SIZE 一致）
+const MAX_SCAN_PAGES = 30; // 本地筛选时最多向后扫多少页，避免极端情况空转
+
+// 只选难度、没输关键字时用：
+// /question/search/filter 的 keyword 是 @NotBlank，没法只按难度查，
+// 所以和 C 端一样翻 /question/list 再在本地筛，凑够一页再交给列表。
+// 不返回 total / pages —— 本地筛出来的条数和后端页数没有对应关系，
+// 让通用列表退回「本页是否满页」判断还有没有下一页。
+async function fetchByDifficulty(difficulty, cursorRef) {
+  const picked = [];
+  while (picked.length < SCAN_PAGE_SIZE && cursorRef.current < MAX_SCAN_PAGES) {
+    cursorRef.current += 1;
+    const d = await fetchQuestionPage(cursorRef.current);
+    const list = Array.isArray(d?.list) ? d.list : [];
+    for (const q of list) {
+      if (Number(q.difficulty) === Number(difficulty)) picked.push(q);
+    }
+    const pageSize = Number(d?.pageSize) > 0 ? Number(d.pageSize) : list.length;
+    if (list.length < pageSize) break; // 后端没有更多数据了
+  }
+  return { list: picked, pageSize: SCAN_PAGE_SIZE };
+}
 
 // 创建 / 更新 两格：上排是操作人昵称，下排是时间；两样都没有就一个「—」
 function AuditCell({ by, time, names }) {
@@ -48,6 +82,16 @@ export default function AdminQuestions() {
   // createBy / updateBy 是用户 ID，翻成管理员昵称再展示
   const names = useAdminNameMap();
 
+  // 搜索：input 是输入框里正在敲的，search 是「已生效」的条件
+  const [input, setInput] = useState('');
+  const [search, setSearch] = useState({ keyword: '', difficulty: null });
+  // 本地筛选模式下翻到 /question/list 第几页了
+  const cursorRef = useRef(0);
+
+  const searching = search.keyword !== '' || search.difficulty != null;
+  // 三种数据源：关键字搜索 / 仅难度（本地筛） / 普通分页
+  const mode = search.keyword ? 'search' : search.difficulty != null ? 'local' : 'list';
+
   const {
     items,
     total,
@@ -58,9 +102,25 @@ export default function AdminQuestions() {
     loadNext,
     reload,
   } = useAdminPagedList(
-    // 只按页码分页（ListQuestionDTO 只支持 pageNum），条件恒定所以 key 固定
-    useCallback((pageNum) => fetchQuestionPage(pageNum), []),
-    'questions'
+    // 条件变了（key 变）通用列表会自己清空重来，这里只管按 current 条件取第 pageNum 页
+    useCallback(
+      (pageNum) => {
+        if (mode === 'local') {
+          if (pageNum === 1) cursorRef.current = 0; // 新一轮，游标归零
+          return fetchByDifficulty(search.difficulty, cursorRef);
+        }
+        if (mode === 'search') {
+          return searchQuestions({
+            keyword: search.keyword,
+            difficulty: search.difficulty,
+            pageNum,
+          });
+        }
+        return fetchQuestionPage(pageNum);
+      },
+      [mode, search.keyword, search.difficulty]
+    ),
+    `${mode}\u0000${search.keyword}\u0000${search.difficulty ?? ''}`
   );
 
   // 内容不足一屏时自动再拉一页（否则没有滚动条，就永远触发不了滚动加载）
@@ -79,6 +139,21 @@ export default function AdminQuestions() {
     },
     [loadNext]
   );
+
+  const submitSearch = (e) => {
+    e.preventDefault();
+    setSearch((s) => ({ ...s, keyword: input.trim() }));
+  };
+
+  // 点难度：立刻生效（和 C 端一致），顺带把输入框里已敲的关键字一起带上
+  const applyDifficulty = (d) => {
+    setSearch({ keyword: input.trim(), difficulty: d });
+  };
+
+  const resetSearch = () => {
+    setInput('');
+    setSearch({ keyword: '', difficulty: null });
+  };
 
   const confirmDelete = async () => {
     if (!pendingDelete) return;
@@ -110,7 +185,63 @@ export default function AdminQuestions() {
       <p className="admin-sub">题库的增删改查，题目描述与测试用例直接编辑。</p>
 
       <section className="admin-section">
-        <div className="admin-toolbar">
+        <form className="admin-toolbar" onSubmit={submitSearch}>
+          <span className="admin-search">
+            <input
+              className="admin-input w-md"
+              type="text"
+              placeholder="搜索题目标题…"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+            />
+            {input && (
+              <button
+                type="button"
+                className="admin-search-clear"
+                onClick={() => setInput('')}
+                title="清空输入"
+                aria-label="清空输入"
+              >
+                ×
+              </button>
+            )}
+          </span>
+          <button type="submit" className="admin-btn primary" disabled={loading}>
+            搜索
+          </button>
+          <button
+            type="button"
+            className="admin-btn"
+            onClick={resetSearch}
+            disabled={!searching && !input}
+          >
+            重置
+          </button>
+
+          <span className="admin-chips">
+            <button
+              type="button"
+              className={`admin-chip${search.difficulty == null ? ' is-active' : ''}`}
+              onClick={() => applyDifficulty(null)}
+            >
+              全部
+            </button>
+            {[1, 2, 3].map((d) => (
+              <button
+                key={d}
+                type="button"
+                className={`admin-chip is-${DIFFICULTY_LEVELS[d].kind}${
+                  search.difficulty === d ? ' is-active' : ''
+                }`}
+                onClick={() => applyDifficulty(d)}
+              >
+                {DIFFICULTY_LEVELS[d].text}
+              </button>
+            ))}
+          </span>
+
+          <span className="admin-toolbar-spacer" />
+
           <button
             type="button"
             className="admin-btn primary"
@@ -126,7 +257,7 @@ export default function AdminQuestions() {
           >
             刷新
           </button>
-        </div>
+        </form>
 
         {notice && <Notice onClose={() => setNotice(null)}>{notice}</Notice>}
 
@@ -142,9 +273,7 @@ export default function AdminQuestions() {
                   <th style={{ width: 110 }}>空间限制</th>
                   <th style={{ width: 152 }}>创建</th>
                   <th style={{ width: 152 }}>更新</th>
-                  <th style={{ width: 118 }} className="col-actions">
-                    操作
-                  </th>
+                  <th className="col-actions">操作</th>
                 </tr>
               </thead>
               <tbody>
@@ -169,21 +298,23 @@ export default function AdminQuestions() {
                       <td className="col-audit">
                         <AuditCell by={q.updateBy} time={q.updateTime} names={names} />
                       </td>
-                      <td className="col-actions admin-row-actions">
-                        <button
-                          type="button"
-                          className="admin-btn"
-                          onClick={() => setDialog({ mode: 'edit', id: q.id })}
-                        >
-                          编辑
-                        </button>
-                        <button
-                          type="button"
-                          className="admin-btn danger"
-                          onClick={() => setPendingDelete(q)}
-                        >
-                          删除
-                        </button>
+                      <td className="col-actions">
+                        <div className="admin-row-actions">
+                          <button
+                            type="button"
+                            className="admin-btn"
+                            onClick={() => setDialog({ mode: 'edit', id: q.id })}
+                          >
+                            编辑
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-btn danger"
+                            onClick={() => setPendingDelete(q)}
+                          >
+                            删除
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -192,7 +323,9 @@ export default function AdminQuestions() {
             </table>
 
             {loading && <EmptyState>加载中…</EmptyState>}
-            {!loading && !items.length && !error && <EmptyState>暂无数据</EmptyState>}
+            {!loading && !items.length && !error && (
+              <EmptyState>{searching ? '没有匹配的题目' : '暂无数据'}</EmptyState>
+            )}
             {!loading && !items.length && error && (
               <EmptyState>
                 {error}
@@ -218,8 +351,14 @@ export default function AdminQuestions() {
 
           <div className="admin-listfoot">
             <span>
-              共 <span className="admin-num">{total ?? '—'}</span> 题，已加载{' '}
-              <span className="admin-num">{items.length}</span> 题
+              {/* 本地筛难度时后端给不出匹配总数，就只报已加载多少 */}
+              {total != null && (
+                <>
+                  {searching ? '匹配' : '共'}{' '}
+                  <span className="admin-num">{total}</span> 题，
+                </>
+              )}
+              已加载 <span className="admin-num">{items.length}</span> 题
             </span>
           </div>
         </div>

@@ -42,12 +42,14 @@ public class QuestionController {
         return R.success(questionService.detail(id));
     }
 
+    //done
     @PostMapping("/b/edit")
     @Operation(description = "管理员修改题目信息")
     public R<String> edit(@Validated @RequestBody QuestionEditDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(questionService.edit(dto, token));
     }
 
+    //done
     @DeleteMapping("/b/delete/{id}")
     @Operation(description = "管理员删除题目信息")
     public R<String> delete(@PathVariable Long id) {

@@ -11,6 +11,7 @@ import com.wjl.domain.exception.ServiceException;
 import com.wjl.redis.service.RedisService;
 import com.wjl.redis.util.CacheUtil;
 import com.wjl.security.service.TokenService;
+import com.wjl.system.document.QuestionDocument;
 import com.wjl.system.domain.question.dto.AddQuestionDTO;
 import com.wjl.system.domain.question.dto.ListQuestionDTO;
 import com.wjl.system.domain.question.dto.QuestionEditDTO;
@@ -19,6 +20,7 @@ import com.wjl.system.domain.question.vo.QuestionDetailVO;
 import com.wjl.system.domain.question.vo.QuestionVO;
 import com.wjl.system.entity.question.Question;
 import com.wjl.system.mapper.QuestionMapper;
+import com.wjl.system.repository.QuestionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,6 +36,8 @@ public class QuestionService {
     private TokenService tokenService;
     @Autowired
     private RedisService redisService;
+    @Autowired
+    private QuestionRepository questionRepository;
 
     public ListQuestionVO list(ListQuestionDTO listQuestionDTO) {
         ListQuestionVO listQuestionVO = new ListQuestionVO();
@@ -73,6 +77,7 @@ public class QuestionService {
         return listQuestionVO;
     }
 
+    //当涉及到题目的增删改操作时，es 中的查询也需要同步更改
     public String add(AddQuestionDTO dto, String token) {
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
@@ -90,6 +95,13 @@ public class QuestionService {
         redisService.scan(CacheConstants.QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
             redisService.deleteObject(key);
         });
+
+        //将题目添加到es中
+        QuestionDocument questionDocument = new QuestionDocument();
+        Long questionId = question.getId();
+        questionDocument.setId(questionId);
+        BeanCopyUtil.copyProperties(dto, questionDocument);
+        questionRepository.save(questionDocument);
 
         return String.format("添加成功，题目编号：%d", question.getId());
     }
@@ -170,10 +182,18 @@ public class QuestionService {
             throw new ServiceException(ResultCode.FAILED_NOT_EXISTS.getCode(), ResultCode.FAILED_NOT_EXISTS.getMsg());
         }
 
+        //修改题目信息时，题目列表、题目详情失效
         redisService.scan(CacheConstants.QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
             redisService.deleteObject(key);
         });
-        //edit 题目时，不需要失效竞赛题目列表缓存，因为保存的是 questionId
+        String questionKey = CacheUtil.getQuestionKey(question.getId());
+        redisService.deleteObject(questionKey);
+
+        //覆盖原先 es 中的题目信息
+        QuestionDocument questionDocument = new QuestionDocument();
+        BeanCopyUtil.copyProperties(dto, questionDocument);
+        questionDocument.setId(question.getId());
+        questionRepository.save(questionDocument);
 
         return String.format("题目 %d 更新成功",  question.getId());
     }
@@ -189,6 +209,10 @@ public class QuestionService {
         redisService.scan(CacheConstants.QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
             redisService.deleteObject(key);
         });
+        String questionKey = CacheUtil.getQuestionKey(id);
+        redisService.deleteObject(questionKey);
+
+        questionRepository.deleteById(id);
 
         return String.format("题目 %d 删除成功", id);
     }

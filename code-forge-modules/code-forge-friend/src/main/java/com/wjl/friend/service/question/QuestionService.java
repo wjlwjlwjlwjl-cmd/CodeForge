@@ -167,7 +167,6 @@ public class QuestionService {
         //24 / 10 + 1
         int pages = (int)(total / size + (total % size == 0 ? 0 : 1));
         listQuestionVO.setPages(pages);
-        ColorLog.info("total: {}, pageNum: {}, size: {}, pages: {}", total, pageNum, size, pages);
         return listQuestionVO;
     }
 }

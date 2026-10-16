@@ -989,11 +989,107 @@
   color: var(--text-muted);
 }
 
-/* 一行里并排两个操作按钮 */
+/* 一行里并排两个操作按钮
+   注意：flex 要加在 td 里面的 div 上，不能直接加在 td 上 ——
+   td 变成 flex 容器后就不再是 table-cell，列宽约束失效，
+   按钮会溢出到表格边框外面（不同浏览器表现还不一致）。 */
 .admin-row-actions {
   display: flex;
   gap: 6px;
   justify-content: flex-end;
+  white-space: nowrap;
+}
+
+/* ---------------- 题目搜索 ---------------- */
+/* 输入框里的清空按钮 */
+.admin-search {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.admin-search .admin-input {
+  padding-right: 26px;
+}
+
+.admin-search-clear {
+  position: absolute;
+  right: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  font-size: 14px;
+  line-height: 1;
+  font-family: inherit;
+  color: var(--text-muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+
+.admin-search-clear:hover {
+  color: var(--text);
+  background: var(--header-control-hover);
+}
+
+/* 难度筛选：与 C 端 .filter-chip 同一套观感 */
+.admin-chips {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-chip {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-family: inherit;
+  color: var(--text-secondary);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  cursor: pointer;
+  transition: border-color 0.12s ease, color 0.12s ease,
+    background-color 0.12s ease;
+}
+
+.admin-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.admin-chip.is-active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  font-weight: 600;
+}
+
+/* 未选中的难度 chip 用难度色做文字，选中后统一走强调色 */
+.admin-chip.is-easy:not(.is-active) {
+  color: var(--success);
+}
+
+.admin-chip.is-medium:not(.is-active) {
+  color: var(--warning);
+}
+
+.admin-chip.is-hard:not(.is-active) {
+  color: var(--error);
+}
+
+/* 把「新增题目 / 刷新」推到右边 */
+.admin-toolbar-spacer {
+  flex: 1 1 auto;
+}
+
+/* 操作列：两个按钮要放得下（按钮宽度随字体略有差异，留够余量） */
+.admin-table-questions th.col-actions,
+.admin-table-questions td.col-actions {
+  width: 128px;
 }
 
 /* 新增 / 编辑题目弹窗：字段多且含长文本，放宽并让内容自己滚 */

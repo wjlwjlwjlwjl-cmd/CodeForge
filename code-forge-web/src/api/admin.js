@@ -209,6 +209,20 @@ export async function fetchQuestionPage(pageNum = 1) {
   return request(`/question/list?pageNum=${Number(pageNum) || 1}`);
 }
 
+// GET /question/search/filter?keyword=&difficulty=&pageNum=  （ES 检索）
+//   keyword    ：必填（后端 @NotBlank），空值会返回 3002 参数校验失败
+//   difficulty ：可选，1 简单 / 2 中等 / 3 困难
+//   返回结构和 /question/list 一致：BasePageVO<QuestionVO>
+//   注意：搜索结果里只有 id/title/difficulty/timeLimit/spaceLimit，
+//   没有 createBy/createTime/updateBy/updateTime（ES 文档里就没存这些）
+export async function searchQuestions({ keyword, difficulty = null, pageNum = 1 }) {
+  const qs = new URLSearchParams();
+  qs.set('keyword', keyword ?? '');
+  qs.set('pageNum', String(Number(pageNum) || 1));
+  if (difficulty != null) qs.set('difficulty', String(difficulty));
+  return request(`/question/search/filter?${qs.toString()}`);
+}
+
 // GET /question/detail?id= → QuestionDetailVO
 //   { id, title, difficulty, timeLimit, spaceLimit, content, questionCase, defaultCode, mainFuc }
 export async function fetchQuestionDetail(id) {

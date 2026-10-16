@@ -28,8 +28,6 @@ public class ElasticInitTask {
     //导入 Mysql 数据，索引根据 document 自动建立
     @EventListener(ApplicationReadyEvent.class)
     public void importElasticData(){
-        ColorLog.info("开始导入 MySQL 题目数据");
-
         questionRepository.deleteAll();
 
         //题目采取分页的方式导入
@@ -50,7 +48,7 @@ public class ElasticInitTask {
             pageNum++;
         }
 
-        ColorLog.info("MySQL 数据导入完成");
+        ColorLog.info(true, "题目数据导入 ES 完成");
     }
 }
 
