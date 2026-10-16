@@ -575,7 +575,8 @@
 }
 
 /* ---------------- 管理员详情弹窗 ---------------- */
-.admin-detail {
+/* 加 .dialog 前缀提高优先级，压过 theme.css 里 .dialog 的默认宽度 */
+.dialog.admin-detail {
   width: min(420px, 92vw);
 }
 
@@ -940,8 +941,8 @@
   min-width: 900px;
 }
 
-/* 难度标签：简单绿 / 中等黄 / 困难红（与 C 端 .difficulty-* 同一套颜色变量） */
-.admin-difficulty {
+/* 彩色小标签：圆点 + 彩色文字（难度 / 竞赛时间状态共用，颜色与 C 端同一套变量） */
+.admin-color-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -950,7 +951,7 @@
   white-space: nowrap;
 }
 
-.admin-difficulty::before {
+.admin-color-tag::before {
   content: '';
   width: 6px;
   height: 6px;
@@ -959,16 +960,23 @@
   background: currentColor;
 }
 
-.admin-difficulty.is-easy {
+.admin-color-tag.is-easy,
+.admin-color-tag.is-success {
   color: var(--success);
 }
 
-.admin-difficulty.is-medium {
+.admin-color-tag.is-medium,
+.admin-color-tag.is-warning {
   color: var(--warning);
 }
 
-.admin-difficulty.is-hard {
+.admin-color-tag.is-hard,
+.admin-color-tag.is-error {
   color: var(--error);
+}
+
+.admin-color-tag.is-muted {
+  color: var(--text-secondary);
 }
 
 /* 创建 / 更新：上排操作人，下排时间 */
@@ -1068,17 +1076,24 @@
   font-weight: 600;
 }
 
-/* 未选中的难度 chip 用难度色做文字，选中后统一走强调色 */
-.admin-chip.is-easy:not(.is-active) {
+/* 未选中的 chip 用各自的语义色做文字，选中后统一走强调色 */
+.admin-chip.is-easy:not(.is-active),
+.admin-chip.is-success:not(.is-active) {
   color: var(--success);
 }
 
-.admin-chip.is-medium:not(.is-active) {
+.admin-chip.is-medium:not(.is-active),
+.admin-chip.is-warning:not(.is-active) {
   color: var(--warning);
 }
 
-.admin-chip.is-hard:not(.is-active) {
+.admin-chip.is-hard:not(.is-active),
+.admin-chip.is-error:not(.is-active) {
   color: var(--error);
+}
+
+.admin-chip.is-muted:not(.is-active) {
+  color: var(--text-muted);
 }
 
 /* 把「新增题目 / 刷新」推到右边 */
@@ -1092,8 +1107,10 @@
   width: 128px;
 }
 
-/* 新增 / 编辑题目弹窗：字段多且含长文本，放宽并让内容自己滚 */
-.admin-q-dialog {
+/* 新增 / 编辑题目弹窗：字段多且含长文本，放宽并让内容自己滚
+   注意要写成 .dialog.xxx：admin.css 在 theme.css 之前加载，
+   同权重下 .dialog 的 width 会覆盖这里，导致弹窗只有 340px */
+.dialog.admin-q-dialog {
   width: min(880px, 94vw);
 }
 
@@ -1282,4 +1299,98 @@
     grid-column: 1 / -1;
     border-right: none;
   }
+}
+
+/* ---------------- 竞赛管理 ---------------- */
+/* 6 列，窄屏下横向滚动而不是挤成一团 */
+.admin-table-exams {
+  min-width: 1000px;
+}
+
+/* 竞赛题目弹窗 */
+.dialog.admin-exam-q-dialog {
+  width: min(820px, 94vw);
+}
+
+.admin-exam-q-sub {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* 弹窗里的列表区比页面上的矮一些，给标题和按钮留位置 */
+.admin-exam-q-dialog .admin-scroll-area {
+  max-height: min(calc(100vh - 330px), 480px);
+}
+
+.admin-exam-q-dialog .admin-listfoot {
+  padding: var(--space-2) var(--space-3);
+}
+
+.admin-table-exam-q {
+  min-width: 620px;
+}
+
+/* 时间列不折行（「2026-11-06 09:00:00」正好卡在列宽上，字体略有差异就会断成两行） */
+.admin-table-exams th.col-time,
+.admin-table-exams td.col-time {
+  white-space: nowrap;
+}
+
+/* 新增竞赛弹窗 */
+.dialog.admin-exam-dialog {
+  width: min(520px, 94vw);
+}
+
+/* 时间输入的宽度不要撑满 */
+.admin-exam-dialog input[type='datetime-local'] {
+  width: 100%;
+  font-family: var(--font-mono);
+}
+
+/* ---------------- 「为竞赛添加题目」弹窗 ---------------- */
+.dialog.admin-exam-addq-dialog {
+  width: min(880px, 94vw);
+}
+
+.admin-exam-addq-dialog .admin-scroll-area {
+  max-height: min(calc(100vh - 400px), 400px);
+}
+
+.admin-table-pick {
+  min-width: 680px;
+}
+
+.col-check {
+  text-align: center;
+}
+
+/* 可点选的题行：整行可点，选中后整行淡强调色底 */
+.admin-pick-row {
+  cursor: pointer;
+}
+
+.admin-table tbody tr.admin-pick-row.is-picked td {
+  background: var(--accent-soft);
+}
+
+.admin-table tbody tr.admin-pick-row.is-existing td {
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.admin-pick-hint {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin-pick-preview {
+  margin-left: 4px;
+  color: var(--text-secondary);
+}
+
+/* 底部汇总条里的「清空选择」靠右 */
+.admin-exam-addq-dialog .admin-listfoot {
+  justify-content: space-between;
 }

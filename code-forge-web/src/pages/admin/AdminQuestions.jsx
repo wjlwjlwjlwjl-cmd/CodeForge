@@ -1,10 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-  deleteQuestion,
-  fetchQuestionPage,
-  searchQuestions,
-} from '../../api/admin.js';
+import { deleteQuestion } from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
+import { useAdminQuestionSource } from '../../hooks/useAdminQuestionSource.js';
 import {
   ConfirmDialog,
   DIFFICULTY_LEVELS,
@@ -36,28 +33,6 @@ import { formatDateTime } from '../../utils/format.js';
 //   - 后端 add/edit/delete 都会失效 question:list:page:* 缓存，重拉拿到的才是新数据
 //   - 删除会让后面所有页的偏移整体前移，就地删一行会让后续分页错位、出现漏项
 const SCROLL_EDGE = 80;
-const SCAN_PAGE_SIZE = 10; // 前端分页的每页条数（和后端 PAGE_SIZE 一致）
-const MAX_SCAN_PAGES = 30; // 本地筛选时最多向后扫多少页，避免极端情况空转
-
-// 只选难度、没输关键字时用：
-// /question/search/filter 的 keyword 是 @NotBlank，没法只按难度查，
-// 所以和 C 端一样翻 /question/list 再在本地筛，凑够一页再交给列表。
-// 不返回 total / pages —— 本地筛出来的条数和后端页数没有对应关系，
-// 让通用列表退回「本页是否满页」判断还有没有下一页。
-async function fetchByDifficulty(difficulty, cursorRef) {
-  const picked = [];
-  while (picked.length < SCAN_PAGE_SIZE && cursorRef.current < MAX_SCAN_PAGES) {
-    cursorRef.current += 1;
-    const d = await fetchQuestionPage(cursorRef.current);
-    const list = Array.isArray(d?.list) ? d.list : [];
-    for (const q of list) {
-      if (Number(q.difficulty) === Number(difficulty)) picked.push(q);
-    }
-    const pageSize = Number(d?.pageSize) > 0 ? Number(d.pageSize) : list.length;
-    if (list.length < pageSize) break; // 后端没有更多数据了
-  }
-  return { list: picked, pageSize: SCAN_PAGE_SIZE };
-}
 
 // 创建 / 更新 两格：上排是操作人昵称，下排是时间；两样都没有就一个「—」
 function AuditCell({ by, time, names }) {
@@ -91,6 +66,8 @@ export default function AdminQuestions() {
   const searching = search.keyword !== '' || search.difficulty != null;
   // 三种数据源：关键字搜索 / 仅难度（本地筛） / 普通分页
   const mode = search.keyword ? 'search' : search.difficulty != null ? 'local' : 'list';
+  // 取数逻辑与「为竞赛添加题目」弹窗共用同一个 hook
+  const fetchPage = useAdminQuestionSource(search, cursorRef);
 
   const {
     items,
@@ -102,24 +79,7 @@ export default function AdminQuestions() {
     loadNext,
     reload,
   } = useAdminPagedList(
-    // 条件变了（key 变）通用列表会自己清空重来，这里只管按 current 条件取第 pageNum 页
-    useCallback(
-      (pageNum) => {
-        if (mode === 'local') {
-          if (pageNum === 1) cursorRef.current = 0; // 新一轮，游标归零
-          return fetchByDifficulty(search.difficulty, cursorRef);
-        }
-        if (mode === 'search') {
-          return searchQuestions({
-            keyword: search.keyword,
-            difficulty: search.difficulty,
-            pageNum,
-          });
-        }
-        return fetchQuestionPage(pageNum);
-      },
-      [mode, search.keyword, search.difficulty]
-    ),
+    fetchPage,
     `${mode}\u0000${search.keyword}\u0000${search.difficulty ?? ''}`
   );
 

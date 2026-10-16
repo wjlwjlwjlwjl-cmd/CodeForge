@@ -129,10 +129,15 @@ export function ConfirmDialog({
   );
 }
 
-/* ---------------- 难度标签 ---------------- */
+/* ---------------- 彩色小标签（圆点 + 彩色文字） ---------------- */
 //
-// 简单绿 / 中等黄 / 困难红 —— 与 C 端的 .difficulty-tag 用同一套颜色变量，
-// 只是样式写在 B 端自己的 admin.css 里（B 端不引 C 端样式表）。
+// 难度（简单绿 / 中等黄 / 困难红）和竞赛时间状态（进行中绿 / 未开始黄 / 已结束灰）
+// 都用它，颜色取自 C 端同一套变量，但样式写在 B 端自己的 admin.css 里
+// （B 端不引 C 端样式表）。
+export function ColorTag({ kind, children }) {
+  return <span className={`admin-color-tag is-${kind}`}>{children}</span>;
+}
+
 export const DIFFICULTY_LEVELS = {
   1: { text: '简单', kind: 'easy' },
   2: { text: '中等', kind: 'medium' },
@@ -142,7 +147,7 @@ export const DIFFICULTY_LEVELS = {
 export function DifficultyTag({ level }) {
   const d = DIFFICULTY_LEVELS[level];
   if (!d) return <span className="admin-muted">—</span>;
-  return <span className={`admin-difficulty is-${d.kind}`}>{d.text}</span>;
+  return <ColorTag kind={d.kind}>{d.text}</ColorTag>;
 }
 
 /* ---------------- 图标（16px 线性图标，沿用 C 端描边风格） ---------------- */

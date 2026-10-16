@@ -7,7 +7,7 @@ import AdminOverview from './AdminOverview.jsx';
 import AdminUsers from './AdminUsers.jsx';
 import AdminAdmins from './AdminAdmins.jsx';
 import AdminDetailDialog from './AdminDetailDialog.jsx';
-import AdminPending from './AdminPending.jsx';
+import AdminExams from './AdminExams.jsx';
 import AdminQuestions from './AdminQuestions.jsx';
 import '../../styles/admin.css';
 
@@ -194,21 +194,7 @@ export default function AdminApp({ theme, onToggleTheme }) {
             {section === 'users' && <AdminUsers />}
             {section === 'admins' && <AdminAdmins selfAccount={account} />}
             {section === 'questions' && <AdminQuestions />}
-            {section === 'exams' && (
-              <AdminPending
-                title="竞赛管理"
-                note="管理界面待接入。"
-                actions={[
-                  '新增竞赛',
-                  '修改竞赛信息',
-                  '删除竞赛',
-                  '为竞赛添加题目',
-                  '删除竞赛题目',
-                  '发布竞赛',
-                  '取消发布竞赛',
-                ]}
-              />
-            )}
+            {section === 'exams' && <AdminExams />}
           </div>
         </div>
       </div>

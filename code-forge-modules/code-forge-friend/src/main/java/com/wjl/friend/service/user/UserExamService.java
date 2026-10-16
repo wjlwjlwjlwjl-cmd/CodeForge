@@ -3,6 +3,7 @@ package com.wjl.friend.service.user;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.github.pagehelper.PageHelper;
 import com.github.pagehelper.PageInfo;
+import com.wjl.core.utils.ColorLog;
 import com.wjl.domain.constants.CacheConstants;
 import com.wjl.domain.constants.CommonConstants;
 import com.wjl.core.enums.ResultCode;
@@ -136,20 +137,50 @@ public class UserExamService {
         Integer pageNum = dto.getPageNum();
         Integer pageSize = CommonConstants.PAGE_SIZE;
         Integer option = dto.getOption();
-        String cacheKey;
-        switch(option){
-            case 0:
-                cacheKey = CacheConstants.EXAM_UNSTART;
-                break;
-            case 1:
-                cacheKey = CacheConstants.EXAM_UNFINISH;
-                break;
-            case 2:
-                cacheKey = CacheConstants.EXAM_FINISHED;
-                break;
-            default:
-                throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+        String cacheKey = switch (option) {
+            case 0 -> CacheConstants.EXAM_UNSTART;
+            case 1 -> CacheConstants.EXAM_UNFINISH;
+            case 2 -> CacheConstants.EXAM_FINISHED;
+            default ->
+                    throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
+        };
+
+        if(!redisService.hasKey(cacheKey)){
+            //出于某些原因，竞赛状态缓存没了，重构缓存
+            redisService.deleteObject(CacheConstants.EXAM_FINISHED);
+            redisService.deleteObject(CacheConstants.EXAM_UNFINISH);
+            redisService.deleteObject(CacheConstants.EXAM_UNSTART);
+
+            List<Exam> exams = examMapper.selectList(null);
+
+            for(Exam exam:exams){
+                LocalDateTime examStartTime = exam.getStartTime();
+                LocalDateTime examEndTime = exam.getEndTime();
+                String newKey;
+                if(LocalDateTime.now().isBefore(examStartTime)){ //竞赛未开始
+                    newKey = CacheConstants.EXAM_UNSTART;
+                }
+                else if(LocalDateTime.now().isAfter(examStartTime) && LocalDateTime.now().isBefore(examEndTime)){ //竞赛未结束
+                    newKey = CacheConstants.EXAM_UNFINISH;
+                }
+                else{ //竞赛已经结束
+                    newKey = CacheConstants.EXAM_FINISHED;
+                }
+
+                //缓存对象使用 ExamVO
+                ExamVO examVO = new ExamVO();
+                BeanCopyUtil.copyProperties(exam, examVO);
+                if(redisService.hasKey(newKey)){
+                    redisService.rightPushForList(newKey, examVO);
+                }
+                else{
+                    List<ExamVO> examVOS = new ArrayList<>();
+                    examVOS.add(examVO);
+                    redisService.setCacheList(newKey, examVOS);
+                }
+            }
         }
+
         List<ExamVO> examVOs = redisService.getCacheListByRange(cacheKey, (long) pageSize * (pageNum - 1), (long) pageSize * pageNum - 1, ExamVO.class);
 
         examListVO.setTotal(Math.toIntExact(redisService.getCacheListSize(cacheKey)));

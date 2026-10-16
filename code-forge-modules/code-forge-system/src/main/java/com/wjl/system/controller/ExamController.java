@@ -22,18 +22,21 @@ public class ExamController {
     @Autowired
     private ExamService examService;
 
+    //done
     @GetMapping("/list")
-    @Operation(description = "获取所有竞赛") //done
+    @Operation(description = "获取所有竞赛")
     public R<ExamListVO> list(ExamQueryDTO examQueryDTO){
         return R.success(examService.examList(examQueryDTO));
     }
 
+    //done
     @GetMapping("/listQuestion")
-    @Operation(description = "获取竞赛的所有题目") //done
+    @Operation(description = "获取竞赛的所有题目")
     public R<ExamQuestionListVO> listQuestion(ExamQuestionListDTO dto){
         return R.success(examService.examListQuestion(dto)); //这里createTime因为字段复用，为null，不影响前端展示
     }
 
+    //done
     @PostMapping("/b/add")
     @Operation(description = "添加竞赛")
     public R<String> add(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @RequestBody ExamAddDTO examAddDTO){

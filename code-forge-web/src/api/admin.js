@@ -249,3 +249,98 @@ export async function deleteQuestion(id) {
     method: 'DELETE',
   });
 }
+
+/* ---------------- 竞赛管理 ---------------- */
+
+// GET /exam/list?pageNum=  → ExamListVO { total, pages, pageNum, pageSize, list: ExamVO[] }
+//   ExamVO = { examId, title, startTime, endTime, status }（status：1 已发布 / 0 未发布）
+// ⚠️ 后端这一版返回的 pages 恒为 1（ExamService 里 total/pageSize 那行三元写错了），
+//    不能拿它判断有没有下一页，所以这里把 pages 丢掉，
+//    让通用列表退回「本页是否满页」的判断。
+export async function fetchExamPage(pageNum = 1) {
+  const d = await request(`/exam/list?pageNum=${Number(pageNum) || 1}`);
+  return { ...(d || {}), pages: undefined };
+}
+
+// GET /user/exam/list/queue?option=&pageNum=
+//   option：0 未开始 / 1 进行中（已开始未结束）/ 2 已结束
+//   pageNum 必须从 1 开始：后端是 LRANGE pageSize*(pageNum-1) .. pageSize*pageNum-1，
+//   传 0 会落到负数下标（取到列表末尾的 10 条）。
+//   返回 { pageSize, pageNum, total, list }，没有 pages。
+export async function fetchExamQueuePage(option, pageNum = 1) {
+  const page = Math.max(1, Number(pageNum) || 1);
+  return request(`/user/exam/list/queue?option=${Number(option)}&pageNum=${page}`);
+}
+
+// GET /exam/listQuestion?examId=&pageNum=  → ExamQuestionListVO extends BasePageVO<QuestionVO>
+//   QuestionVO = { id, title, difficulty, timeLimit, spaceLimit }
+// ⚠️ 后端是把「本页 questionId 对应的题目」查出来，再用 PageInfo 包了一层**内存 List**，
+//    不是数据库分页，于是这几个字段都不是真值：
+//      · pages    恒为 1（第 10 题之后前端会以为已经到底）
+//      · total    是「本页条数」，第 2 页起直接变 0
+//      · pageSize 也是「本页条数」，最后一页只剩 1 条时会被当成满页
+//    所以都不采用：total 不展示（只报已加载多少），pageSize 按后端固定页长
+//    （CommonConstants.PAGE_SIZE = 10）来算，这样不满页就能立刻判定到底。
+const EXAM_QUESTION_PAGE_SIZE = 10;
+
+export async function fetchExamQuestionPage(examId, pageNum = 1) {
+  const qs = new URLSearchParams({
+    examId: String(examId),
+    pageNum: String(Math.max(1, Number(pageNum) || 1)),
+  });
+  const d = await request(`/exam/listQuestion?${qs.toString()}`);
+  const list = Array.isArray(d?.list) ? d.list : [];
+  return { list, pageSize: EXAM_QUESTION_PAGE_SIZE };
+}
+
+// DELETE /exam/b/delete?examId=&questionId=（从竞赛里移除一道题，不是删题库里的题）
+// ⚠️ 后端 checkExam(examId, false) 会拦三种情况：竞赛已发布(3208)、
+//    竞赛已开始(3201)、竞赛已结束(3207)，都必须先在竞赛管理里「取消发布」才能改。
+export async function deleteExamQuestion({ examId, questionId }) {
+  const qs = new URLSearchParams({
+    examId: String(examId),
+    questionId: String(questionId),
+  });
+  return request(`/exam/b/delete?${qs.toString()}`, { method: 'DELETE' });
+}
+
+// POST /exam/b/add  参数 ExamAddDTO { title, startTime, endTime }
+// ⚠️ 后端这两个时间字段是 @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")，
+//    所以必须传 "2026-10-20 09:00:00"（空格分隔），传 ISO 的 "2026-10-20T09:00" 会解析失败。
+//    前端表单用的是 <input type="datetime-local">（值形如 "2026-10-20T09:00"），
+//    这里统一转成后端要的格式。
+// 校验（前端已预先做一遍，见 AdminExamDialog）：
+//   · 开始时间不能早于当前时间（3201）
+//   · 开始时间不能晚于结束时间（3202）
+// 新建出来的竞赛 status = 0（未发布）。
+function toApiDateTime(value) {
+  if (!value) return null;
+  const raw = String(value).trim().replace('T', ' ');
+  const m = /^(\d{4}-\d{2}-\d{2}) (\d{2}:\d{2})(?::(\d{2}))?$/.exec(raw);
+  if (!m) return raw;
+  return `${m[1]} ${m[2]}:${m[3] || '00'}`;
+}
+
+export async function addExam({ title, startTime, endTime }) {
+  return request('/exam/b/add', {
+    method: 'POST',
+    body: {
+      title,
+      startTime: toApiDateTime(startTime),
+      endTime: toApiDateTime(endTime),
+    },
+  });
+}
+
+// POST /exam/b/question/add  参数 ExamQuestionAdd { examId, questions:[questionId,…] }
+//   一次提交一批题目 id（后端是 LinkedHashSet，重复的会去重）
+// ⚠️ 两个后端行为要注意：
+//   · checkExam(examId, false)：竞赛「已发布 / 已开始 / 已结束」都不允许改（3208/3201/3207）
+//   · 只要提交的 id 里有一个已经在这场竞赛里了，整批失败并返回 3209「竞赛题目已存在」
+//     —— 所以弹窗里会把已在竞赛中的题目标出来、不允许勾选。
+export async function addExamQuestions({ examId, questionIds }) {
+  return request('/exam/b/question/add', {
+    method: 'POST',
+    body: { examId, questions: questionIds },
+  });
+}
