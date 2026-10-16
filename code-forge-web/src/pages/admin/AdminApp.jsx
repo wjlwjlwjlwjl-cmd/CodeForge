@@ -8,6 +8,7 @@ import AdminUsers from './AdminUsers.jsx';
 import AdminAdmins from './AdminAdmins.jsx';
 import AdminDetailDialog from './AdminDetailDialog.jsx';
 import AdminErrorBoundary from './AdminErrorBoundary.jsx';
+import { AdminToaster } from './AdminToast.jsx';
 import AdminExams from './AdminExams.jsx';
 import AdminQuestions from './AdminQuestions.jsx';
 import '../../styles/admin.css';
@@ -70,13 +71,17 @@ export default function AdminApp({ theme, onToggleTheme }) {
   //   · 其余（无 token / 验证失败）→ 登录表单，并显示失败原因
   if (!info) {
     return (
-      <AdminLogin
-        theme={theme}
-        onToggleTheme={onToggleTheme}
-        onLogin={login}
-        checking={!!token && loading}
-        sessionError={token && !loading ? error : null}
-      />
+      <>
+        <AdminLogin
+          theme={theme}
+          onToggleTheme={onToggleTheme}
+          onLogin={login}
+          checking={!!token && loading}
+          sessionError={token && !loading ? error : null}
+        />
+        {/* 操作反馈统一走屏幕中央的 toast（和 C 端同形态） */}
+        <AdminToaster />
+      </>
     );
   }
 
@@ -85,6 +90,7 @@ export default function AdminApp({ theme, onToggleTheme }) {
   const current = SECTIONS.find((s) => s.key === section) || SECTIONS[0];
 
   return (
+    <>
     <div className="admin-shell">
       {/* 左侧固定导航 */}
       <aside className={`admin-side${collapsed ? ' is-collapsed' : ''}`}>
@@ -210,5 +216,7 @@ export default function AdminApp({ theme, onToggleTheme }) {
         />
       )}
     </div>
+    <AdminToaster />
+    </>
   );
 }

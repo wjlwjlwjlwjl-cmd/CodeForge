@@ -1,5 +1,6 @@
 package com.wjl.system.service.exam;
 
+import com.alibaba.nacos.shaded.io.grpc.ServiceDescriptor;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -173,9 +174,15 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
         LocalDateTime now = LocalDateTime.now();
         if(startTime.isBefore(now)) {
+            //添加竞赛时间再当前时间之前
             throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getCode(), ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getMsg());
         }
+        if(endTime.isBefore(now)) {
+            //添加时间再当前时间之前
+            throw new ServiceException(ResultCode.EXAM_END_TIME_BEFORE_CURRENT_TIME.getCode(), ResultCode.EXAM_END_TIME_BEFORE_CURRENT_TIME.getMsg());
+        }
         if(startTime.isAfter(endTime)) {
+            //开始时间再竞赛时间之后
             throw new ServiceException(ResultCode.EXAM_START_TIME_AFTER_END_TIME.getCode(), ResultCode.EXAM_START_TIME_AFTER_END_TIME.getMsg());
         }
 
@@ -206,10 +213,25 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
     public String questionAdd(String token, ExamQuestionAdd examQuestionAdd) {
         //当给一个竞赛添加题目时，需要让这个竞赛的题目列表缓存失效
-
         LinkedHashSet<Long> questions = examQuestionAdd.getQuestions();
         Long examId = examQuestionAdd.getExamId();
-        checkExam(examId, false); //竞赛存在性、时间检查
+
+        //合法性检查
+        Exam exam = examMapper.selectById(examId);
+        if(exam == null){
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startTime = exam.getStartTime();
+        LocalDateTime endTime = exam.getEndTime();
+        if(endTime.isBefore(now)) {
+            //竞赛结束
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+        if(startTime.isBefore(now) && endTime.isAfter(now)) {
+            //竞赛进行中
+            throw new ServiceException(ResultCode.EXAM_HAS_START.getCode(),  ResultCode.EXAM_HAS_START.getMsg());
+        }
 
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
@@ -255,7 +277,20 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String questionDelete(String token, Long examId, Long questionId){
-        checkExam(examId, false);
+        Exam exam = examMapper.selectById(examId);
+        if(exam == null){
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        LocalDateTime startTime = exam.getStartTime();
+        LocalDateTime endTime = exam.getEndTime();
+        LocalDateTime now = LocalDateTime.now();
+        if(endTime.isBefore(now)) {
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+        if(startTime.isBefore(now) && endTime.isAfter(now)) {
+            throw new ServiceException(ResultCode.EXAM_HAS_START.getCode(),  ResultCode.EXAM_HAS_START.getMsg());
+        }
+
         int cnt = examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>()
                 .eq(ExamQuestion::getExamId, examId)
                 .eq(ExamQuestion::getQuestionId, questionId));
@@ -298,40 +333,52 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
     /**
      * 修改竞赛信息
-     * <p>
-     * 可编辑性只看「时间」，**不看发布状态**：
-     * <ul>
-     *   <li>未开始：可以编辑（已发布也可以）</li>
-     *   <li>进行中：不可以（3210 竞赛已经开始，不能进行编辑操作）</li>
-     *   <li>已结束：不可以（3207 竞赛已经结束不能进行操作）</li>
-     * </ul>
-     * 原来这里调的是 checkExam(examId, false)，它要求竞赛「未发布」且「未开始」，
-     * 于是已发布的未开始竞赛改不了、而已开始（进行中）的竞赛报的是 3201
-     * 「竞赛开始时间不能早于当前时间」，语义对不上。
      */
     public String examEdit(String token, ExamEditDTO examEditDTO){
-        Long examId = examEditDTO.getExamId();
-        checkExamCanEdit(examId);
+        Exam exam = examMapper.selectById(examEditDTO.getExamId());
+        if(exam == null) {
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        if(exam.getEndTime().isBefore(LocalDateTime.now())){
+            //已经结束的竞赛不能修改
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+        if(exam.getStartTime().isBefore(LocalDateTime.now()) && exam.getEndTime().isAfter(LocalDateTime.now())){
+            //竞赛正在进行中，不能修改
+            throw new ServiceException(ResultCode.EXAM_HAS_START.getCode(), ResultCode.EXAM_HAS_START.getMsg());
+        }
 
-        // 新时间也要合法，规则与 examAdd 保持一致：
-        // 不能为空（否则会把 NOT NULL 列写坏）、开始不能晚于结束、开始不能早于当前时间
-        if (examEditDTO.getStartTime() == null || examEditDTO.getEndTime() == null) {
+        Long examId = examEditDTO.getExamId();
+        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
+        // 这两个必须是「提交上来的新时间」（examEditDTO）：
+        // 用 exam.getStartTime()/getEndTime()（库里的旧值）会导致校验的是旧值，
+        // 而且下面 update 写回去的也是旧值 —— 时间根本改不动
+        LocalDateTime startTime = examEditDTO.getStartTime();
+        LocalDateTime endTime = examEditDTO.getEndTime();
+        LocalDateTime now = LocalDateTime.now();
+
+        if(startTime == null || endTime == null){
+            //时间不能为空，否则会把 NOT NULL 列写坏
             throw new ServiceException(ResultCode.FAILED_PARAMS_VALIDATE.getCode(), ResultCode.FAILED_PARAMS_VALIDATE.getMsg());
         }
-        if (examEditDTO.getStartTime().isAfter(examEditDTO.getEndTime())) {
+        if(endTime.isBefore(startTime)){
+            //结束时间早于开始时间
             throw new ServiceException(ResultCode.EXAM_START_TIME_AFTER_END_TIME.getCode(), ResultCode.EXAM_START_TIME_AFTER_END_TIME.getMsg());
         }
-        if (examEditDTO.getStartTime().isBefore(LocalDateTime.now())) {
+        if(startTime.isBefore(now)) {
+            //开始时间早于当前时间
             throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getCode(), ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getMsg());
         }
-
-        LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
+        if(endTime.isBefore(now)) {
+            //结束时间早于当前时间
+            throw new ServiceException(ResultCode.EXAM_END_TIME_BEFORE_CURRENT_TIME.getCode(), ResultCode.EXAM_END_TIME_BEFORE_CURRENT_TIME.getMsg());
+        }
 
         examMapper.update(new LambdaUpdateWrapper<Exam>()
                 .eq(Exam::getExamId, examId)
-                .set(Exam::getStartTime, examEditDTO.getStartTime())
-                .set(Exam::getEndTime, examEditDTO.getEndTime())
                 .set(Exam::getTitle, examEditDTO.getTitle())
+                .set(Exam::getStartTime, startTime)
+                .set(Exam::getEndTime, endTime)
                 .set(Exam::getUpdateBy, loginUserDTO.getUserId())
                 .set(Exam::getUpdateTime, LocalDateTime.now())
         );
@@ -341,14 +388,20 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
             redisService.deleteObject(key);
         });
         redisService.deleteObject(CacheUtil.getExamKey(examId));
-        // 时间被改过 → 它可能在「未开始/进行中/已结束」之间换桶
         clearExamTimeStatusCache();
 
         return String.format("更新%d竞赛成功", examId);
     }
 
-    public String examDelete(Long examId){
-        checkExam(examId, false);
+    public String examDelete(String token, Long examId){
+        Exam exam = examMapper.selectById(examId);
+        if(exam == null) {
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        if(exam.getStatus() == 1){
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+
         //先删除竞赛信息
         examMapper.deleteById(examId);
         examQuestionMapper.delete(new LambdaQueryWrapper<ExamQuestion>().eq(ExamQuestion::getExamId, examId));
@@ -369,7 +422,21 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String examPublish(String token, Long examId){
-        checkExam(examId, false);
+        Exam exam = examMapper.selectById(examId);
+        if(exam == null) {
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+        LocalDateTime startTime = exam.getStartTime();
+        LocalDateTime endTime = exam.getEndTime();
+        LocalDateTime now = LocalDateTime.now();
+        if(endTime.isBefore(now)){
+            //竞赛结束，还发布干啥
+            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
+        }
+        if(startTime.isBefore(now) && endTime.isAfter(now)) {
+            throw new ServiceException(ResultCode.EXAM_HAS_START.getCode(), ResultCode.EXAM_HAS_START.getMsg()); //竞赛正在进行
+        }
+
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
@@ -389,7 +456,11 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
     }
 
     public String examPublishCancel(String token, Long examId){
-        checkExam(examId, true);
+        Exam exam = examMapper.selectById(examId);
+        if(exam == null) {
+            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
+        }
+
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);
         Long userId = Long.valueOf(loginUserDTO.getUserId());
         examMapper.update(new LambdaUpdateWrapper<Exam>()
@@ -406,52 +477,5 @@ public class ExamService extends ServiceImpl<ExamQuestionMapper, ExamQuestion> {
 
         clearExamTimeStatusCache();
         return String.format("成功取消发布%d", examId);
-    }
-
-    /**
-     * 编辑专用的可编辑性校验：只按时间判断，与发布状态无关
-     * <p>
-     * 已结束 → 3207；已开始（进行中）→ 3210；竞赛不存在 → 3203。
-     */
-    private void checkExamCanEdit(Long examId) {
-        Exam exam = examMapper.selectById(examId);
-        if (exam == null) {
-            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(), ResultCode.EXAM_NOT_EXISTS.getMsg());
-        }
-        LocalDateTime now = LocalDateTime.now();
-        if (exam.getEndTime() != null && exam.getEndTime().isBefore(now)) {
-            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(), ResultCode.EXAM_IS_FINISH.getMsg());
-        }
-        if (exam.getStartTime() != null && exam.getStartTime().isBefore(now)) {
-            throw new ServiceException(ResultCode.EXAM_HAS_START.getCode(), ResultCode.EXAM_HAS_START.getMsg());
-        }
-    }
-
-    private void checkExam(Long examId, boolean force) {
-        Exam exam = examMapper.selectById(examId);
-        //竞赛不存在
-        if(exam ==  null){
-            throw new ServiceException(ResultCode.EXAM_NOT_EXISTS.getCode(),ResultCode.EXAM_NOT_EXISTS.getMsg());
-        }
-
-        if(force){
-            return;
-        }
-
-        //竞赛状态检查
-        if(exam.getStatus() == 1){
-            throw new ServiceException(ResultCode.EXAM_IS_PUBLISH.getCode(),ResultCode.EXAM_IS_PUBLISH.getMsg());
-        }
-
-        //竞赛时间异常
-        LocalDateTime startTime = exam.getStartTime();
-        LocalDateTime endTime = exam.getEndTime();
-        LocalDateTime currentTime = LocalDateTime.now();
-        if(startTime.isBefore(currentTime)){
-            throw new ServiceException(ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getCode(),ResultCode.EXAM_START_TIME_BEFORE_CURRENT_TIME.getMsg());
-        }
-        if(endTime.isBefore(currentTime)){
-            throw new ServiceException(ResultCode.EXAM_IS_FINISH.getCode(),ResultCode.EXAM_IS_FINISH.getMsg());
-        }
     }
 }

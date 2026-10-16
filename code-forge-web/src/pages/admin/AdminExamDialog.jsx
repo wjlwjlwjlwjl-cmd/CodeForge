@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addExam, editExam, fetchExamDetail } from '../../api/admin.js';
-import { Notice } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
 
 // 「新增 / 编辑竞赛」弹窗
 //
@@ -63,19 +63,17 @@ export default function AdminExamDialog({ exam = null, onClose, onSaved }) {
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
 
   // 编辑：先拉详情回填（时间转成 datetime-local 需要的 "YYYY-MM-DDTHH:mm"）
   useEffect(() => {
     if (!isEdit) return undefined;
     let cancelled = false;
     setLoading(true);
-    setError(null);
     fetchExamDetail(exam.examId)
       .then((d) => {
         if (cancelled) return;
         if (!d) {
-          setError('竞赛不存在或已被删除');
+          toast.error('竞赛不存在或已被删除');
           return;
         }
         setForm({
@@ -85,7 +83,7 @@ export default function AdminExamDialog({ exam = null, onClose, onSaved }) {
         });
       })
       .catch((e) => {
-        if (!cancelled) setError(e?.message || '竞赛详情加载失败');
+        if (!cancelled) toast.error(e?.message || '竞赛详情加载失败');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -106,19 +104,17 @@ export default function AdminExamDialog({ exam = null, onClose, onSaved }) {
   const set = (key) => (e) => {
     const value = e.target.value;
     setForm((p) => ({ ...p, [key]: value }));
-    setError(null);
   };
 
   const submit = async () => {
     if (saving || loading) return;
     const msg = validate(form);
     if (msg) {
-      setError(msg);
+      toast.info(msg);
       return;
     }
 
     setSaving(true);
-    setError(null);
     try {
       const title = form.title.trim();
       const payload = {
@@ -131,7 +127,7 @@ export default function AdminExamDialog({ exam = null, onClose, onSaved }) {
       onSaved?.({ title, mode: isEdit ? 'edit' : 'add' });
     } catch (e) {
       // 3201 / 3202 / 3208 等后端校验仍然以它为准（例如刚好卡在当前时间上）
-      setError(e?.message || (isEdit ? '保存失败' : '添加失败'));
+      toast.error(e?.message || (isEdit ? '保存失败' : '添加失败'));
     } finally {
       setSaving(false);
     }
@@ -215,7 +211,6 @@ export default function AdminExamDialog({ exam = null, onClose, onSaved }) {
             />
           </div>
 
-              {error && <Notice kind="error">{error}</Notice>}
             </>
           )}
         </div>

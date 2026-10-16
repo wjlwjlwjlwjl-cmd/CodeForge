@@ -6,15 +6,16 @@ import {
   publishExam,
 } from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
+import { toast } from './AdminToast.jsx';
 import {
   ColorTag,
   ConfirmDialog,
   EmptyState,
-  Notice,
   RowMenu,
   StatusDot,
 } from './AdminBits.jsx';
 import AdminExamAddQuestionsDialog from './AdminExamAddQuestionsDialog.jsx';
+import AdminExamDeleteQuestionsDialog from './AdminExamDeleteQuestionsDialog.jsx';
 import AdminExamDialog from './AdminExamDialog.jsx';
 import AdminExamQuestionsDialog from './AdminExamQuestionsDialog.jsx';
 import { formatDateTime } from '../../utils/format.js';
@@ -33,6 +34,8 @@ import { formatDateTime } from '../../utils/format.js';
 // 「查看竞赛题目」会打开弹窗，里面调 /exam/listQuestion 列出这场竞赛的题目，
 // 并支持把某道题移出竞赛（DELETE /exam/b/delete）。
 // 「添加题目」会打开题目选择弹窗（POST /exam/b/question/add）。
+// 「删除题目」用的是同一套选择器（检索 + 点行），但一次只移出一道题
+// （DELETE /exam/b/delete）。
 // 行内「⋯」菜单里是竞赛本身的三个操作：
 //   编辑   POST   /exam/b/edit            （详情 GET /exam/detail 回填）
 //   发布   PUT    /exam/b/publish         （status=1，C 端才看得到）
@@ -63,12 +66,13 @@ const TIME_STATUS = {
 };
 
 export default function AdminExams() {
-  const [notice, setNotice] = useState(null);
   // 正在查看题目的那场竞赛（null = 没开弹窗）
   const [viewExam, setViewExam] = useState(null);
   const [addOpen, setAddOpen] = useState(false);
   // 正在给哪场竞赛添加题目（null = 没开弹窗）
   const [addQExam, setAddQExam] = useState(null);
+  // 正在给哪场竞赛删除题目（null = 没开弹窗）
+  const [delQExam, setDelQExam] = useState(null);
   // 正在编辑的竞赛（null = 没开弹窗）
   const [editExam, setEditExam] = useState(null);
   // 待确认的操作：{ kind:'publish'|'cancel'|'delete', exam }
@@ -110,7 +114,7 @@ export default function AdminExams() {
   const handleAdded = ({ title, mode }) => {
     setAddOpen(false);
     setEditExam(null);
-    setNotice(`已${mode === 'edit' ? '保存' : '新增'}竞赛「${title}」`);
+    toast.success(`已${mode === 'edit' ? '保存' : '新增'}竞赛「${title}」`);
     if (mode === 'edit') {
       refreshAfter();
       setRevealEnd(true); // 时间变了排序可能变，直接把这场竞赛翻到眼前
@@ -159,20 +163,20 @@ export default function AdminExams() {
     try {
       if (kind === 'publish') {
         await publishExam(exam.examId);
-        setNotice(`已发布竞赛「${exam.title || ''}」`);
+        toast.success(`已发布竞赛「${exam.title || ''}」`);
         refreshAfter();
       } else if (kind === 'cancel') {
         await publishCancelExam(exam.examId);
-        setNotice(`已取消发布竞赛「${exam.title || ''}」`);
+        toast.success(`已取消发布竞赛「${exam.title || ''}」`);
         refreshAfter();
       } else {
         await deleteExam(exam.examId);
-        setNotice(`已删除竞赛「${exam.title || ''}」`);
+        toast.success(`已删除竞赛「${exam.title || ''}」`);
         refreshAfter();
       }
       setPending(null);
     } catch (e) {
-      setNotice(e?.message || '操作失败');
+      toast.error(e?.message || '操作失败');
       setPending(null);
     } finally {
       setBusy(false);
@@ -221,8 +225,6 @@ export default function AdminExams() {
             刷新
           </button>
         </div>
-
-        {notice && <Notice onClose={() => setNotice(null)}>{notice}</Notice>}
 
         <div className="admin-panel">
           {/* 列表区：高度有上限，区内滚动加载 */}
@@ -274,7 +276,7 @@ export default function AdminExams() {
                             className="admin-btn"
                             onClick={() => setViewExam(e)}
                           >
-                            查看竞赛题目
+                            查看题目
                           </button>
                           <button
                             type="button"
@@ -282,6 +284,13 @@ export default function AdminExams() {
                             onClick={() => setAddQExam(e)}
                           >
                             添加题目
+                          </button>
+                          <button
+                            type="button"
+                            className="admin-btn"
+                            onClick={() => setDelQExam(e)}
+                          >
+                            删除题目
                           </button>
                           <RowMenu
                             items={[
@@ -385,10 +394,7 @@ export default function AdminExams() {
         <AdminExamAddQuestionsDialog
           exam={addQExam}
           onClose={() => setAddQExam(null)}
-          onAdded={(msg) => {
-            setAddQExam(null);
-            setNotice(msg);
-          }}
+          onAdded={() => setAddQExam(null)}
         />
       )}
 
@@ -396,6 +402,13 @@ export default function AdminExams() {
         <AdminExamQuestionsDialog
           exam={viewExam}
           onClose={() => setViewExam(null)}
+        />
+      )}
+
+      {delQExam && (
+        <AdminExamDeleteQuestionsDialog
+          exam={delQExam}
+          onClose={() => setDelQExam(null)}
         />
       )}
     </>

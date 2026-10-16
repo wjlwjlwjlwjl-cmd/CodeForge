@@ -43,6 +43,8 @@ public enum ResultCode {
 
     EXAM_START_TIME_BEFORE_CURRENT_TIME(3201, "竞赛开始时间不能早于当前时间"),
 
+    EXAM_END_TIME_BEFORE_CURRENT_TIME(3211, "竞赛结束时间不能早于当前时间"),
+
     EXAM_START_TIME_AFTER_END_TIME(3202, "竞赛开始时间不能晚于竞赛结束时间"),
 
     EXAM_NOT_EXISTS                    (3203, "竞赛不存在"),

@@ -16,7 +16,9 @@
 // 拉取失败就如实报错（可退回登录时那份，但会明确标注，不冒充最新数据）。
 import { useCallback, useEffect, useState } from 'react';
 import { fetchAdminInfo } from '../../api/admin.js';
-import { Notice, SysUserFields } from './AdminBits.jsx';
+import { SysUserFields } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
+
 
 export default function AdminDetailDialog({ fallback, onClose }) {
   const [data, setData] = useState(null);
@@ -30,6 +32,7 @@ export default function AdminDetailDialog({ fallback, onClose }) {
       setData(await fetchAdminInfo());
     } catch (e) {
       setError(e?.message || '读取失败');
+      toast.error(e?.message || '读取失败');
       setData(null);
     } finally {
       setLoading(false);
@@ -73,7 +76,7 @@ export default function AdminDetailDialog({ fallback, onClose }) {
           {loading && <p className="admin-detail-state">读取中…</p>}
 
           {!loading && !view && (
-            <Notice kind="error">{error}</Notice>
+            <p className="admin-detail-state">{error || '读取失败'}</p>
           )}
 
           {!loading && view && (

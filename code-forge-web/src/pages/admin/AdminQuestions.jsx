@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { deleteQuestion } from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
+import { toast } from './AdminToast.jsx';
 import { useAdminQuestionSource } from '../../hooks/useAdminQuestionSource.js';
 import {
   ConfirmDialog,
   DIFFICULTY_LEVELS,
   DifficultyTag,
   EmptyState,
-  Notice,
 } from './AdminBits.jsx';
 import AdminQuestionDialog from './AdminQuestionDialog.jsx';
 import { adminNameOf, useAdminNameMap } from '../../hooks/useAdminNameMap.js';
@@ -48,7 +48,6 @@ function AuditCell({ by, time, names }) {
 }
 
 export default function AdminQuestions() {
-  const [notice, setNotice] = useState(null);
   // null | { mode: 'add' } | { mode: 'edit', id }
   const [dialog, setDialog] = useState(null);
   const [pendingDelete, setPendingDelete] = useState(null);
@@ -121,11 +120,11 @@ export default function AdminQuestions() {
     try {
       // 后端返回的是「题目 108 删除成功」（带自增 id），这里自己按标题拼
       await deleteQuestion(pendingDelete.id);
-      setNotice(`已删除题目「${pendingDelete.title || ''}」`);
+      toast.success(`已删除题目「${pendingDelete.title || ''}」`);
       setPendingDelete(null);
       reload();
     } catch (e) {
-      setNotice(e?.message || '删除失败');
+      toast.error(e?.message || '删除失败');
       setPendingDelete(null);
     } finally {
       setDeleting(false);
@@ -135,7 +134,7 @@ export default function AdminQuestions() {
   // 新增 / 编辑成功后统一按题目标题提示（见 AdminQuestionDialog 的 onSaved）
   const handleSaved = ({ mode, title }) => {
     setDialog(null);
-    setNotice(`${mode === 'edit' ? '已保存' : '已添加'}题目「${title}」`);
+    toast.success(`${mode === 'edit' ? '已保存' : '已添加'}题目「${title}」`);
     reload();
   };
 
@@ -218,8 +217,6 @@ export default function AdminQuestions() {
             刷新
           </button>
         </form>
-
-        {notice && <Notice onClose={() => setNotice(null)}>{notice}</Notice>}
 
         <div className="admin-panel">
           {/* 列表区：高度有上限，区内滚动加载 */}

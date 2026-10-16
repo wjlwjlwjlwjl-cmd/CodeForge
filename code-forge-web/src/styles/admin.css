@@ -1232,6 +1232,91 @@
   margin-left: auto;
 }
 
+/* ---------------- 操作反馈 toast ----------------
+   形态与 C 端「已经是最后一题了」的 .toast 一致：屏幕正中、深灰底、白字、
+   小圆角、0.12s 淡入；区别是多了一个表示成功/失败/提示的图标。
+   挂在 .admin-shell 之外（fixed + 高 z-index），所以弹窗开着也浮在最上面。 */
+.admin-toaster {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.admin-toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(560px, 80vw);
+  padding: 11px 20px;
+  border-radius: var(--radius-md);
+  background: rgba(60, 60, 60, 0.94);
+  color: #ffffff;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: left;
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  cursor: default;
+  animation: admin-toast-in 0.12s ease-out;
+}
+
+@keyframes admin-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* 左侧竖条 + 图标双重标识，一眼能看出成功还是失败 */
+.admin-toast.is-success {
+  border-left: 3px solid #5cba86;
+}
+.admin-toast.is-error {
+  border-left: 3px solid #e0736f;
+}
+.admin-toast.is-info {
+  border-left: 3px solid #9a9a9a;
+}
+
+.admin-toast-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+  width: 16px;
+  height: 16px;
+}
+
+.admin-toast-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.admin-toast.is-success .admin-toast-icon {
+  color: #7ee0a6;
+}
+.admin-toast.is-error .admin-toast-icon {
+  color: #ff9f9b;
+}
+.admin-toast.is-info .admin-toast-icon {
+  color: #d5d5d5;
+}
+
+.admin-toast-text {
+  min-width: 0;
+}
+
 /* ---------------- 响应式 ---------------- */
 @media (max-width: 1040px) {
   .admin-admins-cols {
@@ -1355,6 +1440,14 @@
 
 .admin-exam-addq-dialog .admin-scroll-area {
   max-height: min(calc(100vh - 400px), 400px);
+}
+
+/* 「删除竞赛题目」弹窗里的一行说明 */
+.admin-exam-delq-tip {
+  margin: 6px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-muted);
 }
 
 .admin-table-pick {

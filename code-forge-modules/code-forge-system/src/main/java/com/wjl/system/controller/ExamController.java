@@ -50,18 +50,21 @@ public class ExamController {
         return R.success(examService.questionAdd(token, examQuestionAdd));
     }
 
+    //done
     @DeleteMapping("/b/delete")
     @Operation(description = "删除竞赛题目")
     public R<String> questionDelete(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, Long examId, Long questionId){
         return R.success(examService.questionDelete(token, examId, questionId));
     }
 
+    //done
     @GetMapping("/detail")
     @Operation(description = "获取竞赛详细信息")
     public R<ExamVO> detail(Long examId){
         return R.success(examService.examDetail(examId));
     }
 
+    //done
     @PostMapping("/b/edit")
     @Operation(description = "修改竞赛信息")
     public R<String> edit(@RequestHeader(SecurityConstants.AUTHENTICATION) String token, @RequestBody ExamEditDTO examEditDTO){
@@ -71,8 +74,8 @@ public class ExamController {
     //done
     @DeleteMapping("/b/delete/{examId}")
     @Operation(description = "删除竞赛")
-    public R<String> delete(@PathVariable Long examId){
-        return R.success(examService.examDelete(examId));
+    public R<String> delete(@PathVariable Long examId, @RequestHeader(SecurityConstants.AUTHENTICATION) String token){
+        return R.success(examService.examDelete(token, examId));
     }
 
     //done

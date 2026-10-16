@@ -9,8 +9,9 @@ import {
   DIFFICULTY_LEVELS,
   DifficultyTag,
   EmptyState,
-  Notice,
 } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
+
 
 // 「为竞赛添加题目」弹窗
 //
@@ -23,7 +24,8 @@ import {
 //
 // ⚠️ 后端只要发现提交的 id 里有一个已经在本场竞赛里，整批就失败（3209
 //    「竞赛题目已存在」），所以打开时会先把竞赛已有的题目 id 拉全并标成不可选。
-//    另外 checkExam(examId,false) 要求竞赛未发布、未开始、未结束，否则报 3208/3201/3207。
+//    能不能加由后端按「时间」决定（与发布状态无关）：未开始可以，
+//    进行中报 3210、已结束报 3207。
 const SCROLL_EDGE = 60;
 // 拉「竞赛已有题目」时最多翻多少页（每页 10 条），只为了标记去重
 const EXISTING_MAX_SCAN_PAGES = 20;
@@ -36,7 +38,6 @@ export default function AdminExamAddQuestionsDialog({ exam, onClose, onAdded }) 
   // 竞赛已有的题目 id（null = 还没拉回来）
   const [existing, setExisting] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState(null);
   const cursorRef = useRef(0);
   const areaRef = useRef(null);
 
@@ -116,7 +117,6 @@ export default function AdminExamAddQuestionsDialog({ exam, onClose, onAdded }) 
       else next.set(key, q.title || '');
       return next;
     });
-    setNotice(null);
   };
 
   const submitSearch = (e) => {
@@ -138,20 +138,20 @@ export default function AdminExamAddQuestionsDialog({ exam, onClose, onAdded }) 
     if (saving) return;
     const ids = [...picked.keys()].map((x) => Number(x));
     if (!ids.length) {
-      setNotice('请先点选要添加的题目');
+      toast.info('请先点选要添加的题目');
       return;
     }
     setSaving(true);
-    setNotice(null);
     try {
       await addExamQuestions({ examId: exam.examId, questionIds: ids });
+      toast.success(`已为「${exam.title || ''}」添加 ${ids.length} 道题目`);
       // 成功用独立的 onAdded 回调；onClose 只负责关弹窗，
       // 绝不能再把「消息」塞进 onClose —— 按钮 onClose 直接当 onClick 用时
       // 会传进来一个 click 事件对象，被当成提示文案渲染 → 报错白屏
-      onAdded?.(`已为「${exam.title || ''}」添加 ${ids.length} 道题目`);
+      onAdded?.();
     } catch (e) {
       // 3208 / 3201 / 3207（竞赛状态不允许改）、3209（题目已存在）等原文透出
-      setNotice(e?.message || '添加失败');
+      toast.error(e?.message || '添加失败');
     } finally {
       setSaving(false);
     }
@@ -246,7 +246,6 @@ export default function AdminExamAddQuestionsDialog({ exam, onClose, onAdded }) 
           </span>
         </form>
 
-        {notice && <Notice kind="error" onClose={() => setNotice(null)}>{notice}</Notice>}
 
         <div className="admin-panel">
           <div className="admin-scroll-area" ref={areaRef} onScroll={onScroll}>

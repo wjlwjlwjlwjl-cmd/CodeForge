@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { addQuestion, editQuestion, fetchQuestionDetail } from '../../api/admin.js';
-import { Notice } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
 
 // B 端「新增题目 / 编辑题目」弹窗
 //
@@ -101,19 +101,17 @@ export default function AdminQuestionDialog({ mode, id, onClose, onSaved }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [loading, setLoading] = useState(isEdit);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!isEdit) return undefined;
     let cancelled = false;
     setLoading(true);
-    setError(null);
     fetchQuestionDetail(id)
       .then((d) => {
         if (!cancelled) setForm(toForm(d));
       })
       .catch((e) => {
-        if (!cancelled) setError(e?.message || '题目详情加载失败');
+        if (!cancelled) toast.error(e?.message || '题目详情加载失败');
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -135,14 +133,13 @@ export default function AdminQuestionDialog({ mode, id, onClose, onSaved }) {
   const set = (key) => (e) => {
     const value = e.target.value;
     setForm((p) => ({ ...p, [key]: value }));
-    setError(null);
   };
 
   const submit = async () => {
     if (saving || loading) return;
     const msg = validate(form);
     if (msg) {
-      setError(msg);
+      toast.info(msg);
       return;
     }
     const payload = {
@@ -157,7 +154,6 @@ export default function AdminQuestionDialog({ mode, id, onClose, onSaved }) {
     };
 
     setSaving(true);
-    setError(null);
     try {
       // 后端返回的文案是「添加成功，题目编号：108」这种带自增 id 的，
       // 界面上不用它（id 对使用的人没意义），把标题交给页面去拼提示
@@ -165,7 +161,7 @@ export default function AdminQuestionDialog({ mode, id, onClose, onSaved }) {
       else await addQuestion(payload);
       onSaved?.({ mode: isEdit ? 'edit' : 'add', title: payload.title });
     } catch (e) {
-      setError(e?.message || (isEdit ? '保存失败' : '添加失败'));
+      toast.error(e?.message || (isEdit ? '保存失败' : '添加失败'));
     } finally {
       setSaving(false);
     }
@@ -334,7 +330,6 @@ export default function AdminQuestionDialog({ mode, id, onClose, onSaved }) {
                 />
               </div>
 
-              {error && <Notice kind="error">{error}</Notice>}
             </>
           )}
         </div>

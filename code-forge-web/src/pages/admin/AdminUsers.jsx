@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { fetchUserList, updateUserStatus } from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
-import { StatusDot, EmptyState, Notice } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
+import { StatusDot, EmptyState } from './AdminBits.jsx';
 import { formatDateTime } from '../../utils/format.js';
 
 // B 端用户管理
@@ -22,7 +23,6 @@ export default function AdminUsers() {
   const [applied, setApplied] = useState({ nickName: '', userId: '' });
   // 点「查询 / 重置」时 +1：条件没变也能重新拉一次
   const [nonce, setNonce] = useState(0);
-  const [notice, setNotice] = useState(null);
   const [busyId, setBusyId] = useState(null);
   const areaRef = useRef(null);
 
@@ -84,7 +84,6 @@ export default function AdminUsers() {
   const toggleStatus = async (row) => {
     const next = row.status === 1 ? 0 : 1;
     setBusyId(row.userId);
-    setNotice(null);
     try {
       await updateUserStatus({ userId: row.userId, status: next });
       // 只就地改这一行，不重拉列表（否则滚动位置会丢、已加载的页还要重拼）
@@ -93,11 +92,11 @@ export default function AdminUsers() {
           String(u.userId) === String(row.userId) ? { ...u, status: next } : u
         )
       );
-      setNotice(
+      toast.success(
         `已将用户 ${row.nickName || row.userId} 设为${next === 0 ? '黑名单' : '正常'}`
       );
     } catch (e) {
-      setNotice(e?.message || '更新失败');
+      toast.error(e?.message || '更新失败');
     } finally {
       setBusyId(null);
     }
@@ -133,8 +132,6 @@ export default function AdminUsers() {
             重置
           </button>
         </form>
-
-        {notice && <Notice onClose={() => setNotice(null)}>{notice}</Notice>}
 
         <div className="admin-panel">
           {/* 列表区：高度固定，区内滚动加载 */}

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { addAdmin, deleteAdmin, fetchAdminList } from '../../api/admin.js';
-import { ConfirmDialog, EmptyState, Notice } from './AdminBits.jsx';
+import { ConfirmDialog, EmptyState } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
+
 import { formatDateTime } from '../../utils/format.js';
 
 // 管理员管理
@@ -26,7 +28,6 @@ export default function AdminAdmins({ selfAccount }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [notice, setNotice] = useState(null);
 
   const [form, setForm] = useState({ nickname: '', password: '' });
   const [formError, setFormError] = useState(null);
@@ -46,6 +47,7 @@ export default function AdminAdmins({ selfAccount }) {
       setRows(Array.isArray(d?.list) ? d.list : []);
     } catch (e) {
       setError(e?.message || '管理员列表加载失败');
+      toast.error(e?.message || '管理员列表加载失败');
       setRows([]);
     } finally {
       setLoading(false);
@@ -77,17 +79,17 @@ export default function AdminAdmins({ selfAccount }) {
 
     setSaving(true);
     setFormError(null);
-    setNotice(null);
     setCopied(false);
     try {
       const d = await addAdmin({ nickname, password });
       // 账号是后端生成的，必须显式展示出来（管理员要靠它登录）
       setCreated({ userAccount: d?.userAccount || '', nickname });
       setForm({ nickname: '', password: '' });
+      toast.success(`已创建管理员 ${nickname}`);
       await load();
     } catch (err) {
       // 昵称重复（3101）等后端错误直接透出
-      setFormError(err?.message || '添加失败');
+      toast.error(err?.message || '添加失败');
     } finally {
       setSaving(false);
     }
@@ -126,11 +128,11 @@ export default function AdminAdmins({ selfAccount }) {
     setDeleting(true);
     try {
       await deleteAdmin(pendingDelete.userAccount);
-      setNotice(`已删除管理员：${pendingDelete.userAccount}`);
+      toast.success(`已删除管理员：${pendingDelete.userAccount}`);
       setPendingDelete(null);
       await load();
     } catch (err) {
-      setNotice(err?.message || '删除失败');
+      toast.error(err?.message || '删除失败');
       setPendingDelete(null);
     } finally {
       setDeleting(false);
@@ -140,9 +142,6 @@ export default function AdminAdmins({ selfAccount }) {
   return (
     <>
       <h1 className="admin-h1">管理员管理</h1>
-
-      {error && <Notice kind="error">{error}</Notice>}
-      {notice && <Notice onClose={() => setNotice(null)}>{notice}</Notice>}
 
       <div className="admin-admins-cols">
         {/* 管理员列表 */}

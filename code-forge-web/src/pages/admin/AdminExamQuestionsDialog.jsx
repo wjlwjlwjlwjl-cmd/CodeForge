@@ -4,7 +4,9 @@ import {
   fetchExamQuestionPage,
 } from '../../api/admin.js';
 import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
-import { ConfirmDialog, DifficultyTag, EmptyState, Notice } from './AdminBits.jsx';
+import { ConfirmDialog, DifficultyTag, EmptyState } from './AdminBits.jsx';
+import { toast } from './AdminToast.jsx';
+
 
 // 「查看竞赛题目」弹窗
 //
@@ -13,15 +15,13 @@ import { ConfirmDialog, DifficultyTag, EmptyState, Notice } from './AdminBits.js
 //
 // 列表形态和页面上一致：区域高度有上限、区内滚到底自动拉下一页。
 //
-// ⚠️ 删除能不能成功由后端 checkExam 决定：竞赛「已发布 / 已开始 / 已结束」
-//    都不允许改动（会返回 3208 / 3201 / 3207），必须先取消发布。
-//    前端不预判，直接把后端的话透出来。
+// ⚠️ 删除能不能成功由后端按「时间」决定，与发布状态无关：未开始可以，
+//    进行中返回 3210、已结束返回 3207。前端不预判，直接把后端的话透出来。
 const SCROLL_EDGE = 60;
 
 export default function AdminExamQuestionsDialog({ exam, onClose }) {
   const [pendingDelete, setPendingDelete] = useState(null);
   const [deleting, setDeleting] = useState(false);
-  const [notice, setNotice] = useState(null);
   const areaRef = useRef(null);
 
   const { items, total, loading, loadingMore, error, hasMore, loadNext, reload } =
@@ -66,13 +66,13 @@ export default function AdminExamQuestionsDialog({ exam, onClose }) {
         examId: exam.examId,
         questionId: pendingDelete.id,
       });
-      setNotice(`已将题目「${pendingDelete.title || ''}」移出本场竞赛`);
+      toast.success(`已将题目「${pendingDelete.title || ''}」移出本场竞赛`);
       setPendingDelete(null);
       // 删除会让后面各页的偏移前移，直接从第 1 页重拉
       reload();
     } catch (e) {
       // 已发布 / 已开始 / 已结束都会在这里返回后端原文
-      setNotice(e?.message || '删除失败');
+      toast.error(e?.message || '删除失败');
       setPendingDelete(null);
     } finally {
       setDeleting(false);
@@ -99,10 +99,6 @@ export default function AdminExamQuestionsDialog({ exam, onClose }) {
           <p className="admin-exam-q-sub" title={exam.title}>
             {exam.title || '—'}
           </p>
-
-          {notice && (
-            <Notice onClose={() => setNotice(null)}>{notice}</Notice>
-          )}
 
           <div
             className="admin-panel admin-exam-q-panel"
