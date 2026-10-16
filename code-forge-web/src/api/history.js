@@ -18,11 +18,16 @@ export async function fetchSubmitHistory(questionId, pageNum = 1) {
   }
 
   if (!res.ok) {
-    throw new Error(json?.msg || `请求失败（HTTP ${res.status}）`);
+    // 带上业务码：网关拦下的请求（被拉黑 403 + 3104、未授权 3001）靠它分流
+    const err = new Error(json?.msg || `请求失败（HTTP ${res.status}）`);
+    err.code = json?.code || res.status;
+    throw err;
   }
 
   if (json.code !== SUCCESS_CODE) {
-    throw new Error(json?.msg || json?.message || `业务错误（code=${json.code}）`);
+    const err = new Error(json?.msg || json?.message || `业务错误（code=${json.code}）`);
+    err.code = json.code;
+    throw err;
   }
 
   return json.data;
@@ -45,11 +50,16 @@ export async function fetchSubmitDetail(submitId) {
   }
 
   if (!res.ok) {
-    throw new Error(json?.msg || `请求失败（HTTP ${res.status}）`);
+    // 带上业务码：网关拦下的请求（被拉黑 403 + 3104、未授权 3001）靠它分流
+    const err = new Error(json?.msg || `请求失败（HTTP ${res.status}）`);
+    err.code = json?.code || res.status;
+    throw err;
   }
 
   if (json.code !== SUCCESS_CODE) {
-    throw new Error(json?.msg || json?.message || `业务错误（code=${json.code}）`);
+    const err = new Error(json?.msg || json?.message || `业务错误（code=${json.code}）`);
+    err.code = json.code;
+    throw err;
   }
 
   return json.data;

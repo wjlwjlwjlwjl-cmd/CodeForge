@@ -896,7 +896,46 @@
   margin-top: var(--space-4);
 }
 
-.admin-pager {
+/* ---------------- 用户管理：区内无限滚动 ---------------- */
+/* 区域高度有上限：内容少时收缩到内容高，内容多时到上限为止，
+   之后滚动发生在区域内部（不是整页无限下拉） */
+.admin-scroll-area {
+  max-height: min(calc(100vh - 268px), 760px);
+  overflow: auto;
+  /* 滚到底不要带着外层一起滚，保证「在区域里下拉」的手感 */
+  overscroll-behavior: contain;
+}
+
+/* 区内滚动时表头吸顶 */
+.admin-scroll-area .admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel-bg);
+}
+
+/* 8 列，窄屏下横向滚动而不是挤成一团 */
+.admin-table-users {
+  min-width: 900px;
+}
+
+/* 列表末端：加载中 / 已加载全部 / 后续页出错 */
+.admin-list-more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin-list-more.is-error {
+  color: var(--error);
+}
+
+/* 列表下方的计数条 */
+.admin-listfoot {
   display: flex;
   align-items: center;
   gap: var(--space-3);
@@ -904,12 +943,6 @@
   font-size: 12px;
   color: var(--text-muted);
   border-top: 1px solid var(--border);
-}
-
-.admin-pager-right {
-  display: flex;
-  gap: var(--space-2);
-  margin-left: auto;
 }
 
 /* ---------------- 登录页 ---------------- */

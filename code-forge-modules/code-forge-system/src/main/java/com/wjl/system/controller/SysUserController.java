@@ -72,6 +72,7 @@ public class SysUserController {
         return R.success(sysUserService.list());
     }
 
+    //done
     @DeleteMapping("/b/delete/{userAccount}")
     @Operation(summary = "删除一个管理员用户")
     @Parameter (name = "userAccount", description = "管理员用户 id")

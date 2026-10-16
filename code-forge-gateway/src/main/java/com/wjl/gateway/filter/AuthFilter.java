@@ -1,11 +1,13 @@
 package com.wjl.gateway.filter;
 
 import com.wjl.core.utils.ColorLog;
+import com.wjl.domain.constants.CacheConstants;
 import com.wjl.domain.constants.SecurityConstants;
 import com.wjl.core.enums.ResultCode;
 import com.wjl.core.utils.ServletUtil;
 import com.wjl.domain.domain.dto.LoginUserDTO;
 import com.wjl.gateway.config.WhiteListConfig;
+import com.wjl.redis.service.RedisService;
 import com.wjl.security.service.TokenService;
 import com.wjl.security.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +30,8 @@ public class AuthFilter implements GlobalFilter{
     private TokenService tokenService;
     @Autowired
     private WhiteListConfig whiteListConfig;
+    @Autowired
+    private RedisService redisService;
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -88,6 +92,13 @@ public class AuthFilter implements GlobalFilter{
                 if(loginUserDTO == null){
                     return unauthorized(exchange);
                 }
+
+                //如果请求发起者是C端用户，那么进行黑名单校验
+                String blackListKey = CacheConstants.BLACK_LIST;
+                if(redisService.existMember(blackListKey, Long.valueOf(loginUserDTO.getUserId()))){
+                    //用户已拉黑
+                    return forbidden(exchange);
+                }
                 if(!loginUserDTO.getUserAccount().equals(JwtUtil.getEmailOrAccount(token))
                         || !loginUserDTO.getUsername().equals(JwtUtil.getUserName(token))
                         || !loginUserDTO.getUserId().equals(JwtUtil.getUserId(token))
@@ -105,5 +116,9 @@ public class AuthFilter implements GlobalFilter{
 
     private Mono<Void> unauthorized(ServerWebExchange exchange) {
         return ServletUtil.webFluxResponseWriter(exchange.getResponse(), "application/json", HttpStatus.UNAUTHORIZED, ResultCode.FAILED_UNAUTHORIZED.getMsg(), ResultCode.FAILED_UNAUTHORIZED.getCode());
+    }
+
+    private Mono<Void> forbidden(ServerWebExchange exchange) {
+        return ServletUtil.webFluxResponseWriter(exchange.getResponse(), "application/json", HttpStatus.FORBIDDEN, ResultCode.FAILED_USER_BANNED.getMsg(), ResultCode.FAILED_USER_BANNED.getCode());
     }
 }

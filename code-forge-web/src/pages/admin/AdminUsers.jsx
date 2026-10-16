@@ -1,54 +1,75 @@
-import { useCallback, useEffect, useState } from 'react';
-import { fetchUserList, updateUserStatus } from '../../api/admin.js';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { updateUserStatus } from '../../api/admin.js';
+import { useAdminUserList } from '../../hooks/useAdminUserList.js';
 import { StatusDot, EmptyState, Notice } from './AdminBits.jsx';
 import { formatDateTime } from '../../utils/format.js';
 
 // B 端用户管理
-//   GET  /user/b/list?pageNum=&nickName=&userId=  → BasePageVO<UserVO>
+//   GET  /user/b/list?pageNum=&nickName=&userId=  → UserListVO（后端 PageHelper 分页）
 //   POST /user/b/update?userId=&status=           → 拉黑(0) / 解封(1)
 //   status 语义见 01-init.sql：0-拉黑 1-正常
+//
+// 列表形态 = 「区内无限滚动」：
+//   区域高度固定（见 admin.css 的 .admin-scroll-area），在区域里向下滚到底就
+//   自动拉下一页追加，而不是整页无限下拉，也不是上一页/下一页翻页。
+//
+// 拉黑 / 解封成功后只就地改这一行（patchItem），不整表重拉：
+//   无限列表重拉会丢滚动位置，还得把已经加载的几页重新拼一遍。
+const SCROLL_EDGE = 80; // 距底部还有多少像素就开始加载下一页
+
 export default function AdminUsers() {
-  const [page, setPage] = useState(1);
   const [filters, setFilters] = useState({ nickName: '', userId: '' });
   const [applied, setApplied] = useState({ nickName: '', userId: '' });
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // 点「查询 / 重置」时 +1：条件没变也能重新拉一次
+  const [nonce, setNonce] = useState(0);
   const [notice, setNotice] = useState(null);
   const [busyId, setBusyId] = useState(null);
+  const areaRef = useRef(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const d = await fetchUserList({
-        pageNum: page,
-        nickName: applied.nickName || undefined,
-        userId: applied.userId || undefined,
-      });
-      setData(d || null);
-    } catch (e) {
-      setError(e?.message || '用户列表加载失败');
-      setData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [page, applied]);
+  const {
+    items,
+    total,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadNext,
+    reload,
+    patchItem,
+  } = useAdminUserList({ ...applied, nonce });
 
+  // 换条件后把滚动区域拉回顶部
   useEffect(() => {
-    load();
-  }, [load]);
+    if (areaRef.current) areaRef.current.scrollTop = 0;
+  }, [applied, nonce]);
+
+  // 内容不足一屏时自动再拉一页（否则没有滚动条，就永远触发不了滚动加载）
+  useEffect(() => {
+    if (loading || loadingMore || !hasMore || error) return;
+    const el = areaRef.current;
+    if (el && el.scrollHeight <= el.clientHeight + 4) loadNext();
+  }, [items, loading, loadingMore, hasMore, error, loadNext]);
+
+  const onScroll = useCallback(
+    (e) => {
+      const el = e.currentTarget;
+      if (el.scrollTop + el.clientHeight >= el.scrollHeight - SCROLL_EDGE) {
+        loadNext();
+      }
+    },
+    [loadNext]
+  );
 
   const search = (e) => {
     e.preventDefault();
-    setPage(1);
     setApplied({ nickName: filters.nickName.trim(), userId: filters.userId.trim() });
+    setNonce((n) => n + 1);
   };
 
   const reset = () => {
     setFilters({ nickName: '', userId: '' });
     setApplied({ nickName: '', userId: '' });
-    setPage(1);
+    setNonce((n) => n + 1);
   };
 
   const toggleStatus = async (row) => {
@@ -57,18 +78,16 @@ export default function AdminUsers() {
     setNotice(null);
     try {
       await updateUserStatus({ userId: row.userId, status: next });
-      setNotice(`已将用户 ${row.nickName || row.userId} 设为${next === 0 ? '黑名单' : '正常'}`);
-      await load();
+      patchItem(row.userId, { status: next });
+      setNotice(
+        `已将用户 ${row.nickName || row.userId} 设为${next === 0 ? '黑名单' : '正常'}`
+      );
     } catch (e) {
       setNotice(e?.message || '更新失败');
     } finally {
       setBusyId(null);
     }
   };
-
-  const list = Array.isArray(data?.list) ? data.list : [];
-  const total = typeof data?.total === 'number' ? data.total : null;
-  const pages = typeof data?.pages === 'number' ? data.pages : null;
 
   return (
     <>
@@ -99,17 +118,14 @@ export default function AdminUsers() {
           <button type="button" className="admin-btn" onClick={reset}>
             重置
           </button>
-          <span className="admin-hint">共 {total ?? '—'} 条</span>
         </form>
 
-        {error && <Notice kind="error">{error}</Notice>}
-        {notice && (
-          <Notice onClose={() => setNotice(null)}>{notice}</Notice>
-        )}
+        {notice && <Notice onClose={() => setNotice(null)}>{notice}</Notice>}
 
         <div className="admin-panel">
-          <div className="admin-table-wrap">
-            <table className="admin-table">
+          {/* 列表区：高度固定，区内滚动加载 */}
+          <div className="admin-scroll-area" ref={areaRef} onScroll={onScroll}>
+            <table className="admin-table admin-table-users">
               <thead>
                 <tr>
                   <th style={{ width: 70 }}>ID</th>
@@ -125,7 +141,7 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody>
-                {list.map((u) => {
+                {items.map((u) => {
                   const ok = u.status === 1;
                   return (
                     <tr key={u.userId}>
@@ -163,45 +179,38 @@ export default function AdminUsers() {
                 })}
               </tbody>
             </table>
-            {!loading && !list.length && (
-              <EmptyState>{error ? '加载失败' : '暂无数据'}</EmptyState>
-            )}
+
+            {/* 首屏加载 / 空态 / 首屏出错 */}
             {loading && <EmptyState>加载中…</EmptyState>}
+            {!loading && !items.length && !error && <EmptyState>暂无数据</EmptyState>}
+            {!loading && !items.length && error && (
+              <EmptyState>
+                {error}
+                <button type="button" className="admin-btn link" onClick={reload}>
+                  重试
+                </button>
+              </EmptyState>
+            )}
+
+            {/* 滚到底的反馈：加载中 / 已到底 / 后续页出错 */}
+            {loadingMore && <div className="admin-list-more">加载中…</div>}
+            {!loading && !loadingMore && !hasMore && items.length > 0 && (
+              <div className="admin-list-more">已加载全部 {items.length} 条</div>
+            )}
+            {!loading && items.length > 0 && error && (
+              <div className="admin-list-more is-error">
+                {error}
+                <button type="button" className="admin-btn link" onClick={reload}>
+                  重试
+                </button>
+              </div>
+            )}
           </div>
 
-          <div className="admin-pager">
+          <div className="admin-listfoot">
             <span>
-              第 <span className="admin-num">{data?.pageNum ?? page}</span>
-              {pages ? (
-                <>
-                  {' / '}
-                  <span className="admin-num">{pages}</span>
-                </>
-              ) : null}{' '}
-              页
-              {total != null && (
-                <>
-                  ，共 <span className="admin-num">{total}</span> 条
-                </>
-              )}
-            </span>
-            <span className="admin-pager-right">
-              <button
-                type="button"
-                className="admin-btn"
-                disabled={loading || page <= 1}
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-              >
-                上一页
-              </button>
-              <button
-                type="button"
-                className="admin-btn"
-                disabled={loading || (pages != null && page >= pages)}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                下一页
-              </button>
+              共 <span className="admin-num">{total ?? '—'}</span> 条，已加载{' '}
+              <span className="admin-num">{items.length}</span> 条
             </span>
           </div>
         </div>

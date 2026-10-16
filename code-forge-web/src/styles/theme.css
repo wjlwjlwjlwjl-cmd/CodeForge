@@ -1659,6 +1659,27 @@ body {
   border-radius: var(--radius-md);
 }
 
+/* 被管理员拉黑：比普通错误提示更重的一排（标题 + 后端原文） */
+.login-banned {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--error);
+  background: var(--error-soft);
+  border: 1px solid var(--error);
+  border-radius: var(--radius-sm);
+}
+
+.login-banned strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+
 .login-submit:disabled {
   opacity: 0.7;
   cursor: not-allowed;

@@ -18,15 +18,17 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    //done
     @RequestMapping("/list")
-    @Operation(description = "管理员查询用户（用户 id + 昵称）")
+    @Operation(description = "管理员查询用户（用户 id + 昵称），分页获取")
     public R<UserListVO> list(UserQueryDTO userQueryDTO) {
         return R.success(userService.list(userQueryDTO));
     }
 
+    //done
     @RequestMapping("/update")
     @Operation(description = "管理员更新用户状态（拉黑/解封）")
-    public R<String> updateStatus(UserDTO userDTO, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
+    public R<Void> updateStatus(UserDTO userDTO, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(userService.updateStatus(userDTO, token));
     }
 }

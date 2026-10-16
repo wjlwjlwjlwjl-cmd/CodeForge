@@ -452,7 +452,7 @@ public class RedisService {
     //************ */
 
     /**
-     * 向 Set 中添加一个或多个元素
+     * 向 Set 中添加一个或多个元素（没有Set就新建）
      * 
      * @param key   Set 键值
      * @param objs  要插入的一个或多个元素
@@ -460,6 +460,18 @@ public class RedisService {
     public void addMember(final String key, Object... objs){
         if(key == null || objs == null) return;
         redisTemplate.opsForSet().add(key, objs);
+    }
+
+    /**
+     * 判断Set中某个元素是否存在
+     *
+     * @param key  Set 键值
+     * @param obj 要判断是否存在的元素
+     * @return 存在性
+     */
+    public boolean existMember(final String key, final Object obj){
+        if(key == null || obj == null) return false;
+        return Boolean.TRUE.equals(redisTemplate.opsForSet().isMember(key, obj));
     }
 
     /**

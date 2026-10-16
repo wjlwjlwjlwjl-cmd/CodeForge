@@ -98,4 +98,9 @@ public class CacheConstants {
      * 竞赛排名列表缓存
      */
     public final static String EXAM_RANK = "exam:%d:rank";
+
+    /**
+     * 黑名单用户缓存
+     */
+    public final static String BLACK_LIST = "black:list";
 }

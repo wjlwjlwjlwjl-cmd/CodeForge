@@ -103,6 +103,9 @@ public class UserService {
         if(!BCryptPwdUtil.matches(rawPassword, hashedPassword)){
             throw new ServiceException(ResultCode.FAILED_LOGIN.getCode(),ResultCode.FAILED_LOGIN.getMsg());
         }
+        if(user.getStatus() == 0){
+            throw new ServiceException(ResultCode.FAILED_USER_BANNED.getCode(), ResultCode.FAILED_USER_BANNED.getMsg());
+        }
 
         // 用户身份合法，签发 token
         LoginUserDTO loginUserDTO = new LoginUserDTO();

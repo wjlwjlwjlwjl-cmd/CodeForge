@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { submitJudge } from '../api/submit.js';
 import { subscribeJudge, unsubscribeJudge } from '../api/judgeSocket.js';
-import { goToLogin } from '../config.js';
+import { handleApiError, goToLogin } from '../config.js';
 
 // 提交判题 + 订阅结果
 // 返回：
@@ -90,12 +90,11 @@ export function useJudge(questionId, examId = null) {
         // 提交成功后，等待 WS 推送结果；onMessage 里会置 judging=false
       } catch (e) {
         setJudging(false);
-        // 未登录/登录过期：引导重新登录
-        if (e?.code === 'UNAUTHORIZED') {
-          goToLogin();
-          return;
-        }
-        setSubmitError(e.message || '提交失败');
+        // 被拉黑（网关 403 + 3104）/ 未登录 / 登录过期：统一从这里踢回登录页，
+        // handleApiError 返回 null 表示已经发起跳转，不用再设置错误文案
+        const msg = handleApiError(e, '提交失败');
+        if (msg === null) return;
+        setSubmitError(msg);
       }
     },
     [questionId, examId]

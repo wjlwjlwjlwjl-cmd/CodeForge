@@ -29,6 +29,7 @@ import com.wjl.system.entity.system.BUser;
 import com.wjl.system.mapper.BUserMapper;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 
 @Service 
 @Slf4j 
@@ -78,7 +79,7 @@ public class SysUserService {
     }
 
     //添加管理员用户
-    public AddAdminVO addAdmin(String token, AddAdminDTO addAdminDTO){
+    public AddAdminVO addAdmin(String token, @Validated AddAdminDTO addAdminDTO){
         AddAdminVO addAdminVO = new AddAdminVO();
 
         LoginUserDTO loginUserDTO = tokenService.getBLoginUser(token);

@@ -7,12 +7,33 @@ import { clearAvatar } from '../api/avatarStore.js';
 import { clearMyExams } from '../api/myExamStore.js';
 import { clearCurrentUser } from '../hooks/useCurrentUser.js';
 import {
+  BLACKLIST_CODE,
   SEND_CODE_COOLDOWN_SEC,
   TOKEN_STORAGE_KEY,
+  clearAuthed,
   getToken,
   markAuthed,
   goAfterAuth,
+  takeLoginNotice,
 } from '../config.js';
+
+// 从上一页带过来的「被限制登录」原因（handleBlacklisted 写的）。
+// 放在模块级读：整页跳转后一个页面只加载一次模块，天然只取一次，
+// 不受 StrictMode 双渲染 / 双 effect 影响。
+const CARRIED_NOTICE = takeLoginNotice();
+
+// 清掉本地登录态与缓存（登出 / 失效 / 被拉黑共用）
+function clearLocalSession() {
+  try {
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch (e) {
+    // 忽略
+  }
+  clearAvatar();
+  clearCurrentUser();
+  clearMyExams();
+  clearAuthed();
+}
 
 // 登录 / 注册页
 //   - 顶栏与代码编辑页一致（Logo + Code Forge + 主题切换）
@@ -23,6 +44,8 @@ export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
   const [mode, setMode] = useState('login');
   // 本地已持有 token 时，先调后端接口核验一次登录态
   const [checking, setChecking] = useState(() => !!getToken());
+  // 被限制登录（拉黑）的原因：登录接口直接拒给的，或带着 token 却已被网关拦下
+  const [banned, setBanned] = useState(CARRIED_NOTICE);
 
   const switchMode = useCallback((next) => {
     setMode(next);
@@ -46,15 +69,12 @@ export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
       })
       .catch((e) => {
         if (cancelled) return;
-        if (e?.code === 3001 || e?.code === 'UNAUTHORIZED') {
-          try {
-            window.localStorage.removeItem(TOKEN_STORAGE_KEY);
-          } catch (err) {
-            // 忽略
-          }
-          clearAvatar();
-          clearCurrentUser();
-          clearMyExams();
+        if (e?.code === BLACKLIST_CODE) {
+          // 带着 token 但已被拉黑：网关直接 403 + 3104，清干净并在登录页给出原因
+          clearLocalSession();
+          setBanned(e?.message || '您已被列入黑名单，请联系管理员');
+        } else if (e?.code === 3001 || e?.code === 'UNAUTHORIZED') {
+          clearLocalSession();
         }
         setChecking(false);
       });
@@ -95,6 +115,7 @@ export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
         ) : mode === 'login' ? (
           <LoginForm
             key="login"
+            notice={banned}
             onSwitch={() => switchMode('register')}
             onSuccess={onLoginSuccess}
           />
@@ -111,11 +132,14 @@ export default function LoginPage({ theme, onToggleTheme, onLoginSuccess }) {
 }
 
 /* ============================ 登录表单 ============================ */
-function LoginForm({ onSwitch, onSuccess }) {
+function LoginForm({ onSwitch, onSuccess, notice }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  // 本次登录被后端判定为黑名单的原因（比普通错误提示重，单独一排）
+  const [bannedLocal, setBannedLocal] = useState('');
+  const banned = bannedLocal || notice || '';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -131,7 +155,12 @@ function LoginForm({ onSwitch, onSuccess }) {
       // token 由外层负责持久化（onSuccess）
       onSuccess?.(token);
     } catch (err) {
-      setError(err.message || '登录失败');
+      // 拉黑：后端 user.status == 0，直接不发 token，这里也只提示、不进站
+      if (err?.code === BLACKLIST_CODE) {
+        setBannedLocal(err.message || '您已被列入黑名单，请联系管理员');
+      } else {
+        setError(err.message || '登录失败');
+      }
     } finally {
       setSubmitting(false);
     }
@@ -157,6 +186,13 @@ function LoginForm({ onSwitch, onSuccess }) {
         value={password}
         onChange={(e) => setPassword(e.target.value)}
       />
+
+      {banned && (
+        <div className="login-banned" role="alert">
+          <strong>账号已被限制登录</strong>
+          <span>{banned}</span>
+        </div>
+      )}
 
       {error && <div className="login-error" role="alert">{error}</div>}
 

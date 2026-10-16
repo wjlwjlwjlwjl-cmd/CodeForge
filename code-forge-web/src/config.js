@@ -37,6 +37,39 @@ export function isSuccessResponse(json) {
 export const FIRST_QUESTION_CODE = 3501; // 已经是第一题
 export const LAST_QUESTION_CODE = 3502; // 已经是最后一题
 
+// ---------------- 黑名单（被管理员拉黑） ----------------
+//
+// 后端两条路径返回同一个业务码 3104「您已被列入黑名单, 请联系管理员.」：
+//   1. 登录时：POST /user/login 里 user.status == 0
+//      → R 包裹的 3104（HTTP 200，登录直接不给你 token）
+//   2. 登录之后：网关 AuthFilter 查 Redis "black:list"（由 B 端 /user/b/update 维护）
+//      命中 → HTTP 403 + { code: 3104, ... }
+// 所以前端只认这一个码：登录时直接不让进；已经登录的则把本地登录态清干净、
+// 踢回登录页并把原因带过去，后续任何操作都做不了。
+export const BLACKLIST_CODE = 3104;
+
+// 被踢回登录页时要显示的原因（整页跳转后还在，所以用 sessionStorage 传一次）
+const LOGIN_NOTICE_KEY = 'cf:loginNotice';
+
+function setLoginNotice(msg) {
+  try {
+    window.sessionStorage.setItem(LOGIN_NOTICE_KEY, msg || '');
+  } catch (e) {
+    // 忽略
+  }
+}
+
+// 取走并清掉（只显示一次）
+export function takeLoginNotice() {
+  try {
+    const msg = window.sessionStorage.getItem(LOGIN_NOTICE_KEY);
+    if (msg) window.sessionStorage.removeItem(LOGIN_NOTICE_KEY);
+    return msg || null;
+  } catch (e) {
+    return null;
+  }
+}
+
 // 鉴权 JWT：完全由登录页登录后写入 localStorage，不再硬编码。
 // 同时用于：
 //   1. GET /question/detail 的 Authorization 请求头（经网关 AuthFilter 鉴权）
@@ -135,9 +168,37 @@ export function goToLogin() {
   window.location.replace(login.toString());
 }
 
-// 统一错误处理：未登录 / 登录态失效（网关 3001）则跳转登录页，否则返回可展示的错误文案
+// 被拉黑：清掉本地登录态与缓存，回登录页，并把后端给的原因带过去。
+// 清理范围与 App#handleLogout 保持一致（避免下个账号串号）：
+//   cf:token（localStorage）、cf:authed、cf:avatar（sessionStorage）；
+//   其余内存缓存随整页跳转自然失效。
+export function handleBlacklisted(msg) {
+  setLoginNotice(msg || '您已被列入黑名单，请联系管理员');
+  try {
+    window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch (e) {
+    // 忽略
+  }
+  try {
+    window.sessionStorage.removeItem('cf:avatar');
+  } catch (e) {
+    // 忽略
+  }
+  clearAuthed();
+  // 已经在登录页就不要再跳一次：goToLogin 是整页跳转，会再跑一遍登录态校验，
+  // 又拿到 3104，又跳…… 死循环。
+  const alreadyLogin =
+    new URLSearchParams(window.location.search).get('page') === 'login';
+  if (!alreadyLogin) goToLogin();
+}
+
+// 统一错误处理：被拉黑 / 未登录 / 登录态失效则跳转登录页，否则返回可展示的错误文案
 // 返回 null 表示已发起跳转，调用方无需再设置 error。
 export function handleApiError(e, fallback = '请求失败') {
+  if (e?.code === BLACKLIST_CODE) {
+    handleBlacklisted(e?.message);
+    return null;
+  }
   if (e?.code === 'UNAUTHORIZED' || e?.code === 3001) {
     goToLogin();
     return null;
