@@ -198,3 +198,40 @@ export async function fetchExamTotal() {
   const data = await request('/exam/list?pageNum=1');
   return typeof data?.total === 'number' ? data.total : null;
 }
+
+/* ---------------- 题目管理 ---------------- */
+
+// GET /question/list?pageNum=  → { total, pages, pageNum, pageSize, list: QuestionVO[] }
+//   QuestionVO = { id, title, difficulty, timeLimit, spaceLimit }
+//   pageNum 从 1 开始（ListQuestionDTO 上有 @Min(1)）；每页条数由后端 PAGE_SIZE 决定
+//   注意：这个接口在网关侧需要鉴权，所以必须带 Authorization（B 端 token 同样可用）
+export async function fetchQuestionPage(pageNum = 1) {
+  return request(`/question/list?pageNum=${Number(pageNum) || 1}`);
+}
+
+// GET /question/detail?id= → QuestionDetailVO
+//   { id, title, difficulty, timeLimit, spaceLimit, content, questionCase, defaultCode, mainFuc }
+export async function fetchQuestionDetail(id) {
+  return request(`/question/detail?id=${encodeURIComponent(String(id))}`);
+}
+
+// POST /question/b/add  参数 AddQuestionDTO，8 个字段全部必填：
+//   title / difficulty(1~3) / timeLimit(ms) / spaceLimit(KB) /
+//   content / questionCase / defaultCode / mainFuc
+// 返回一句文案，如「添加成功，题目编号：108」
+export async function addQuestion(dto) {
+  return request('/question/b/add', { method: 'POST', body: dto });
+}
+
+// POST /question/b/edit  参数 QuestionEditDTO：id 必填，其余字段可选
+// （后端 updateById 会忽略 null，传全量即可）
+export async function editQuestion(dto) {
+  return request('/question/b/edit', { method: 'POST', body: dto });
+}
+
+// DELETE /question/b/delete/{id} → 返回一句文案
+export async function deleteQuestion(id) {
+  return request(`/question/b/delete/${encodeURIComponent(String(id))}`, {
+    method: 'DELETE',
+  });
+}

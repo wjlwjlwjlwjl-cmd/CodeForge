@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { updateUserStatus } from '../../api/admin.js';
-import { useAdminUserList } from '../../hooks/useAdminUserList.js';
+import { fetchUserList, updateUserStatus } from '../../api/admin.js';
+import { useAdminPagedList } from '../../hooks/useAdminPagedList.js';
 import { StatusDot, EmptyState, Notice } from './AdminBits.jsx';
 import { formatDateTime } from '../../utils/format.js';
 
@@ -35,8 +35,17 @@ export default function AdminUsers() {
     hasMore,
     loadNext,
     reload,
-    patchItem,
-  } = useAdminUserList({ ...applied, nonce });
+    setItems,
+  } = useAdminPagedList(
+    (pageNum) =>
+      fetchUserList({
+        pageNum,
+        nickName: applied.nickName || undefined,
+        userId: applied.userId || undefined,
+      }),
+    // 条件指纹：查询/重置会 +nonce，条件没变也能重新拉
+    `${applied.nickName}\u0000${applied.userId}\u0000${nonce}`
+  );
 
   // 换条件后把滚动区域拉回顶部
   useEffect(() => {
@@ -78,7 +87,12 @@ export default function AdminUsers() {
     setNotice(null);
     try {
       await updateUserStatus({ userId: row.userId, status: next });
-      patchItem(row.userId, { status: next });
+      // 只就地改这一行，不重拉列表（否则滚动位置会丢、已加载的页还要重拼）
+      setItems((prev) =>
+        prev.map((u) =>
+          String(u.userId) === String(row.userId) ? { ...u, status: next } : u
+        )
+      );
       setNotice(
         `已将用户 ${row.nickName || row.userId} 设为${next === 0 ? '黑名单' : '正常'}`
       );

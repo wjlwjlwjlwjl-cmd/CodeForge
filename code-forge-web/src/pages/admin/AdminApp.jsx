@@ -8,6 +8,7 @@ import AdminUsers from './AdminUsers.jsx';
 import AdminAdmins from './AdminAdmins.jsx';
 import AdminDetailDialog from './AdminDetailDialog.jsx';
 import AdminPending from './AdminPending.jsx';
+import AdminQuestions from './AdminQuestions.jsx';
 import '../../styles/admin.css';
 
 // B 端管理后台外壳：左侧固定导航 + 右侧内容区
@@ -52,14 +53,16 @@ export default function AdminApp({ theme, onToggleTheme }) {
   }, []);
 
   // Esc：宽屏下收起导航（不做抽屉，避免多余交互）
-  // 详情弹窗打开时让路，否则一次 Esc 会既关弹窗又收导航
+  // 任何弹窗开着都让路，否则一次 Esc 会既关弹窗又收导航
   useEffect(() => {
     const onKey = (e) => {
-      if (e.key === 'Escape' && !detailOpen) setCollapsed((v) => v);
+      if (e.key !== 'Escape') return;
+      if (document.querySelector('.dialog-backdrop')) return;
+      setCollapsed((v) => v);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [detailOpen]);
+  }, []);
 
   // 没拿到管理员信息就不进后台：
   //   · 有 token 且仍在验证 → 「正在验证登录状态…」
@@ -190,13 +193,7 @@ export default function AdminApp({ theme, onToggleTheme }) {
             {section === 'overview' && <AdminOverview info={info} onGo={go} />}
             {section === 'users' && <AdminUsers />}
             {section === 'admins' && <AdminAdmins selfAccount={account} />}
-            {section === 'questions' && (
-              <AdminPending
-                title="题目管理"
-                note="管理界面待接入。"
-                actions={['添加题目', '修改题目信息', '删除题目', '查看题目详情']}
-              />
-            )}
+            {section === 'questions' && <AdminQuestions />}
             {section === 'exams' && (
               <AdminPending
                 title="竞赛管理"

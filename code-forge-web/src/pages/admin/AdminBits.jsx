@@ -129,6 +129,22 @@ export function ConfirmDialog({
   );
 }
 
+/* ---------------- 难度标签 ---------------- */
+//
+// 简单绿 / 中等黄 / 困难红 —— 与 C 端的 .difficulty-tag 用同一套颜色变量，
+// 只是样式写在 B 端自己的 admin.css 里（B 端不引 C 端样式表）。
+export const DIFFICULTY_LEVELS = {
+  1: { text: '简单', kind: 'easy' },
+  2: { text: '中等', kind: 'medium' },
+  3: { text: '困难', kind: 'hard' },
+};
+
+export function DifficultyTag({ level }) {
+  const d = DIFFICULTY_LEVELS[level];
+  if (!d) return <span className="admin-muted">—</span>;
+  return <span className={`admin-difficulty is-${d.kind}`}>{d.text}</span>;
+}
+
 /* ---------------- 图标（16px 线性图标，沿用 C 端描边风格） ---------------- */
 const PATHS = {
   overview: (

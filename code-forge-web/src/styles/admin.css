@@ -934,6 +934,142 @@
   color: var(--error);
 }
 
+/* ---------------- 题目管理 ---------------- */
+/* 列较多，窄屏下横向滚动而不是挤成一团 */
+.admin-table-questions {
+  min-width: 900px;
+}
+
+/* 难度标签：简单绿 / 中等黄 / 困难红（与 C 端 .difficulty-* 同一套颜色变量） */
+.admin-difficulty {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.admin-difficulty::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.admin-difficulty.is-easy {
+  color: var(--success);
+}
+
+.admin-difficulty.is-medium {
+  color: var(--warning);
+}
+
+.admin-difficulty.is-hard {
+  color: var(--error);
+}
+
+/* 创建 / 更新：上排操作人，下排时间 */
+.admin-audit {
+  display: block;
+  line-height: 1.35;
+}
+
+.admin-audit-name {
+  display: block;
+  color: var(--text-secondary);
+}
+
+.admin-audit-time {
+  display: block;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+}
+
+/* 一行里并排两个操作按钮 */
+.admin-row-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* 新增 / 编辑题目弹窗：字段多且含长文本，放宽并让内容自己滚 */
+.admin-q-dialog {
+  width: min(880px, 94vw);
+}
+
+.admin-q-body {
+  max-height: min(calc(100vh - 220px), 720px);
+  overflow-y: auto;
+  padding-right: 4px;
+  margin-top: var(--space-3);
+}
+
+.admin-q-dialog .admin-field label {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.admin-q-req {
+  font-style: normal;
+  color: var(--error);
+}
+
+.admin-q-unit {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin-q-count {
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.admin-q-count.is-over {
+  color: var(--error);
+}
+
+/* 难度 / 时间 / 空间 排成一行 */
+.admin-q-row {
+  display: grid;
+  grid-template-columns: 0.8fr 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.admin-textarea {
+  width: 100%;
+  padding: 6px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  line-height: 1.6;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  outline: none;
+  resize: vertical;
+  transition: border-color 0.12s ease;
+}
+
+.admin-textarea:focus {
+  border-color: var(--accent);
+}
+
+.admin-textarea::placeholder {
+  color: var(--text-muted);
+}
+
+.admin-textarea.mono {
+  font-family: var(--font-mono);
+  line-height: 1.55;
+}
+
 /* 列表下方的计数条 */
 .admin-listfoot {
   display: flex;

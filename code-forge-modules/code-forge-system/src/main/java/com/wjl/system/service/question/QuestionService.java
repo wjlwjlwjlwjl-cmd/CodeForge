@@ -86,11 +86,8 @@ public class QuestionService {
 
         questionMapper.insert(question);
 
-        //两个缓存需要失效：题目缓存，竞赛题目缓存
+        //当添加题目时，直接让所有题目列表缓存失效，竞赛题目列表不需要清除缓存
         redisService.scan(CacheConstants.QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
-            redisService.deleteObject(key);
-        });
-        redisService.scan(CacheConstants.EXAM_QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
             redisService.deleteObject(key);
         });
 
@@ -188,16 +185,10 @@ public class QuestionService {
         }
         redisService.deleteObject(CacheConstants.QUESTION_PREFIX + id);
 
+        //删除题目后，清空Redis题目列表缓存
         redisService.scan(CacheConstants.QUESTION_LIST_PAGE_PREFIX + "*", 100, key -> {
             redisService.deleteObject(key);
         });
-
-        //exam:%d:list:page:%d
-        String pattern = "exam:*:list:page:*"; //当一个题目删除时，让所有竞赛题目列表的缓存失效
-        redisService.scan(pattern, 100, key -> {
-            redisService.deleteObject(key);
-        });
-        ColorLog.info("题目列表缓存已失效");
 
         return String.format("题目 %d 删除成功", id);
     }

@@ -21,18 +21,21 @@ public class QuestionController {
     @Autowired
     private QuestionService questionService;
 
+    //done
     @GetMapping("/list")
     @Operation(description = "列出所有题目")
     public R<ListQuestionVO> list(@Validated ListQuestionDTO dto) {
         return R.success(questionService.list(dto));
     }
 
+    //done
     @PostMapping("/b/add")
-    @Operation(description = "管理员添加用户")
+    @Operation(description = "管理员添加题目")
     public R<String> add(@Validated @RequestBody AddQuestionDTO dto, @RequestHeader(SecurityConstants.AUTHENTICATION) String token) {
         return R.success(questionService.add(dto, token));
     }
 
+    //done
     @GetMapping("/detail")
     @Operation(description = "获取某道题目的详细信息")
     public R<QuestionDetailVO> detail(@RequestParam Long id) {
@@ -51,12 +54,14 @@ public class QuestionController {
         return R.success(questionService.delete(id));
     }
 
+    //done
     @GetMapping("/next")
     @Operation(description = "获取当前题目的下一道题目")
     public R<QuestionDetailVO> next(@RequestParam Long id) {
         return R.success(questionService.next(id));
     }
 
+    //done
     @GetMapping("/prev")
     @Operation(description = "获取当前题目的上一道题目")
     public R<QuestionDetailVO> prev(@RequestParam Long id) {
