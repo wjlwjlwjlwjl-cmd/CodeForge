@@ -35,4 +35,9 @@ public class ProductorController {
         rabbitTemplate.convertAndSend(Constants.TOPIC_EXCHANGE, "a.b.c", "hello a.b.c");
         rabbitTemplate.convertAndSend(Constants.TOPIC_EXCHANGE, "1.2.3", "hello 1.2.3");
     }
+
+    @RequestMapping("/manual_ack")
+    public void manalAck(){
+        rabbitTemplate.convertAndSend(Constants.ACK_QUEUE, "test manual ack");
+    }
 }

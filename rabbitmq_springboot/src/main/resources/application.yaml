@@ -2,10 +2,10 @@ server:
   port: 8080
 spring:
   application:
-    name: productor
+    name: rabbitmq
   rabbitmq:
-    host: localhost
+    host: 192.168.5.128
     port: 5672
     username: admin
     password: 123
-    virtual-host: test
+    virtual-host: /
