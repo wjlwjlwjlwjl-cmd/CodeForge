@@ -5,11 +5,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="c869e3a3-f39f-43ac-9351-ff0e4d81ebac" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../RabbitMQ.md" beforeDir="false" afterPath="$PROJECT_DIR$/../RabbitMQ.md" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wjl/constants/Constants.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wjl/constants/Constants.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/wjl/controller/ProductorController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/wjl/controller/ProductorController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/application.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/application.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
