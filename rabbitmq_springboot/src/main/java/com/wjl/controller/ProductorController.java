@@ -40,4 +40,29 @@ public class ProductorController {
     public void manalAck(){
         rabbitTemplate.convertAndSend(Constants.ACK_QUEUE, "test manual ack");
     }
+
+    @RequestMapping("/ttl")
+    public void ttl(){
+        String ttl = "10000"; //10s
+        rabbitTemplate.convertAndSend(Constants.TTL_EXCHANGE, Constants.TTL_QUEUE, "testing ttl", messagePostProcesser->{
+            messagePostProcesser.getMessageProperties().setExpiration(ttl);
+            return messagePostProcesser;
+        });
+    }
+
+    @RequestMapping("/dl_ttl")
+    public void dlTtl(){
+        rabbitTemplate.convertAndSend(Constants.NORMAL_EX, "normal", "testing dl caused by ttl");
+    }
+
+    @RequestMapping("/dl_len")
+    public void dlLen(){
+        for(int i = 0; i < 20; i++)
+            rabbitTemplate.convertAndSend(Constants.NORMAL_EX, "normal", "testing dl caused by length");
+    }
+
+    @RequestMapping("/dl_nack")
+    public void dlNack(){
+        rabbitTemplate.convertAndSend(Constants.NORMAL_EX, "normal", "testing dl caused by nack");
+    }
 }

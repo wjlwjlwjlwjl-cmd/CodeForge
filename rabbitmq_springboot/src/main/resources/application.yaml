@@ -4,14 +4,12 @@ spring:
   application:
     name: rabbitmq
   rabbitmq:
-    host: 127.0.0.1
+    host: 192.168.5.128
     port: 5672
     username: admin
     password: 123
     virtual-host: /
-    acknowledge-mode: none
+    listener:
+      simple:
+        acknowledge-mode: manual
     publisher-confirm-type: correlated # 开启消息发送确认
-    retry:
-      enabled: true
-      initial-interval: 5000ms
-      max-attempts: 5

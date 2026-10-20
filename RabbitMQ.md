@@ -34,13 +34,13 @@
 - `direct`，将消息根据路由键 `Routing Key` 转发到指定队列
 - `topic`，将消息根据路由键（含有通配符 `*` 或者 `.`），路由到符合通配符的队列
 
-## 2\.4 Routing
+## 2.4 Routing
 
 <img src="图片和附件/image%207.png" width=50%>
 
 根据路由键，将消息转发到指定队列，对应的交换机工作模式为 `direct`
 
-## 2\.5 Topic
+## 2.5 Topic
 
 <img src="图片和附件/image.png" width=50%>
 
@@ -49,13 +49,13 @@
 - *`*`，匹配任意一个单词，例如  `program.language.java` 可以匹配到 `program.language.*`*
 - `#`，匹配零个或多个单词，例如 `program.language.cpp` 可以匹配到 `program.#`
 
-## 2\.6 RPC 
+## 2.6 RPC 
 
 <img src="图片和附件/image%202.png" width=50%>
 
 在 RPC 模式中，没有生产者消费者（或者说都是消费者、生产者），由不同的队列将请求发送、结果返回解绑，常用于服务调用、结果接受的微服务场景，实现生产消费解绑
 
-## 2\.7 Publish/Confirm 
+## 2.7 Publish/Confirm 
 
 <img src="图片和附件/image%203.png" width=50%>
 
@@ -70,7 +70,6 @@
 > - [RabbitMQ Java Client](https://gitee\.com/wangs\-joyful\-home/rabbitmq/tree/master/rabbitmq)
 > 
 > - [Spring AMQP](https://gitee\.com/wangs\-joyful\-home/rabbitmq/tree/master/rabbitmq\_springboot)
-> 
 
 # 三、RabbitMQ 确认应答机制
 
@@ -170,3 +169,47 @@ Confirm 机制，解决了消息压根就没有到达 Broker 或者 Broker 出�
 > 2. **在交换机中没能成功路由到队列**：使用发送方确认机制的 Return 模式
 > 3. **在 Broker 内部消息丢失**：开启持久化机制，包括交换机持久化、队列持久化、消息持久化
 > 4. **消息未能到达消费者或消费者处理失败**：应答机制，包括自动应答和手动应答两种方式（自动应答相当于直接放弃对于消费者处理的确认）
+
+# 六、重试机制
+
+RabbitMQ 的重试机制由框架提供，而不是 Broker 原生提供的能力，在 Spring AMQP 中，重试次数形如下面配置
+
+```yaml
+spring:
+  rabbitmq:
+    retry:
+      enabled: true # 是否开启重试机制
+      initial-delay: 5000ms # 第一次失败延迟时间
+      max-attempts: 5 # 最大重试次数
+```
+
+根据配置的确认方式（`spring:rabbitmq:acknowledge-mode: `），具体体现为：
+
+- `none`，自动确认时，重试次数超过（包括第一次尝试），会抛出异常
+- `auto`，当重试次数超过时，会通过警告的方式日志提醒，并进行自动应答，消息丢失（默认行为）
+- `manual`，手动确认，取决于 `basicAck` 和 `basicNack`，不受重试次数的限制
+
+# 七、TTL 过期时间
+
+RabbitMQ 支持对消息设置过期时间，包含两个方面：
+
+- 消息 TTL，在发送消息时设置；当消息过期时，不会立刻删除（懒处理），而是在将要投递到消费者时处理（每个消息的过期时间在发送时确定，各不相同，尝试确定会消耗额外的时间）
+- 队列 TTL，在建立队列时确定，所有消息都会在这个时间内过期（消息 TTL 的优先级更高，但是取消息 TTL 和队列 TTL 的最小值）；当消息过期时，立即删除（在队列过期的场景下，过期的消息一定在队列头部，不需要遍历队列）
+
+**队列过期时间**
+
+```java
+@Bean("ttl_queue")
+public Queue getTtlQueue(){
+    return QueueBuilder.durable(Constants.TTL_QUEUE).ttl(10*1000).build();
+}
+```
+
+**消息过期时间**
+```java
+String ttl = "10000"; //10s
+rabbitTemplate.convertAndSend(Constants.TTL_EXCHANGE, Constants.TTL_QUEUE, "testing ttl", messagePostProcesser->{
+    messagePostProcesser.getMessageProperties().setExpiration(ttl);
+    return messagePostProcesser;
+});
+```
