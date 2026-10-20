@@ -1,0 +1,172 @@
+# 一、快速开始
+
+- Docker 部署
+
+    ```Shell
+    sudo docker run -itd --name=rabbitmq_service -p5672:5672 -p15672:15672 -e RABBITMQ_DEFAULT_USER=admin -e RABBITMQ_DEFAULT_PASS=123 rabbitmq:3-management
+    ```
+
+- Web 管理界面 `http://localhost:15672`
+
+# 二、七种工作模型
+
+## 2.1 Simple
+
+<img src="./图片和附件/image%201.png" width=50%>
+
+**Simple**，一个生产者、一个消费者，只留一个队列作为交易场所。是最简单的工作模式，点对点
+
+## 2.2 WorkQueue
+
+<img src="图片和附件/image%204.png" width=50%>
+
+**WorkQueue**，相比于 Simple，引入了更多竞争关系的消费者，RabbitMQ 会将任务分发给其中一个消费者，常用的场景是微服务中，一个节点将请求放到队列中，请求处理集群出一个节点处理任务
+
+## 2.3 Publish/Subscribe
+
+<img src="图片和附件/image%205.png" width=50%>
+
+`ex` 指的是交换机，生产者将数据发送到交换机后，交换机会将消息转发到队列。
+
+交换机常用的工作模式包括
+
+- `fanout`，直接将消息转发到所有绑定到交换机的队列，对应 `Publish/Subscribe` 模式
+- `direct`，将消息根据路由键 `Routing Key` 转发到指定队列
+- `topic`，将消息根据路由键（含有通配符 `*` 或者 `.`），路由到符合通配符的队列
+
+## 2\.4 Routing
+
+<img src="图片和附件/image%207.png" width=50%>
+
+根据路由键，将消息转发到指定队列，对应的交换机工作模式为 `direct`
+
+## 2\.5 Topic
+
+<img src="图片和附件/image.png" width=50%>
+
+根据统配规则，将消息发送到符合通配的队列，交换机工作模式为 `topic`，通配符匹配规则如下
+
+- *`*`，匹配任意一个单词，例如  `program.language.java` 可以匹配到 `program.language.*`*
+- `#`，匹配零个或多个单词，例如 `program.language.cpp` 可以匹配到 `program.#`
+
+## 2\.6 RPC 
+
+<img src="图片和附件/image%202.png" width=50%>
+
+在 RPC 模式中，没有生产者消费者（或者说都是消费者、生产者），由不同的队列将请求发送、结果返回解绑，常用于服务调用、结果接受的微服务场景，实现生产消费解绑
+
+## 2\.7 Publish/Confirm 
+
+<img src="图片和附件/image%203.png" width=50%>
+
+前面几种模式，当我们将消息发送到 RabbitMQ 时，不能确认 Rabbitmq 是否接受并且转发了消息。生产者可以通过将 Channel 设置为 confirm 模式，来进行确认：
+
+- 对于不可路由消息，Broker 接收到消息立即返回 ACK 确认应答
+- 对于可路由的消息，在完成转发到全部对应队列并且完成持久化（如果需要的话），返回 ACK
+- 如果 RabbitMQ 内部错误，会返回 NACK，生产者可以选择重新发送
+
+> 具体代码见：
+> 
+> - [RabbitMQ Java Client](https://gitee\.com/wangs\-joyful\-home/rabbitmq/tree/master/rabbitmq)
+> 
+> - [Spring AMQP](https://gitee\.com/wangs\-joyful\-home/rabbitmq/tree/master/rabbitmq\_springboot)
+> 
+
+# 三、RabbitMQ 确认应答机制
+
+RabbitMQ 应答机制分为两种：
+
+- **自动应答**，Broker 发出消息就确认，不管消费者是否接收到、是否成功处理。
+- **手动应答**，由消费者手动确认，在一定时间内，没有接收到确认应答，并且消费者连接断开，就重新入队发送
+  
+在 Spring AMQP 中，应答机制有三个选项：
+
+1. `none`，等价于上面的**自动应答** 
+2. `auto`，默认选项，只要 listener 正常完成就自动确认（Spring 完成，不需要手动调用）；如果抛出异常，那么自动否定确认
+3. `manual`，手动调用，使用 `channel.basicAck()` 和 `channel.basicNack()` 两个方法
+
+> 这里的确认应答机制，完成的是从 Broker 到消费者的可靠性确认
+
+# 四、RabbitMQ 持久化
+
+持久化包含三部分
+
+- **交换机持久化**，在创建交换机时，`.durable(true)`。此时当 Broker 断电重启后，交换机依然存在，否则交换机的原信息丢失
+- **队列持久化**，同样在创建队列时进行，`QueueBuilder.durable(queueName).build()`。Spring AMQP 中默认开启队列持久化
+- **消息持久化**，如果没有开启队列持久化，那么当 Broker 断电重启时，队列消息丢失，持久化的消息也会丢失。消息持久化在发送消息时指定
+
+> 即使开启了 RabbitMQ 交换机、队列、消息持久化也不代表消息能够不丢失，下面两种情况仍然会丢失消息
+>
+> 1. 在写入磁盘的过程中，可能中途被打断而导致消息丢失，解决方式可以是下面的发送方确认
+> 2. 如果消费者设置自动应答，并且没有接收到消息或者在处理消息时异常，依然会发生丢失，这种解决方式可以是手动应答
+
+# 五、发送方确认
+
+RabbitMQ 确认应答机制、RabbitMQ 持久化，分别解决了消息在从 Broker 到 Consumer、在 Broker 内部的可靠性，但是在 Producer 到 Broker 以及 Broker 落盘失败的情况下呢？
+
+RabbitMQ 提供了发送方确认机制，包含两种方式
+
+- Confirm 确认模式
+- Return 模式
+
+## 5.1 Confirm 确认模式
+
+不仅是消费者会给予 Broker 确认，Broker 也会在接收并成功路由消息（如果需要的话还包括落盘）之后，向 Producer 发送确认。
+
+发送方可以设置回调函数，处理 Ack 和 NAck 的情况
+
+Confirm 机制，解决了消息压根就没有到达 Broker 或者 Broker 出现错误无法路由消息的情况
+
+## 5.2 Return 模式
+
+当 Broker 无法将消息路由到任何一个消息队列时，可以选择开启 Return 机制，通过设置回调函数，接收消息路由失败的信息
+
+在 Spring AMQP 中，使用 Confirm 确认模式和 Return 模式
+
+- 开启消息发送确认
+
+    ```yaml
+    spring:
+      rabbitmq:
+        publisher-confirm-type: corrlated
+    ```
+
+- 设置回调函数
+
+    ```java
+    @Configuration
+    public class RabbitTemplateConfig {
+        @Bean
+        public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+            RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+    
+            //Confirm 模式
+            rabbitTemplate.setConfirmCallback((correlationData, ack, cause) -> {
+                if(ack){
+                    System.out.println("Broker 成功接收消息");
+                }
+                else{
+                    System.out.println("Broker 接收消息失败");
+                }
+            });
+    
+            //Return 模式
+            rabbitTemplate.setReturnsCallback(returned -> {
+                System.out.println("消息路由失败：" + returned);
+            });
+    
+            return rabbitTemplate;
+        }
+    }
+    ```
+
+> 总结：
+>
+> <img src="图片和附件/image%206.png" width=80%>
+>
+> **RabbitMQ 怎样进行消息的可靠传输？** 
+>
+> 1. **生产者到 Broker**：使用发送方确认机制的 Confirm 模式，如果消息未能到达 Broker 或者 Broker 未能成功处理，会返回 Nack 给回调
+> 2. **在交换机中没能成功路由到队列**：使用发送方确认机制的 Return 模式
+> 3. **在 Broker 内部消息丢失**：开启持久化机制，包括交换机持久化、队列持久化、消息持久化
+> 4. **消息未能到达消费者或消费者处理失败**：应答机制，包括自动应答和手动应答两种方式（自动应答相当于直接放弃对于消费者处理的确认）

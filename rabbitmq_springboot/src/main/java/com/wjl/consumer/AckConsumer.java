@@ -12,20 +12,16 @@ import java.io.IOException;
 
 @Component
 public class AckConsumer {
-    @Autowired
-    private RabbitTemplate rabbitTemplate;
-
     @RabbitListener(queues = {Constants.ACK_QUEUE})
     public void ackFunc(Channel channel, Message message) throws IOException {
         System.out.println("get message: " + message);
         Long deliveryTag = message.getMessageProperties().getDeliveryTag();
         try{
-            int a = 1 / 0;
             channel.basicAck(deliveryTag, false);
         }
         catch(Exception e){
             System.out.println("发生异常");
-            channel.basicNack(deliveryTag, false, true);
+            channel.basicNack(deliveryTag, false, false);
         }
     }
 }
