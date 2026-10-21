@@ -1,7 +1,6 @@
 package com.wjl.config;
 
 import com.wjl.constants.Constants;
-import org.apache.tomcat.util.bcel.Const;
 import org.springframework.amqp.core.*;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
