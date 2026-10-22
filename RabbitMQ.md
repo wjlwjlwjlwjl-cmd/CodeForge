@@ -333,3 +333,30 @@ spring:
   - 数量太少
 - **网络状态不好**，导致传输慢或者反复丢失确认报文重试
 - **Broker配置过低**
+
+# 十三、仲裁队列
+
+仲裁队列基于 Raft 一致性算法实现的持久化、可复制的队列，在 RabbitMQ 集群中实现高可用、安全的数据处理
+
+## 13.1 Raft 算法
+
+### 13.1.1 组成
+
+Raft 将节点划分为三种角色：
+
+- `leader`，只有一个，作为集群的领导者，接收集群外的数据，通过日志复制到其他节点；并定期发送心跳包，防止 follower 进入选举
+- `candidate`，有零个或若干个，由 term 超时的 follower 转化而成，如果没有成为 leader 就会回退会 follower
+- `follower`，从主节点的日志接收数据进行同步，当一个 follower 节点在一定时间后没有接收到 leader 的心跳包，会认为 leader 下线，成为 candidate 尝试成为 leader
+
+在 Raft 算法中，节点间的通信主要包含两种：
+
+- `RequestVote RPCs`，condidate 用来向其他节点发起投票
+- `AppendEntries RPCs`，leader 用来向 follower 进行日志复制和心跳机制
+
+### 13.1.2 Term
+
+Raft 中存在任期机制，主要是用来体现是否选举出了新的 leader 节点。更大的 Term 意味着更新的任期，即：leader 不变时，任期不变；当原 leader 下线选举出新的 leader 时，Term 会递增更新
+
+### 13.1.3 Leader 选举
+
+[Raft 算法工作机制动画演示](https://raft.github.io/)
